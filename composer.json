@@ -1,11 +1,11 @@
 {
-    "name": "bagisto/graphql-api",
-    "description": "Bagisto GraphQL API",
+    "name": "addweb/graphql-api",
+    "description": "Addweb GraphQL API",
     "license": "MIT",
     "authors": [
         {
-            "name": "Vivek Sharma",
-            "email": "viveksh047@webkul.com"
+            "name": "Addweb",
+            "email": "rahul@addwebsolution.in"
         }
     ],
     "require": {
