@@ -11,7 +11,7 @@ return [
     | registration and take full control.
     |
     */
-
+    'super_admin' => env('SUPER_ADMIN', 1),
     'route' => [
         /*
          * The URI the endpoint responds to, e.g. mydomain.com/graphql.
@@ -76,7 +76,7 @@ return [
     */
 
     'schema' => [
-        'register' => base_path('vendor/bagisto/graphql-api/src/graphql/schema.graphql'),
+        'register' => base_path('vendor/addweb/graphql-api/src/graphql/schema.graphql'),
     ],
 
     /*

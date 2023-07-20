@@ -3,15 +3,21 @@
 namespace Webkul\GraphQLAPI\Mutations\Setting;
 
 use Exception;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Password;
 use JWTAuth;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
 use Webkul\Core\Http\Controllers\Controller;
+use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\User\Repositories\RoleRepository;
 use Webkul\User\Repositories\AdminRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use App\Helpers\OTPGenerationHelper;
+use App\Events\SendOTPEvent;
+
 
 class UserMutation extends Controller
 {
@@ -50,6 +56,9 @@ class UserMutation extends Controller
         }
 
         $data = $args['input'];
+        if($data['role_id'] == env('SUPER_ADMIN')){
+            throw new Exception('{"role_id":["You are not allowed to create super admin."]}');
+        }
 
         $validator = Validator::make($data, [
             'name'     => 'required',
@@ -96,6 +105,12 @@ class UserMutation extends Controller
 
         $data = $args['input'];
         $id = $args['id'];
+        if($id == env('SUPER_ADMIN')){
+            throw new Exception('{"role_id":["You are not allowed to update super admin."]}');
+        }
+        if($data['role_id'] == env('SUPER_ADMIN')){
+            throw new Exception('{"role_id":["You are not allowed to update super admin in another profile."]}');
+        }
 
         $validator = Validator::make($data, [
             'name'     => 'required',
@@ -153,7 +168,9 @@ class UserMutation extends Controller
         }
 
         $id = $args['id'];
-
+        if($id == env('SUPER_ADMIN')){
+            throw new Exception('{"id":["You are not allowed to delete super admin."]}');
+        }
         $user = $this->adminRepository->findOrFail($id);
 
         if ($this->adminRepository->count() == 1) {
@@ -189,6 +206,7 @@ class UserMutation extends Controller
         $validator = Validator::make($data, [
             'email'     => 'required|email',
             'password'  => 'required',
+            'role_id'  => 'required|regex:/^[0-9]+$/u',
         ]);
 
         if ($validator->fails()) {
@@ -200,6 +218,7 @@ class UserMutation extends Controller
         if (!$jwtToken = JWTAuth::attempt([
             'email'     => $data['email'],
             'password'  => $data['password'],
+            'role_id'  => $data['role_id'],
         ], $remember)) {
             throw new Exception(trans('admin::app.users.users.login-error'));
         }
@@ -247,5 +266,75 @@ class UserMutation extends Controller
             'status'    => false,
             'success'   => trans('bagisto_graphql::app.admin.response.no-login-user'),
         ];
+    }
+
+    /**
+     * Method to reset the user password
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function forgot($rootValue, array $args , GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        $validator = Validator::make($data, [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            $errorMessage = [];
+            foreach ($validator->messages()->toArray() as $message) {
+                $errorMessage[] = is_array($message) ? $message[0] : $message;
+            }
+
+            throw new CustomException(
+                implode(" ,", $errorMessage),
+                'Invalid ForgotPassword Details.'
+            );
+        }
+
+        try {
+            $Admin = bagisto_graphql()->guard($this->guard)->user();
+            $admin = $Admin::where("email", "=", $data['email'])->first();
+            if(!$admin){
+                throw new Exception('{"email":["We are unable to find account with given email. Please try again."]}');
+            }
+
+            $OTP = (new OTPGenerationHelper())->generateNumericOTP(config('otp.generate_otp_number'));
+            $encryptedKeyText = json_encode(["email" => $data['email'], "otp" => $OTP]);
+            $verifyLink = config('otp.front_end_url').Crypt::encryptString($encryptedKeyText);
+//            dd($verifyLink);
+            SendOTPEvent::dispatch($data['email'], $OTP, $verifyLink);
+
+            dd(1111);
+
+//            $response = $this->broker()->sendResetLink($data);
+//
+//            if ($response == Password::RESET_LINK_SENT) {
+//                return [
+//                    'status'    => true,
+//                    'success'   => trans('customer::app.forget_password.reset_link_sent')
+//                ];
+//            } else {
+//                throw new CustomException(
+//                    trans('bagisto_graphql::app.shop.response.password-reset-failed'),
+//                    'Invalid ForgotPassword Email Details.'
+//                );
+//            }
+        } catch (\Swift_RfcComplianceException $e) {
+            throw new CustomException(
+                trans('customer::app.forget_password.reset_link_sent'),
+                'Swift_RfcComplianceException: Invalid ForgotPassword Details.'
+            );
+        } catch (Exception $e) {
+            throw new CustomException(
+                $e->getMessage(),
+                'Exception: invalid forgot password email.'
+            );
+        }
     }
 }
