@@ -2,8 +2,14 @@
 
 namespace Webkul\GraphQLAPI\Mutations\Setting;
 
+use App\Exceptions\ExpiredOTPException;
+use App\Exceptions\InvalidOTPException;
+use App\Models\Admin;
+use App\Models\UserOTP;
 use Exception;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use JWTAuth;
 use Illuminate\Http\JsonResponse;
@@ -286,50 +292,121 @@ class UserMutation extends Controller
         ]);
 
         if ($validator->fails()) {
-            $errorMessage = [];
-            foreach ($validator->messages()->toArray() as $message) {
-                $errorMessage[] = is_array($message) ? $message[0] : $message;
-            }
-
-            throw new CustomException(
-                implode(" ,", $errorMessage),
-                'Invalid ForgotPassword Details.'
-            );
+            throw new Exception($validator->messages());
         }
 
         try {
             $Admin = bagisto_graphql()->guard($this->guard)->user();
             $admin = $Admin::where("email", "=", $data['email'])->first();
             if(!$admin){
-                throw new Exception('{"email":["We are unable to find account with given email. Please try again."]}');
+                throw new Exception('We are unable to find account with given email. Please try again.');
             }
 
             $OTP = (new OTPGenerationHelper())->generateNumericOTP(config('otp.generate_otp_number'));
-            $encryptedKeyText = json_encode(["email" => $data['email'], "otp" => $OTP]);
+            $encryptedKeyText = json_encode(["userId" => $admin['id'], "otp" => $OTP]);
             $verifyLink = config('otp.front_end_url').Crypt::encryptString($encryptedKeyText);
+            $userOTP = [
+                'user_id' => $admin['id'],
+                'user_type' => config('otp.admin_user_type'),
+                'expire_at' => Carbon::now()->addMinute(config('otp.expire_time_in_minutes')),
+                'otp' => $OTP,
+                'verify_link' => $verifyLink
+            ];
+
+            (new UserOTP())->create(
+                $userOTP
+            );
             SendOTPEvent::dispatch($data['email'], $OTP, $verifyLink);
 
-//            if ($response == Password::RESET_LINK_SENT) {
-                return [
-                    'status'    => true,
-                    'success'   => trans('customer::app.forget_password.reset_link_sent')
-                ];
-//            } else {
-//                throw new CustomException(
-//                    trans('bagisto_graphql::app.shop.response.password-reset-failed'),
-//                    'Invalid ForgotPassword Email Details.'
-//                );
-//            }
+            return [
+                'status'    => true,
+                'success'   => trans('customer::app.forget_password.reset_link_sent')
+            ];
         } catch (\Swift_RfcComplianceException $e) {
-            throw new CustomException(
-                trans('customer::app.forget_password.reset_link_sent'),
-                'Swift_RfcComplianceException: Invalid ForgotPassword Details.'
-            );
+            throw new Exception(trans('customer::app.forget_password.reset_link_sent'));
         } catch (Exception $e) {
-            throw new CustomException(
-                $e->getMessage(),
-                'Exception: invalid forgot password email.'
-            );
+            throw new Exception($e->getMessage());
         }
+    }
+
+    /**
+     * Method to reset the user password
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function verifyForgotPasswordOTP($rootValue, array $args , GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        $validator = Validator::make($data, [
+            'otp' => 'required|numeric',
+            'encryptedKey' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        $decryptedKey = Crypt::decryptString($data['encryptedKey']);
+        $decryptedKeyArr = json_decode($decryptedKey);
+
+        if($decryptedKeyArr->otp != $data['otp']){
+            throw new Exception(config('exceptionmessages.invalid_otp'));
+        }
+        $admin = UserOTP::where(UserOTP::USER_ID, '=', $decryptedKeyArr->userId)
+            ->take(1)
+            ->orderBy(UserOTP::ID, 'desc')
+            ->first();
+
+        if(empty($admin->{UserOTP::EXPIRE_AT})){
+            throw new Exception(config('exceptionmessages.invalid_otp'));
+        }
+        $totalDuration = Carbon::now()->diffInMinutes(Carbon::parse($admin->{UserOTP::EXPIRE_AT}), false);
+        if($totalDuration < 1){
+            throw new Exception(config('exceptionmessages.otp_expired'));
+        }
+
+        return [
+            'status'    => 'success',
+            'success'   => 'Email verified successfully.',
+            'userId'   => $decryptedKeyArr->userId,
+        ];
+    }
+
+    /**
+     * Method to reset the user password
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function resetPassword($rootValue, array $args , GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        $validator = Validator::make($data, [
+            'newPassword' => 'required',
+            'confirmPassword' => 'required|required_with:newPassword|same:newPassword',
+            'userId' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+        $Admin = bagisto_graphql()->guard($this->guard)->user();
+        $Admin::whereId($data['userId'])->update([
+            'password' => Hash::make($data['newPassword'])
+        ]);
+
+        return [
+            'status'    => 'success',
+            'success'   => 'Password changed successfully.',
+        ];
     }
 }

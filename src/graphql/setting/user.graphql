@@ -26,6 +26,14 @@ extend type Mutation {
     userForgotPassword(
         input: UserForgotPasswordInput!
     ): UserForgotPasswordResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\UserMutation@forgot")
+
+    userVerifyForgotPasswordOTP(
+        input: UserVerifyForgotPasswordOTPInput!
+    ): UserVerifyForgotPasswordOTPResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\UserMutation@verifyForgotPasswordOTP")
+
+    userResetPassword(
+        input: UserResetPasswordInput!
+    ): UserResetPasswordInputResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\UserMutation@resetPassword")
 }
 
 input CreateUserInput {
@@ -54,6 +62,17 @@ input FilterUserInput {
 
 input UserForgotPasswordInput {
     email: String! @rules(apply: ["email"])
+}
+
+input UserVerifyForgotPasswordOTPInput {
+    otp: Int!
+    encryptedKey: String!
+}
+
+input UserResetPasswordInput {
+    newPassword: String!
+    confirmPassword: String!
+    userId: Int!
 }
 
 type LoginResponse {
@@ -85,6 +104,17 @@ type User {
 }
 
 type UserForgotPasswordResponse {
+    status: Boolean
+    success: String
+}
+
+type UserVerifyForgotPasswordOTPResponse {
+    status: Boolean
+    success: String
+    userId: Int
+}
+
+type UserResetPasswordInputResponse {
     status: Boolean
     success: String
 }
