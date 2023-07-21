@@ -296,8 +296,8 @@ class UserMutation extends Controller
         }
 
         try {
-            $Admin = bagisto_graphql()->guard($this->guard)->user();
-            $admin = $Admin::where("email", "=", $data['email'])->first();
+            $User = bagisto_graphql()->guard($this->guard)->user();
+            $admin = $User::where("email", "=", $data['email'])->first();
             if(!$admin){
                 throw new Exception('We are unable to find account with given email. Please try again.');
             }
@@ -370,10 +370,12 @@ class UserMutation extends Controller
             throw new Exception(config('exceptionmessages.otp_expired'));
         }
 
+        $User = bagisto_graphql()->guard($this->guard)->user();
         return [
             'status'    => 'success',
             'success'   => 'Email verified successfully.',
             'userId'   => $decryptedKeyArr->userId,
+            'email'   => $User->email,
         ];
     }
 
@@ -394,15 +396,38 @@ class UserMutation extends Controller
             'newPassword' => 'required',
             'confirmPassword' => 'required|required_with:newPassword|same:newPassword',
             'userId' => 'required',
+            'email'     => 'required|email',
+            'otp' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
-        $Admin = bagisto_graphql()->guard($this->guard)->user();
-        $Admin::whereId($data['userId'])->update([
-            'password' => Hash::make($data['newPassword'])
-        ]);
+
+        $admin = UserOTP::where(UserOTP::USER_ID, '=', $data['userId'])
+            ->take(1)
+            ->orderBy(UserOTP::ID, 'desc')
+            ->first();
+
+        if(empty($admin)){
+            throw new Exception('We are unable to find account with given user id');
+        }
+
+        if($admin->otp != $data['otp']){
+            throw new Exception(config('exceptionmessages.invalid_otp'));
+        }
+
+        $User = bagisto_graphql()->guard($this->guard)->user();
+        if($User->email != $data['email']){
+            throw new Exception('We are unable to find account with given email');
+        }
+        if($User->email == $data['email'] && $admin->otp == $data['otp']) {
+            $User::whereId($data['userId'])->update([
+                'password' => Hash::make($data['newPassword'])
+            ]);
+        }else{
+            throw new Exception('We are unable to find account with given email & user id');
+        }
 
         return [
             'status'    => 'success',

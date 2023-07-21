@@ -73,6 +73,8 @@ input UserResetPasswordInput {
     newPassword: String!
     confirmPassword: String!
     userId: Int!
+    email: String! @rules(apply: ["email"])
+    otp: Int!
 }
 
 type LoginResponse {
@@ -112,6 +114,7 @@ type UserVerifyForgotPasswordOTPResponse {
     status: Boolean
     success: String
     userId: Int
+    email: String
 }
 
 type UserResetPasswordInputResponse {
