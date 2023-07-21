@@ -307,18 +307,13 @@ class UserMutation extends Controller
             $OTP = (new OTPGenerationHelper())->generateNumericOTP(config('otp.generate_otp_number'));
             $encryptedKeyText = json_encode(["email" => $data['email'], "otp" => $OTP]);
             $verifyLink = config('otp.front_end_url').Crypt::encryptString($encryptedKeyText);
-//            dd($verifyLink);
             SendOTPEvent::dispatch($data['email'], $OTP, $verifyLink);
 
-            dd(1111);
-
-//            $response = $this->broker()->sendResetLink($data);
-//
 //            if ($response == Password::RESET_LINK_SENT) {
-//                return [
-//                    'status'    => true,
-//                    'success'   => trans('customer::app.forget_password.reset_link_sent')
-//                ];
+                return [
+                    'status'    => true,
+                    'success'   => trans('customer::app.forget_password.reset_link_sent')
+                ];
 //            } else {
 //                throw new CustomException(
 //                    trans('bagisto_graphql::app.shop.response.password-reset-failed'),
