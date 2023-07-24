@@ -254,17 +254,21 @@ class AccountMutation extends Controller
         $customer = bagisto_graphql()->guard($this->guard)->user();
 //        dd($customer);
         try {
-            $data['customer_type'] = 2; // Event Manager
-            if ($customer = $this->customerRepository->update($data, $customer->id)) {
-                return [
-                    'status' => true,
-                    'success' => trans('shop::app.customer.account.profile.edit-success', ['name' => 'Customer'])
-                ];
+            if (Hash::check($data['password'], $customer->password)) {
+                $data['customer_type'] = 2; // Event Manager
+                if ($customer = $this->customerRepository->update($data, $customer->id)) {
+                    return [
+                        'status' => true,
+                        'success' => trans('shop::app.customer.account.profile.edit-success', ['name' => 'Customer'])
+                    ];
+                } else {
+                    throw new CustomException(
+                        trans('shop::app.customer.account.profile.edit-fail'),
+                        'Customer Type Change Failed.'
+                    );
+                }
             } else {
-                throw new CustomException(
-                    trans('shop::app.customer.account.profile.edit-fail'),
-                    'Customer Type Change Failed.'
-                );
+                throw new Exception(trans('shop::app.customer.account.address.delete.wrong-password'));
             }
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
