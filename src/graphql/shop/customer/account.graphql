@@ -8,6 +8,10 @@ extend type Mutation @guard(with: ["api"]) {
         input: UpdateAccountInput!
     ): AccountInfoResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AccountMutation@update")
 
+    changeCustomerType(
+        input: ChangeCustomerTypeInput!
+    ): ChangeCustomerTypeResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AccountMutation@changeCustomerType")
+
     deleteAccount(
         input: DeleteAccountInput!
     ): AccountDeleteResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AccountMutation@delete")
@@ -28,6 +32,10 @@ input UpdateAccountInput {
     image: Upload
 }
 
+input ChangeCustomerTypeInput {
+    password: String!
+}
+
 input DeleteAccountInput {
     password: String!
 }
@@ -36,6 +44,11 @@ type AccountInfoResult {
     status: Boolean
     message: String
     customer: Customer
+}
+
+type ChangeCustomerTypeResponse {
+    status: Boolean
+    success: String
 }
 
 type AccountDeleteResponse {

@@ -212,7 +212,6 @@ class UserMutation extends Controller
         $validator = Validator::make($data, [
             'email'     => 'required|email',
             'password'  => 'required',
-            'role_id'  => 'required|regex:/^[0-9]+$/u',
         ]);
 
         if ($validator->fails()) {
@@ -224,7 +223,6 @@ class UserMutation extends Controller
         if (!$jwtToken = JWTAuth::attempt([
             'email'     => $data['email'],
             'password'  => $data['password'],
-            'role_id'  => $data['role_id'],
         ], $remember)) {
             throw new Exception(trans('admin::app.users.users.login-error'));
         }
@@ -296,8 +294,7 @@ class UserMutation extends Controller
         }
 
         try {
-            $User = bagisto_graphql()->guard($this->guard)->user();
-            $admin = $User::where("email", "=", $data['email'])->first();
+            $admin = Admin::where("email", "=", $data['email'])->first();
             if(!$admin){
                 throw new Exception('We are unable to find account with given email. Please try again.');
             }
@@ -316,7 +313,7 @@ class UserMutation extends Controller
             (new UserOTP())->create(
                 $userOTP
             );
-            SendOTPEvent::dispatch($data['email'], $OTP, $verifyLink);
+            SendOTPEvent::dispatch($admin, $data['email'], $OTP, $verifyLink, 'admin');
 
             return [
                 'status'    => true,
@@ -370,12 +367,12 @@ class UserMutation extends Controller
             throw new Exception(config('exceptionmessages.otp_expired'));
         }
 
-        $User = bagisto_graphql()->guard($this->guard)->user();
+        $admin = Admin::where("id", "=", $admin->{UserOTP::USER_ID})->first();
         return [
             'status'    => 'success',
             'success'   => 'Email verified successfully.',
             'userId'   => $decryptedKeyArr->userId,
-            'email'   => $User->email,
+            'email'   => $admin->email,
         ];
     }
 
@@ -417,12 +414,12 @@ class UserMutation extends Controller
             throw new Exception(config('exceptionmessages.invalid_otp'));
         }
 
-        $User = bagisto_graphql()->guard($this->guard)->user();
-        if($User->email != $data['email']){
+        $user = Admin::where("email", "=", $data['email'])->first();
+        if(empty($user)){
             throw new Exception('We are unable to find account with given email');
         }
-        if($User->email == $data['email'] && $admin->otp == $data['otp']) {
-            $User::whereId($data['userId'])->update([
+        if($user->email == $data['email'] && $admin->otp == $data['otp']) {
+            $user::whereId($data['userId'])->update([
                 'password' => Hash::make($data['newPassword'])
             ]);
         }else{

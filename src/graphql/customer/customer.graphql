@@ -8,14 +8,14 @@ extend type Query @guard {
 extend type Mutation @guard {
     createCustomer(
         input: CreateCustomerInput!
-    ): Customer  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@store")
+    ): Customer @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@store")
 
     updateCustomer(
         id: ID!,
         input: CreateCustomerInput!
-    ): Customer  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@update")
+    ): Customer @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@update")
     
-    deleteCustomer(id: ID!): Customer  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@delete")
+    deleteCustomer(id: ID!): Customer @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@delete")
 }
 
 input CreateCustomerInput {
@@ -46,6 +46,7 @@ type Customer {
     firstName: String! @rename(attribute: "first_name")
     lastName: String! @rename(attribute: "last_name")
     name: String
+    customerType: Int @rename(attribute: "customer_type")
     gender: String
     dateOfBirth: String @rename(attribute: "date_of_birth")
     email: String!

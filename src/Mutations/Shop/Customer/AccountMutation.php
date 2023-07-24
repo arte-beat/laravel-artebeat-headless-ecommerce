@@ -235,6 +235,43 @@ class AccountMutation extends Controller
     }
 
     /**
+     * Change Customer Type
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function changeCustomerType($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (! bagisto_graphql()->guard($this->guard)->check() ) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+        $data = $args['input'];
+
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+//        dd($customer);
+        try {
+            $data['customer_type'] = 2; // Event Manager
+            if ($customer = $this->customerRepository->update($data, $customer->id)) {
+                return [
+                    'status' => true,
+                    'success' => trans('shop::app.customer.account.profile.edit-success', ['name' => 'Customer'])
+                ];
+            } else {
+                throw new CustomException(
+                    trans('shop::app.customer.account.profile.edit-fail'),
+                    'Customer Type Change Failed.'
+                );
+            }
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id
