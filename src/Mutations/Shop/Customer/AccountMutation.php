@@ -255,8 +255,8 @@ class AccountMutation extends Controller
 //        dd($customer);
         try {
             if (Hash::check($data['password'], $customer->password)) {
-                $data['customer_type'] = 2; // Event Manager
-                if ($customer = $this->customerRepository->update($data, $customer->id)) {
+                $updatedData['customer_type'] = 2; // Event Manager
+                if ($customer = $this->customerRepository->update($updatedData, $customer->id)) {
                     return [
                         'status' => true,
                         'success' => trans('shop::app.customer.account.profile.edit-success', ['name' => 'Customer'])
