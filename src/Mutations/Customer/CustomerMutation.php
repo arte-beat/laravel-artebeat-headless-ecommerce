@@ -54,7 +54,7 @@ class CustomerMutation extends Controller
             'gender'            => 'required',
             'email'             => 'required|unique:customers,email',
             'date_of_birth'     => 'string|before:today',
-            'customer_group_id' => 'required|numeric',
+//            'customer_group_id' => 'required|numeric',
         ]);
         
         if ($validator->fails()) {
@@ -108,7 +108,7 @@ class CustomerMutation extends Controller
             'gender'            => 'required',
             'email'             => 'required|unique:customers,email,' . $id,
             'date_of_birth'     => 'date|before:today',
-            'customer_group_id' => 'required|numeric',
+//            'customer_group_id' => 'required|numeric',
         ]);
         
         if ($validator->fails()) {
