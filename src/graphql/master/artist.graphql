@@ -22,7 +22,6 @@ input ArtistInput {
     artist_name: String!
     artist_type: Int!
     description: String!
-    image: Upload!
     website: String!
     tiktok: String!
     twitter: String!
