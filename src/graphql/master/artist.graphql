@@ -10,10 +10,9 @@ extend type Mutation @guard {
         input: ArtistInput!
     ): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@store")
 
-    updateArtist(
-        id: ID!,
-        input: ArtistInput!
-    ): Artist @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@update")
+    updateArtist(id: ID!, file: Upload!, input: ArtistInput!): String @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@update")
+
+#    uploadFile(file: Upload!, id: Int, type: String): String @field(resolver: "Webkul\\GraphQLAPI\\BagistoGraphql@uploadFile")
 
     deleteArtist(id: ID!): Artist @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@delete")
 }

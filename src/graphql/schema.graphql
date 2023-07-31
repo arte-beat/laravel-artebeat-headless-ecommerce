@@ -9,7 +9,12 @@ scalar Upload
   @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Upload")
 
 extend type Mutation @guard {
-  uploadFile(file: Upload!, id: Int, type: String): String @field(resolver: "Webkul\\GraphQLAPI\\BagistoGraphql@uploadFile")
+  uploadFile(file: Upload!, input: ffff!): String @field(resolver: "Webkul\\GraphQLAPI\\BagistoGraphql@uploadFile")
+}
+
+input ffff {
+  id: Int
+  type: String
 }
 
 #import /shop/common/*.graphql
