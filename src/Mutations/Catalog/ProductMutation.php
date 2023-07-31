@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Event;
 use Webkul\Product\Helpers\ProductType;
 use Webkul\Core\Contracts\Validations\Slug;
 use Webkul\Product\Http\Controllers\Controller;
+use Webkul\Product\Repositories\ProductFlatRepository;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Models\ProductAttributeValue;
@@ -25,11 +26,13 @@ class ProductMutation extends Controller
      * Create a new controller instance.
      *
      * @param  \Webkul\Product\Repositories\ProductRepository  $productRepository
+     * @param  \Webkul\Product\Repositories\ProductFlatRepository  $productFlatRepository
      * @param  \Webkul\Product\Repositories\ProductAttributeValueRepository $productAttributeValueRepository
      * @return void
      */
     public function __construct(
         protected ProductRepository $productRepository,
+        protected ProductFlatRepository $productFlatRepository,
         protected ProductAttributeValueRepository $productAttributeValueRepository
     ) {
         $this->guard = 'admin-api';
@@ -93,6 +96,63 @@ class ProductMutation extends Controller
             throw new Exception($e->getMessage());
         }
     }
+
+    /**
+     * Store the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function storeEventBooking($rootValue, array $args, GraphQLContext $context)
+    {
+        dd(121212);
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        $createData['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+        $createData['type'] = str_replace(" ", "-", 'booking');
+        $createData['attribute_family_id'] = 1;
+        try {
+            Event::dispatch('catalog.product.create.before');
+            $product = $this->productRepository->create($createData);
+            Event::dispatch('catalog.product.create.after', $product);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+
+        if(!empty($product)) {
+            $id = $product->id;
+            // Only in case of booking product type
+            if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
+                $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
+            }
+
+            $image_urls = [];
+            if (isset($data['images'])) {
+                $image_urls = $data['images'];
+                unset($data['images']);
+            }
+
+            try {
+                Event::dispatch('catalog.product.update.before', $id);
+                $updateProduct = $this->productRepository->update($data, $id);
+                Event::dispatch('catalog.product.update.after', $updateProduct);
+
+                if (isset($updateProduct->id)) {
+                    bagisto_graphql()->uploadProductImages($product, $image_urls, 'product/', 'image');
+                    return $updateProduct;
+                }
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+        }else{
+            throw new Exception("Unable to process at the moment. Please try again after sometime.");
+        }
+    }
+
 
     /**
      * Update the specified resource in storage.

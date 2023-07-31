@@ -7,6 +7,14 @@ extend type Query {
     booking(id: ID @eq): Booking @find(model: "Webkul\\BookingProduct\\Models\\Booking")
 }
 
+input CreateBookingInput {
+    type: String!
+    location: String!
+    availableFrom: String @rename(attribute: "available_from")
+    availableTo: String @rename(attribute: "available_to")
+    tickets: [CreateBookingTicketsInput!]
+}
+
 input UpdateBookingInput {
     type: String!
     location: String!
@@ -39,6 +47,18 @@ input BookingTicketsInput {
     qty: Int!
     specialPriceFrom: String @rename(attribute: "special_price_from")
     specialPriceTo: String @rename(attribute: "special_price_to")
+}
+
+input CreateBookingTicketsInput {
+    locales: [CreateBookingTicketsTranslationsInput!]
+    price: Float!
+    qty: Int!
+}
+
+input CreateBookingTicketsTranslationsInput {
+    locale: String!
+    name: String!
+    description: String
 }
 
 input BookingTicketsTranslationsInput {

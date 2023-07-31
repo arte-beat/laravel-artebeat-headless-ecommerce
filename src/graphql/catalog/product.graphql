@@ -1,4 +1,7 @@
 #Catalog\Product Related API
+scalar Upload
+@scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Upload")
+
 extend type Query {
     products(input: FilterProductsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterProducts")): [Product!] @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
@@ -14,9 +17,15 @@ extend type Query {
 extend type Mutation @guard {
     createProduct(input: CreateProductInput!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@store")
 
+    createEventBooking(input: CreateEventBookingInput!): CreateEventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeEventBooking")
+
+    createEventBookingWithUpload(input: CreateEventBookingInputWithUpload!): CreateEventBookingResponseWithUpload @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeEventBooking")
+
     updateProduct(id: ID!, input: UpdateProductInput!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@update")
 
     deleteProduct(id: ID!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@delete")
+
+    upload(file: Upload!, productId: Int): String
 }
 
 input CreateProductInput {
@@ -26,6 +35,20 @@ input CreateProductInput {
     superAttributes: [SuperAttributesInput] @rename(attribute: "super_attributes")
     family: Int
 }
+
+input CreateEventBookingInput {
+    locale: String!
+    channel: String!
+    name: String!
+    description: String!
+    images: [String]
+    booking: CreateBookingInput
+#    file: Upload!
+}
+input CreateEventBookingInputWithUpload {
+    locale: String!
+}
+
 
 input SuperAttributesInput {
     attributeCode: String! @rename(attribute: "attribute_code")
@@ -104,6 +127,20 @@ input FilterProductsInput {
     parentId: ID @rename(attribute: "parent_id")
     attributeFamily: String @rename(attribute: "attribute_family")
     qty: Int
+}
+
+type CreateEventBookingResponse {
+    id: ID!
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    booking: BookingProduct @hasOne(relation: "booking_product")
+    images: [Image!] @hasMany
+    success: String
+}
+
+type CreateEventBookingResponseWithUpload {
+    id: ID!
 }
 
 type Product {

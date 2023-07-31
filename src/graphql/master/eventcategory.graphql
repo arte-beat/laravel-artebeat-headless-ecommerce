@@ -1,0 +1,38 @@
+# EventCategory\EventCategory Related APIs
+extend type Query @guard {
+    eventcategories(input: FilterEventCategoryInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterEventCategory")): [EventCategory!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\Product\\Models\\EventCategory")
+
+    eventcategory(id: ID @eq): EventCategory @find(model: "Webkul\\Product\\Models\\EventCategory")
+}
+
+extend type Mutation @guard {
+    createEventCategory(
+        input: EventCategoryInput!
+    ): EventCategory @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\EventCategoryMutation@store")
+
+    updateEventCategory(
+        id: ID!,
+        input: EventCategoryInput!
+    ): EventCategory @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\EventCategoryMutation@update")
+
+    deleteEventCategory(id: ID!): EventCategory @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\EventCategoryMutation@delete")
+}
+
+input EventCategoryInput {
+    name: String!
+    description: String!
+}
+
+input FilterEventCategoryInput {
+    id: Int
+    name: String
+}
+
+type EventCategory {
+    id: ID!
+    name: String! @rename(attribute: "name")
+    description: String! @rename(attribute: "description")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}

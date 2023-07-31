@@ -287,7 +287,7 @@ class BagistoGraphql
                 if (! $this->validatePath($image_url, $type)) {
                     continue;
                 }
-                
+
                 $img_name = basename($image_url);
 
                 $savePath = $image_dir_path . $img_name;
@@ -300,7 +300,7 @@ class BagistoGraphql
 
                 $params =[
                     'type'       => $type,
-                    'path'       => $model_path . $img_name,
+                    'path'       => env('APP_URL').'/'.$model_path . $img_name,
                     'product_id' => $product->id,
                 ];
 
