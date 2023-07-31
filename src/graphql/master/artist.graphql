@@ -31,6 +31,7 @@ input ArtistInput {
 input FilterArtistInput {
     id: Int
     artist_name: String
+    artist_type: Int
 }
 
 type Artist {
