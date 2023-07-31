@@ -5,6 +5,7 @@ namespace Webkul\GraphQLAPI;
 use JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Product\Repositories\ProductImageRepository;
 use Webkul\Product\Repositories\ProductVideoRepository;
 use Webkul\Product\Repositories\ProductCustomerGroupPriceRepository;
@@ -212,6 +213,24 @@ class BagistoGraphql
                 ];
             }
         }
+    }
+
+    public function uploadFile($rootValue, array $args, GraphQLContext $context)
+    {
+        dd($args);
+        $productId = $args['productId'];
+        $model_path = 'product/' . $productId . '/';
+        $image_dir_path = storage_path('app/public/' . $model_path);
+        if (! file_exists($image_dir_path)) {
+            mkdir(storage_path('app/public/' . $model_path), 0777, true);
+        }
+
+        $imagePath = $args->file('image')->store('public/images');
+        $image = new Image([
+            'title' => $args->get('title'),
+            'image_path' => $imagePath,
+        ]);
+        $image->save();
     }
 
     /**

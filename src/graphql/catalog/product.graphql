@@ -1,6 +1,4 @@
 #Catalog\Product Related API
-scalar Upload
-@scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Upload")
 
 extend type Query {
     products(input: FilterProductsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterProducts")): [Product!] @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
@@ -24,8 +22,6 @@ extend type Mutation @guard {
     updateProduct(id: ID!, input: UpdateProductInput!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@update")
 
     deleteProduct(id: ID!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@delete")
-
-    upload(file: Upload!, productId: Int): String
 }
 
 input CreateProductInput {

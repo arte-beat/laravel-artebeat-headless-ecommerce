@@ -1,6 +1,6 @@
 # EventCategory\EventCategory Related APIs
 extend type Query @guard {
-    eventcategories(input: FilterEventCategoryInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterEventCategory")): [EventCategory!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\Product\\Models\\EventCategory")
+    eventcategories(input: FilterEventCategoryInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Master\\FilterEventCategory")): [EventCategory!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\Product\\Models\\EventCategory")
 
     eventcategory(id: ID @eq): EventCategory @find(model: "Webkul\\Product\\Models\\EventCategory")
 }
