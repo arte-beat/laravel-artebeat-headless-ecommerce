@@ -105,7 +105,6 @@ class ProductMutation extends Controller
      */
     public function storeEventBooking($rootValue, array $args, GraphQLContext $context)
     {
-        dd(121212);
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }

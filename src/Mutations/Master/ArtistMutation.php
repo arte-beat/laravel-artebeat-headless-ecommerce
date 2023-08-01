@@ -57,7 +57,7 @@ class ArtistMutation extends Controller
                 $data['artist_image'] = $imgNameForDB;
             }
             $artist = $this->artistRepository->create($data);
-            $artist['artist_image'] = Storage::disk('artist')->url($artist['artist_image']);
+//            $artist['artist_image'] = Storage::disk('artist')->url($artist['artist_image']);
             return $artist;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -97,7 +97,8 @@ class ArtistMutation extends Controller
                 $data['artist_image'] = $imgNameForDB;
             }
             $artist = $this->artistRepository->update($data, $id);
-            $artist['artist_image'] = Storage::disk('artist')->url($artist['artist_image']);
+            /*dd(Storage::disk('artist'));
+            $artist['artist_image'] = Storage::disk('artist')->url($artist['artist_image']);*/
             return $artist;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
