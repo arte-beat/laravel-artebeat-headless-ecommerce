@@ -3,7 +3,9 @@
 namespace Webkul\GraphQLAPI\Mutations\Master;
 
 use Exception;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Product\Repositories\ArtistRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
@@ -37,6 +39,7 @@ class ArtistMutation extends Controller
         }
 
         $data = $args['input'];
+        $file = $args['file'];
 
         $validator = Validator::make($data, [
             'artist_name'   => 'string|required',
@@ -48,7 +51,27 @@ class ArtistMutation extends Controller
         }
 
         try {
+            if ($file != null) {
+                $model_path = 'artist/';
+                $image_dir_path = storage_path('app/public/' . $model_path);
+                if (!file_exists($image_dir_path)) {
+                    mkdir(storage_path('app/public/' . $model_path), 0777, true);
+                }
+
+                $img_name = basename($file);
+                $savePath = $image_dir_path . $img_name;
+                if (file_exists($savePath)) {
+                    Storage::delete('/' . $model_path . $img_name);
+                }
+                $imgNameForUpload = $savePath . '.' . $file->getClientOriginalExtension();
+                file_put_contents($imgNameForUpload, file_get_contents($file));
+
+                $imgNameForDB = 'app/public/' . $model_path . $img_name . '.' . $file->getClientOriginalExtension();
+                $data['image'] = $imgNameForDB;
+            }
+
             $artist = $this->artistRepository->create($data);
+            $artist['image'] = asset($artist['image']);
             return $artist;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -70,6 +93,8 @@ class ArtistMutation extends Controller
         $data = $args['input'];
         $id = $args['id'];
 
+        $file = $args['file'];
+
         $validator = Validator::make($data, [
             'artist_name'   => 'string|required',
             'artist_type'   => 'numeric|required',
@@ -80,7 +105,26 @@ class ArtistMutation extends Controller
         }
 
         try {
+            if ($file != null) {
+                $model_path = 'artist/';
+                $image_dir_path = storage_path('app/public/' . $model_path);
+                if (!file_exists($image_dir_path)) {
+                    mkdir(storage_path('app/public/' . $model_path), 0777, true);
+                }
+
+                $img_name = basename($file);
+                $savePath = $image_dir_path . $img_name;
+                if (file_exists($savePath)) {
+                    Storage::delete('/' . $model_path . $img_name);
+                }
+                $imgNameForUpload = $savePath . '.' . $file->getClientOriginalExtension();
+                file_put_contents($imgNameForUpload, file_get_contents($file));
+
+                $imgNameForDB = 'app/public/' . $model_path . $img_name . '.' . $file->getClientOriginalExtension();
+                $data['image'] = $imgNameForDB;
+            }
             $artist = $this->artistRepository->update($data, $id);
+            $artist['image'] = asset($artist['image']);
             return $artist;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());

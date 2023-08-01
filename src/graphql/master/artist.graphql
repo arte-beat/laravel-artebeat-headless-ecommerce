@@ -6,9 +6,7 @@ extend type Query @guard {
 }
 
 extend type Mutation @guard {
-    createArtist(
-        input: ArtistInput!
-    ): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@store")
+    createArtist(file: Upload!, input: ArtistInput!): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@store")
 
     updateArtist(id: ID!, file: Upload!, input: ArtistInput!): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@update")
 
@@ -35,6 +33,7 @@ type Artist {
     id: ID!
     artist_name: String! @rename(attribute: "artist_name")
     artist_type: String! @rename(attribute: "artist_type")
+    image: String! @rename(attribute: "image")
     description: String! @rename(attribute: "description")
     website: String! @rename(attribute: "website")
     tiktok: String! @rename(attribute: "tiktok")
