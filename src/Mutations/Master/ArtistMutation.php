@@ -52,26 +52,12 @@ class ArtistMutation extends Controller
 
         try {
             if ($file != null) {
-                $model_path = 'artist/';
-                $image_dir_path = storage_path('app/public/' . $model_path);
-                if (!file_exists($image_dir_path)) {
-                    mkdir(storage_path('app/public/' . $model_path), 0777, true);
-                }
-
-                $img_name = basename($file);
-                $savePath = $image_dir_path . $img_name;
-                if (file_exists($savePath)) {
-                    Storage::delete('/' . $model_path . $img_name);
-                }
-                $imgNameForUpload = $savePath . '.' . $file->getClientOriginalExtension();
-                file_put_contents($imgNameForUpload, file_get_contents($file));
-
-                $imgNameForDB = 'app/public/' . $model_path . $img_name . '.' . $file->getClientOriginalExtension();
-                $data['image'] = $imgNameForDB;
+                $imgNameForDB = basename($file). '.' . $file->getClientOriginalExtension();
+                Storage::disk('artist')->put($imgNameForDB, $file->getContent());
+                $data['artist_image'] = $imgNameForDB;
             }
-
             $artist = $this->artistRepository->create($data);
-            $artist['image'] = asset($artist['image']);
+            $artist['artist_image'] = Storage::disk('artist')->url($artist['artist_image']);
             return $artist;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -106,25 +92,12 @@ class ArtistMutation extends Controller
 
         try {
             if ($file != null) {
-                $model_path = 'artist/';
-                $image_dir_path = storage_path('app/public/' . $model_path);
-                if (!file_exists($image_dir_path)) {
-                    mkdir(storage_path('app/public/' . $model_path), 0777, true);
-                }
-
-                $img_name = basename($file);
-                $savePath = $image_dir_path . $img_name;
-                if (file_exists($savePath)) {
-                    Storage::delete('/' . $model_path . $img_name);
-                }
-                $imgNameForUpload = $savePath . '.' . $file->getClientOriginalExtension();
-                file_put_contents($imgNameForUpload, file_get_contents($file));
-
-                $imgNameForDB = 'app/public/' . $model_path . $img_name . '.' . $file->getClientOriginalExtension();
-                $data['image'] = $imgNameForDB;
+                $imgNameForDB = basename($file). '.' . $file->getClientOriginalExtension();
+                Storage::disk('artist')->put($imgNameForDB, $file->getContent());
+                $data['artist_image'] = $imgNameForDB;
             }
             $artist = $this->artistRepository->update($data, $id);
-            $artist['image'] = asset($artist['image']);
+            $artist['artist_image'] = Storage::disk('artist')->url($artist['artist_image']);
             return $artist;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());

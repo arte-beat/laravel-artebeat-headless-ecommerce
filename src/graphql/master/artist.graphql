@@ -33,7 +33,7 @@ type Artist {
     id: ID!
     artist_name: String! @rename(attribute: "artist_name")
     artist_type: String! @rename(attribute: "artist_type")
-    image: String! @rename(attribute: "image")
+    artist_image: String! @rename(attribute: "artist_image")
     description: String! @rename(attribute: "description")
     website: String! @rename(attribute: "website")
     tiktok: String! @rename(attribute: "tiktok")
