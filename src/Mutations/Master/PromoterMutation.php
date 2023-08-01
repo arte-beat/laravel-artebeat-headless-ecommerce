@@ -13,11 +13,11 @@ class PromoterMutation extends Controller
     /**
      * Create a new controller instance.
      *
-     * @param \Webkul\Product\Repositories\PromoterRepository  $artistRepository
+     * @param \Webkul\Product\Repositories\PromoterRepository  $promoterRepository
      * @return void
      */
     public function __construct(
-        protected PromoterRepository $artistRepository,
+        protected PromoterRepository $promoterRepository,
     )
     {
         $this->guard = 'admin-api';
@@ -51,8 +51,8 @@ class PromoterMutation extends Controller
         }
 
         try {
-            $artist = $this->artistRepository->create($data);
-            return $artist;
+            $promoter = $this->promoterRepository->create($data);
+            return $promoter;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
@@ -86,8 +86,8 @@ class PromoterMutation extends Controller
         }
 
         try {
-            $artist = $this->artistRepository->update($data, $id);
-            return $artist;
+            $promoter = $this->promoterRepository->update($data, $id);
+            return $promoter;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
@@ -106,11 +106,13 @@ class PromoterMutation extends Controller
         }
 
         $id = $args['id'];
-        $artist = $this->artistRepository->findOrFail($id);
+        $promoter = $this->promoterRepository->findOrFail($id);
 
         try {
-            $this->artistRepository->delete($id);
-            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Promoter'])];
+            if($promoter){
+                $this->promoterRepository->delete($id);
+                return ['success' => trans('admin::app.response.delete-success', ['name' => 'Promoter'])];
+            }
         } catch(\Exception $e) {
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Promoter']));
         }
