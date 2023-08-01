@@ -17,6 +17,8 @@ extend type Mutation @guard {
 
     createEventBooking(input: CreateEventBookingInput!): CreateEventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeEventBooking")
 
+    updateEventBooking(id: ID!, input: CreateEventBookingInput!): CreateEventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateEventBooking")
+
     updateProduct(id: ID!, input: UpdateProductInput!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@update")
 
     deleteProduct(id: ID!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@delete")
@@ -35,7 +37,6 @@ input CreateEventBookingInput {
     channel: String!
     name: String!
     description: String!
-    images: [String]
     booking: CreateBookingInput
 }
 input CreateEventBookingInputWithUpload {
