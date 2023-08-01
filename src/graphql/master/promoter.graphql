@@ -40,4 +40,5 @@ type Promoter {
     promoter_status: Int! @rename(attribute: "promoter_status")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
 }
