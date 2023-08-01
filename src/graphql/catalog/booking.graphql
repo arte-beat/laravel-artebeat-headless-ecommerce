@@ -15,6 +15,12 @@ input CreateBookingInput {
     longitude: String!
     age_restriction: Int!
     event_type: Int!
+    website: String!
+    instagram: String!
+    twitter: String!
+    tiktok: String!
+    soundcloud: String!
+    youtube: String!
     availableFrom: String @rename(attribute: "available_from")
     availableTo: String @rename(attribute: "available_to")
     tickets: [CreateBookingTicketsInput!]
@@ -55,7 +61,7 @@ input BookingTicketsInput {
 }
 
 input CreateBookingTicketsInput {
-    locales: [CreateBookingTicketsTranslationsInput!]
+    name: String!
     price: Float!
     qty: Int!
 }
@@ -103,6 +109,17 @@ type BookingProduct {
     type: String!
     qty: Int
     location: String
+    city: String!
+    latitude: String!
+    longitude: String!
+    age_restriction: Int!
+    event_type: Int!
+    website: String!
+    instagram: String!
+    twitter: String!
+    tiktok: String!
+    soundcloud: String!
+    youtube: String!
     showLocation: Boolean @rename(attribute: "show_location")
     availableEveryWeek: Boolean @rename(attribute: "available_every_week")
     availableFrom: DateTime @rename(attribute: "available_from")
@@ -155,17 +172,13 @@ type TicketBookingProductSlots {
     id: ID!
     price: Float!
     qty: Int!
-    specialPrice: Float @rename(attribute: "special_price")
-    specialPriceFrom: DateTime @rename(attribute: "special_price_from")
-    specialPriceTo: DateTime @rename(attribute: "special_price_to")
-    translations: [BookingTicketsTranslations!] @hasMany
+    name: String!
     bookingProductId: ID! @rename(attribute: "booking_product_id")
 }
 
 type BookingTicketsTranslations {
     locale: String!
     name: String!
-    description: String
 }
 
 # Rental Booking Type
