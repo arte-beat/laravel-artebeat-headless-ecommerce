@@ -17,32 +17,41 @@ class FilterCustomer extends BaseFilter
     {
         $arguments = $this->getFilterParams($input);
 
-        $group_name = "";
-
+//        $group_name = "";
         // Get first_name and last_name
-        if ( isset($arguments['name'])) {
+//        if ( isset($arguments['name'])) {
+//            $nameChanger = $this->nameSplitter($arguments['name']);
+//            $arguments['first_name'] = $nameChanger['firstname'];
+//            $arguments['last_name'] = $nameChanger['lastname'];
+//            unset($arguments['name']);
+//        }
+//
+//        // filter the relationship Customer Group
+//        if ( isset($arguments['group_name'])) {
+//            $group_name = $input['group_name'];
+//            unset($arguments['group_name']);
+//            return $query->whereHas('group', function ($q) use ($group_name) {
+//                $q->where('name', $group_name);
+//            })->where($arguments);
+//        }
+//
+//        return $query->where($arguments);
 
-            $nameChanger = $this->nameSplitter($arguments['name']);
+//        return $query->where('name', 'like', '%' . urldecode($arguments['first_name']) . '%');
 
-            $arguments['first_name'] = $nameChanger['firstname'];
-
-            $arguments['last_name'] = $nameChanger['lastname'];
-
-            unset($arguments['name']);
+        if(isset($arguments['name'])) {
+            $query->where(function ($nameQuery) use ($arguments) {
+                $nameQuery->where('customers.first_name', 'LIKE', '%' . $arguments['name'] . '%');
+                $nameQuery->orWhere('customers.last_name', 'LIKE', '%' . $arguments['name'] . '%');
+            });
+        }
+        if(isset($arguments['phone'])) {
+            $query->where('phone', 'like', '%' . urldecode($arguments['phone']) . '%');
+        }
+        if(isset($arguments['email'])) {
+            $query->where('email', 'like', '%' . urldecode($arguments['email']) . '%');
         }
 
-        // filter the relationship Customer Group
-        if ( isset($arguments['group_name'])) {
-
-            $group_name = $input['group_name'];
-
-            unset($arguments['group_name']);
-
-            return $query->whereHas('group', function ($q) use ($group_name) {
-                $q->where('name', $group_name);
-            })->where($arguments);
-        }
-
-        return $query->where($arguments);      
+        return $query;
     }
 }
