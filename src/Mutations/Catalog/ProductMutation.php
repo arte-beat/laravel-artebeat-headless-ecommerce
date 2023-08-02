@@ -4,6 +4,7 @@ namespace Webkul\GraphQLAPI\Mutations\Catalog;
 
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
 use Webkul\Product\Helpers\ProductType;
@@ -129,21 +130,11 @@ class ProductMutation extends Controller
                 $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
             }
 
-            $image_urls = [];
-            if (isset($data['images'])) {
-                $image_urls = $data['images'];
-                unset($data['images']);
-            }
-
             try {
                 Event::dispatch('catalog.product.update.before', $id);
                 $updateProduct = $this->productRepository->update($data, $id);
                 Event::dispatch('catalog.product.update.after', $updateProduct);
-
-                if (isset($updateProduct->id)) {
-                    bagisto_graphql()->uploadProductImages($product, $image_urls, 'product/', 'image');
-                    return $updateProduct;
-                }
+                return $updateProduct;
             } catch (Exception $e) {
                 throw new Exception($e->getMessage());
             }
@@ -174,29 +165,39 @@ class ProductMutation extends Controller
         $data['attribute_family_id'] = 1;
 
         if(!empty($product)) {
-            $id = $product->id;
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
                 $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
             }
 
-            $image_urls = [];
-            if (isset($data['images'])) {
-                $image_urls = $data['images'];
-                unset($data['images']);
-            }
-
             try {
-                Event::dispatch('catalog.product.update.before', $id);
+                //Event::dispatch('catalog.product.update.before', $id);
                 $updateProduct = $this->productRepository->update($data, $id);
-                Event::dispatch('catalog.product.update.after', $updateProduct);
-
-                if (isset($updateProduct->id)) {
-                    bagisto_graphql()->uploadProductImages($product, $image_urls, 'product/', 'image');
-                    return $updateProduct;
-                }
+                //Event::dispatch('catalog.product.update.after', $updateProduct);
+                return $updateProduct;
             } catch (Exception $e) {
                 throw new Exception($e->getMessage());
+            }
+        }else{
+            throw new Exception("Unable to process at the moment. Please try again after sometime.");
+        }
+    }
+
+    public function uploadEventImages($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['product_id']) || (isset($args['product_id']) && !$args['product_id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['product_id'];
+        $product = $this->productRepository->findOrFail($id);
+        if(!empty($product)) {
+            if (isset($product->id)) {
+                $files = $args['files'];
+                if ($files != null) {
+                    bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                }
+                return $product;
             }
         }else{
             throw new Exception("Unable to process at the moment. Please try again after sometime.");

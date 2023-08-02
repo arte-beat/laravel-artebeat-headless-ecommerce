@@ -8,15 +8,6 @@ scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date
 scalar Upload
   @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Upload")
 
-extend type Mutation @guard {
-  uploadFile(file: Upload!, input: ffff!): String @field(resolver: "Webkul\\GraphQLAPI\\BagistoGraphql@uploadFile")
-}
-
-input ffff {
-  id: Int
-  type: String
-}
-
 #import /shop/common/*.graphql
 #import /shop/customer/*.graphql
 #import /shop/cart/*.graphql

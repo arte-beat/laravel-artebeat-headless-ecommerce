@@ -2,7 +2,7 @@
 type Image {
     id: ID!
     type: String
-    path: String
+    path: String! @rename(attribute: "image")
     url: String
     productId: ID @rename(attribute: "product_id")
     product: Product @belongsTo(relation: "product")
