@@ -151,6 +151,7 @@ class ProductMutation extends Controller
      */
     public function updateEventBooking($rootValue, array $args, GraphQLContext $context)
     {
+        $user = bagisto_graphql()->guard($this->guard)->user();
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
@@ -163,6 +164,8 @@ class ProductMutation extends Controller
         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
         $data['type'] = str_replace(" ", "-", 'booking');
         $data['attribute_family_id'] = 1;
+        $data['owner_id'] = $user->id;
+        $data['owner_type'] = 'admin';
 
         if(!empty($product)) {
             // Only in case of booking product type
