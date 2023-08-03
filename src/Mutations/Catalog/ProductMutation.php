@@ -107,7 +107,7 @@ class ProductMutation extends Controller
         $data = $args['input'];
 
         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
-        $data['type'] = str_replace(" ", "-", 'booking');
+        $data['type'] = 'booking';
         $data['attribute_family_id'] = 1;
         try {
             $owner = bagisto_graphql()->guard($this->guard)->user();
@@ -142,6 +142,52 @@ class ProductMutation extends Controller
     }
 
     /**
+     * Store the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function storeMerchantEventBooking($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $multipleData = $args['input'];
+        foreach ($multipleData as $index => $data) {
+            $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+            $data['type'] = 'simple';
+            $data['attribute_family_id'] = 1;
+            $data['parent_id'] = $data['product_id'];
+            try {
+                $owner = bagisto_graphql()->guard($this->guard)->user();
+                $data['owner_id'] = $owner->id;
+                $data['owner_type'] = 'admin';
+
+                Event::dispatch('catalog.product.create.before');
+                $product = $this->productRepository->create($data);
+                Event::dispatch('catalog.product.create.after', $product);
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+
+            if (!empty($product)) {
+                $id = $product->id;
+                try {
+                    Event::dispatch('catalog.product.update.before', $id);
+                    $updateProduct[$index] = $this->productRepository->update($data, $id);
+                    Event::dispatch('catalog.product.update.after', $updateProduct);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            } else {
+                throw new Exception("Unable to process at the moment. Please try again after sometime.");
+            }
+        }
+        return $updateProduct;
+    }
+
+    /**
      * Update the specified resource in storage.
      *
      * @param  int  $id
@@ -159,9 +205,6 @@ class ProductMutation extends Controller
         $product = $this->productRepository->findOrFail($id);
 
         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
-        $data['type'] = str_replace(" ", "-", 'booking');
-        $data['attribute_family_id'] = 1;
-
         if(!empty($product)) {
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
