@@ -7,7 +7,7 @@ extend type Mutation @guard {
 
 input EventPerformer {
     id: Int
-    event_id: Int!
+    product_id: Int!
     artists: [Int]
     promoters: [Int]
 }
@@ -21,20 +21,6 @@ type Promoter {
     promoter_status: Int @rename(attribute: "promoter_status")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
-}
-
-type Artist {
-    id: ID!
-    artist_name: String! @rename(attribute: "artist_name")
-    artist_type: String! @rename(attribute: "artist_type")
-    description: String @rename(attribute: "description")
-    website: String @rename(attribute: "website")
-    tiktok: String @rename(attribute: "tiktok")
-    twitter: String @rename(attribute: "twitter")
-    instagram: String @rename(attribute: "instagram")
-    createdAt: DateTime @rename(attribute: "created_at")
-    updatedAt: DateTime @rename(attribute: "updated_at")
-    success: String
 }
 
 type EventsPerformer {

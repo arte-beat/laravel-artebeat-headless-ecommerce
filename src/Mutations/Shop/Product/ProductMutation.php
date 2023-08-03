@@ -159,6 +159,28 @@ class ProductMutation extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+    public function deleteEventBooking($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['id']) || ( isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+        $product = $this->productRepository->findOrFail($id);
+        try {
+            $this->productRepository->delete($id);
+            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Event'])];
+        } catch (\Exception $e) {
+            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Event']));
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function delete($rootValue, array $args, GraphQLContext $context)
     {
         if (! isset($args['id']) || ( isset($args['id']) && !$args['id'])) {
