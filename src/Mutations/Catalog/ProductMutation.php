@@ -487,4 +487,37 @@ class ProductMutation extends Controller
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Product']));
         }
     }
+
+        /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function syncEventPerformer($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        $validator = Validator::make($data, [
+            'product_id' => 'numeric|required',
+        ]);
+        
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        $eventId = $data['product_id'];
+        $artists = isset($data['artists']) ? $data['artists'] :  [];
+        $promoters = isset($data['promoters']) ? $data['promoters'] :  [];
+
+        try {
+            $event = $this->productRepository->syncEventPerformers($eventId, $artists, $promoters);
+            return $event;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
 }
