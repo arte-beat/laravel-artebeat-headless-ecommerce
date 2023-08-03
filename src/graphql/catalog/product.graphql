@@ -10,20 +10,24 @@ extend type Query {
     productFlat(id: ID @eq): ProductFlat @find(model: "Webkul\\Product\\Models\\ProductFlat")
 
     relatedProducts(productId: Int!): [Product] @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Catalog\\ProductContent@getRelatedProducts")
+
+    getEvents(input: FilterEventsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterEvents")): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+
+    getEvent(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 }
 
 extend type Mutation @guard {
     createProduct(input: CreateProductInput!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@store")
+
+    updateProduct(id: ID!, input: UpdateProductInput!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@update")
+
+    deleteProduct(id: ID!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@delete")
 
     createEventBooking(input: EventBookingInput!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeEventBooking")
 
     updateEventBooking(id: ID!, input: EventBookingInput!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateEventBooking")
 
     uploadEventImages(product_id: ID!, files: [Upload]): UploadEventImagesResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@uploadEventImages")
-
-    updateProduct(id: ID!, input: UpdateProductInput!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@update")
-
-    deleteProduct(id: ID!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@delete")
 }
 
 input CreateProductInput {
@@ -119,6 +123,12 @@ input FilterProductsInput {
     parentId: ID @rename(attribute: "parent_id")
     attributeFamily: String @rename(attribute: "attribute_family")
     qty: Int
+}
+
+input FilterEventsInput {
+    name: String
+    owner_type: String
+    owner_id: Int
 }
 
 type EventBookingResponse {

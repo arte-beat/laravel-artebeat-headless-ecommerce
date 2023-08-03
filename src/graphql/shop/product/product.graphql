@@ -1,3 +1,21 @@
 extend type Query {
     productBySlug(slug: String): ProductFlat @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\ProductListingQuery@findBySlugOrFail")
+
+    getEventsByEventOrganizer(input: FilterEventsInputByEventOrganizer @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\FilterEvents")): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+
+    getEventByEventOrganizer(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+}
+
+extend type Mutation @guard(with: ["api"]) {
+    createEventBookingByEventOrganizer(input: EventBookingInput!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@storeEventBooking")
+
+    updateEventBookingByEventOrganizer(id: ID!, input: EventBookingInput!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@updateEventBooking")
+
+    uploadEventImagesByEventOrganizer(product_id: ID!, files: [Upload]): UploadEventImagesResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@uploadEventImages")
+
+    deleteEventByEventOrganizer(id: ID!): Product @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@delete")
+}
+
+input FilterEventsInputByEventOrganizer {
+    name: String
 }
