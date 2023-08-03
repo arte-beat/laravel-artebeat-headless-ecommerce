@@ -31,7 +31,7 @@ extend type Mutation @guard {
 
     deleteEventBooking(id: ID!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@deleteEventBooking")
 
-    createMerchantEventBooking(inputinput: MerchantEventBookingInput!): MerchantEventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeMerchantEventBooking")
+    createMerchantEventBooking(input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeMerchantEventBooking")
 }
 
 input CreateProductInput {
@@ -51,11 +51,12 @@ input EventBookingInput {
 }
 
 input MerchantEventBookingInput {
-    locale: String!
-    channel: String!
+    channel: String
+    locale: String
+    product_id: Int!
     name: String!
     description: String!
-    booking: CreateBookingInput
+    price: Float
 }
 
 input SuperAttributesInput {
@@ -155,6 +156,11 @@ type EventBookingResponse {
 
 type MerchantEventBookingResponse {
     id: ID!
+    parentId: ID @rename(attribute: "parent_id")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
 }
 
 type Product {
