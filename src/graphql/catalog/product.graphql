@@ -31,6 +31,8 @@ extend type Mutation @guard {
 
     deleteEventBooking(id: ID!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@deleteEventBooking")
 
+    syncEventPerformer(input: EventPerformer!): EventPerformerResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@syncEventPerformer")
+    
     createMerchantEventBooking(input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeMerchantEventBooking")
 }
 
@@ -142,6 +144,13 @@ input FilterEventsInput {
     name: String
     owner_type: String
     owner_id: Int
+}
+
+input EventPerformer {
+    id: Int
+    product_id: Int!
+    artists: [Int]
+    promoters: [Int]
 }
 
 type EventBookingResponse {
@@ -299,3 +308,11 @@ type UploadEventImagesResponse {
     product_id: ID!
 }
 
+type EventPerformerResponse {
+    id: ID!
+    productId: Int!
+    artists: [Artist!]!
+    promoters: [Promoter!]!
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+}
