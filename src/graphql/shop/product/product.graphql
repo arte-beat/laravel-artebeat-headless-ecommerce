@@ -33,6 +33,10 @@ extend type Mutation @guard(with: ["api"]) {
     deletePromoterByEventOrganizer(id: ID!): Promoter @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@deletePromoter")
 
     syncEventPerformerByEventOrganizer(input: EventPerformer!): EventPerformerResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@syncEventPerformer")
+
+    createMerchantEventBookingByEventOrganizer(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@storeMerchantEventBooking")
+
+    updateMerchantEventBookingByEventOrganizer(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@updateMerchantEventBooking")
 }
 
 input FilterEventsInputByEventOrganizer {
