@@ -33,7 +33,9 @@ extend type Mutation @guard {
 
     syncEventPerformer(input: EventPerformer!): EventPerformerResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@syncEventPerformer")
     
-    createMerchantEventBooking(input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeMerchantEventBooking")
+    createMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeMerchantEventBooking")
+
+    updateMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateMerchantEventBooking")
 }
 
 input CreateProductInput {
@@ -53,12 +55,19 @@ input EventBookingInput {
 }
 
 input MerchantEventBookingInput {
+    id: Int
     channel: String
     locale: String
     product_id: Int!
     name: String!
     description: String!
     price: Float
+    quantity: [QuantityInput]
+}
+
+input QuantityInput {
+    qty: Int!
+    size: String!
 }
 
 input SuperAttributesInput {
@@ -155,21 +164,37 @@ input EventPerformer {
 
 type EventBookingResponse {
     id: ID!
+    parentId: ID @rename(attribute: "parent_id")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     booking: BookingProduct @hasOne(relation: "booking_product")
     images: [Image!] @hasMany
+    merchants: [MerchantEventBookingResponse!] @hasMany
     success: String
+}
+
+type UploadEventImagesResponse {
+    product_id: ID!
+    images: [Image!] @hasMany
 }
 
 type MerchantEventBookingResponse {
     id: ID!
     parentId: ID @rename(attribute: "parent_id")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    images: [Image!] @hasMany
+    quantities: [Quantity!] @hasMany
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
+}
+
+type Quantity {
+    id: ID!
+    productId: ID @rename(attribute: "product_id")
+    qty: Int
+    size: String
 }
 
 type Product {
@@ -302,10 +327,6 @@ type ProductPriceHtml {
     special: String
     specialWithoutCurrencyCode: String
     currencyCode: String
-}
-
-type UploadEventImagesResponse {
-    product_id: ID!
 }
 
 type EventPerformerResponse {
