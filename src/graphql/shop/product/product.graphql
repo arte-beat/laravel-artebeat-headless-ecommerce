@@ -31,6 +31,8 @@ extend type Mutation @guard(with: ["api"]) {
     ): Promoter @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@updatePromoter")
 
     deletePromoterByEventOrganizer(id: ID!): Promoter @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@deletePromoter")
+
+    syncEventPerformerByEventOrganizer(input: EventPerformer!): EventPerformerResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@syncEventPerformer")
 }
 
 input FilterEventsInputByEventOrganizer {
