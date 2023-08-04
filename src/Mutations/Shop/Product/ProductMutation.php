@@ -12,6 +12,7 @@ use Webkul\Core\Contracts\Validations\Slug;
 use Webkul\Product\Http\Controllers\Controller;
 use Webkul\Product\Repositories\ProductFlatRepository;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Product\Repositories\PromoterRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Models\ProductAttributeValue;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
@@ -33,6 +34,7 @@ class ProductMutation extends Controller
      */
     public function __construct(
         protected ProductRepository $productRepository,
+        protected PromoterRepository $promoterRepository,
         protected ProductFlatRepository $productFlatRepository,
         protected ProductAttributeValueRepository $productAttributeValueRepository
     ) {
@@ -197,6 +199,99 @@ class ProductMutation extends Controller
             return ['success' => trans('admin::app.response.delete-success', ['name' => 'Product'])];
         } catch (\Exception $e) {
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Product']));
+        }
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storePromoter($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        $validator = Validator::make($data, [
+            'promoter_name' => 'string|required',
+            'promoter_artist_type' => 'numeric|required',
+            'promoter_phone' => 'string|required',
+            'promoter_email' => 'string|required',
+            'promoter_status' => 'numeric|required',
+        ]);
+        
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        try {
+            $promoter = $this->promoterRepository->create($data);
+            return $promoter;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updatePromoter($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['id']) || !isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+        $id = $args['id'];
+
+        $validator = Validator::make($data, [
+            'promoter_name' => 'string|required',
+            'promoter_artist_type' => 'numeric|required',
+            'promoter_phone' => 'string|required',
+            'promoter_email' => 'string|required',
+            'promoter_status' => 'numeric|required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        try {
+            $promoter = $this->promoterRepository->update($data, $id);
+            return $promoter;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function deletePromoter($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+        $promoter = $this->promoterRepository->findOrFail($id);
+
+        try {
+            if($promoter){
+                $this->promoterRepository->delete($id);
+                return ['success' => trans('admin::app.response.delete-success', ['name' => 'Promoter'])];
+            }
+        } catch(\Exception $e) {
+            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Promoter']));
         }
     }
 }
