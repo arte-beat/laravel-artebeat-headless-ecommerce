@@ -134,6 +134,104 @@ class ProductMutation extends Controller
         }
     }
 
+    /**
+     * Store the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function storeMerchantEventBooking($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        $multipleData = $args['input'];
+        $multipleFiles = $args['files'];
+        foreach ($multipleData as $index => $data) {
+//            if($index === 1) {
+            //echo "<pre>"; print_r($data);
+            $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+            $data['type'] = 'simple';
+            $data['attribute_family_id'] = 1;
+            $data['parent_id'] = $data['product_id'];
+            try {
+                $owner = bagisto_graphql()->guard($this->guard)->user();
+                $data['owner_id'] = $owner->id;
+                $data['owner_type'] = 'admin';
+
+                Event::dispatch('catalog.product.create.before');
+                $product = $this->productRepository->create($data);
+                Event::dispatch('catalog.product.create.after', $product);
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+
+            if (!empty($product)) {
+                $id = $product->id;
+                try {
+                    Event::dispatch('catalog.product.update.before', $id);
+                    $updateProduct[$index] = $this->productRepository->update($data, $id);
+                    Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                    if ($multipleFiles != null) {
+                        $files = $multipleFiles[$index];
+                        bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                    }
+
+                    $this->productRepository->syncQuantities($id, $data['quantity']);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            } else {
+                throw new Exception("Unable to process at the moment. Please try again after sometime.");
+            }
+//            }
+        }
+        return $updateProduct;
+    }
+
+
+    /**
+     * Store the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateMerchantEventBooking($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        $multipleData = $args['input'];
+        $multipleFiles = $args['files'];
+        foreach ($multipleData as $index => $data) {
+//            if($index === 1) {
+            //echo "<pre>"; print_r($data);
+            $product = $this->productRepository->findOrFail($data['id']);
+            if (!empty($product)) {
+                $id = $data['id'];
+                try {
+                    $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                    Event::dispatch('catalog.product.update.before', $id);
+                    $updateProduct[$index] = $this->productRepository->update($data, $id);
+                    Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                    if ($multipleFiles != null) {
+                        $files = $multipleFiles[$index];
+                        bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                    }
+                    $this->productRepository->syncQuantities($id, $data['quantity']);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            } else {
+                throw new Exception("Unable to process at the moment. Please try again after sometime.");
+            }
+//            }
+        }
+        return $updateProduct;
+    }
+
     public function uploadEventImages($rootValue, array $args, GraphQLContext $context)
     {
         if (!isset($args['product_id']) || (isset($args['product_id']) && !$args['product_id'])) {

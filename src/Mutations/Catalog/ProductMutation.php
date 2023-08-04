@@ -180,8 +180,8 @@ class ProductMutation extends Controller
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
-                        $files = $multipleFiles[$index];
-                        if ($files != null) {
+                        if ($multipleFiles != null) {
+                            $files = $multipleFiles[$index];
                             bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
                         }
 
