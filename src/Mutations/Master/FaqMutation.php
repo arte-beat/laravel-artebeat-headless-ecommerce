@@ -5,19 +5,19 @@ namespace Webkul\GraphQLAPI\Mutations\Master;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use Webkul\Admin\Http\Controllers\Controller;
-use Webkul\Product\Repositories\PromoterRepository;
+use Webkul\Product\Repositories\FaqRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
-class PromoterMutation extends Controller
+class FaqMutation extends Controller
 {
     /**
      * Create a new controller instance.
      *
-     * @param \Webkul\Product\Repositories\PromoterRepository  $promoterRepository
+     * @param \Webkul\Product\Repositories\FaqRepository  $faqRepository
      * @return void
      */
     public function __construct(
-        protected PromoterRepository $promoterRepository,
+        protected FaqRepository $faqRepository,
     )
     {
         $this->guard = 'admin-api';
@@ -32,6 +32,7 @@ class PromoterMutation extends Controller
      */
     public function store($rootValue, array $args, GraphQLContext $context)
     {
+
         if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
@@ -39,31 +40,23 @@ class PromoterMutation extends Controller
         $data = $args['input'];
 
         $validator = Validator::make($data, [
-            'promoter_name' => 'string|required',
-            // 'promoter_artist_type' => 'numeric|required',
-            // 'promoter_phone' => 'string|required',
-            // 'promoter_email' => 'string|required',
-            // 'promoter_status' => 'numeric|required',
+            'question' => 'string|required',
+            'answer' => 'string|required',
+            'status' => 'numeric|required',
         ]);
-        
+
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
 
         try {
-            $promoter = $this->promoterRepository->create($data);
-            return $promoter;
+            $faq = $this->faqRepository->create($data);
+            return $faq;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update($rootValue, array $args, GraphQLContext $context)
     {
         if (! isset($args['id']) || !isset($args['input']) || (isset($args['input']) && !$args['input'])) {
@@ -74,11 +67,9 @@ class PromoterMutation extends Controller
         $id = $args['id'];
 
         $validator = Validator::make($data, [
-            'promoter_name' => 'string|required',
-            // 'promoter_artist_type' => 'numeric|required',
-            // 'promoter_phone' => 'string|required',
-            // 'promoter_email' => 'string|required',
-            // 'promoter_status' => 'numeric|required',
+            'question' => 'string|required',
+            'answer' => 'string|required',
+            'status' => 'numeric|required',
         ]);
 
         if ($validator->fails()) {
@@ -86,19 +77,13 @@ class PromoterMutation extends Controller
         }
 
         try {
-            $promoter = $this->promoterRepository->update($data, $id);
+            $promoter = $this->faqRepository->update($data, $id);
             return $promoter;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function delete($rootValue, array $args, GraphQLContext $context)
     {
         if (! isset($args['id']) || (isset($args['id']) && !$args['id'])) {
@@ -106,15 +91,17 @@ class PromoterMutation extends Controller
         }
 
         $id = $args['id'];
-        $promoter = $this->promoterRepository->findOrFail($id);
+        $faqRepository = $this->faqRepository->findOrFail($id);
 
         try {
-            if($promoter){
-                $this->promoterRepository->delete($id);
-                return ['success' => trans('admin::app.response.delete-success', ['name' => 'Promoter'])];
+            if($faqRepository){
+                $this->faqRepository->delete($id);
+                return ['success' => trans('admin::app.response.delete-success', ['name' => 'Faq'])];
             }
         } catch(\Exception $e) {
-            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Promoter']));
+            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Faq']));
         }
     }
+
+
 }
