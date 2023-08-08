@@ -20,9 +20,10 @@ class FilterFaq extends Controller
         protected FaqRepository $faqRepository,
     )
     {
-        $this->guard = 'admin-api';
+        $this->guard = 'api';
         auth()->setDefaultDriver($this->guard);
-        $this->_config = request('_config');
+//        $this->_config = request('_config');
+        $this->middleware('auth:' . $this->guard);
     }
 
     /**
