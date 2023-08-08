@@ -1,0 +1,39 @@
+# Faq Related APIs
+extend type Query @guard {
+    getAllFaqs: [FaqResponse!] @paginate(type: "paginator" defaultCount: 10 model: "Webkul\\Product\\Models\\Faq")
+    getFaqsById(id: ID @eq): FaqResponse @find(model: "Webkul\\Product\\Models\\Faq")
+
+}
+extend type Mutation @guard {
+    createFaq(
+        input: FaqInput!
+    ): FaqResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\FaqMutation@store")
+
+    updateFaq(
+        id: ID!,
+        input: FaqInput!
+    ): FaqResponse @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\FaqMutation@update")
+
+    deleteFaq(id: ID!): FaqResponse @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\FaqMutation@delete")
+}
+
+input FaqInput {
+    question: String!
+    answer: String!
+    status: Int!
+}
+
+input FilterFaqInput {
+    id: Int
+    status: Int
+}
+
+type FaqResponse {
+    id: ID!
+    question: String! @rename(attribute: "question")
+    answer: String! @rename(attribute: "answer")
+    status: Int! @rename(attribute: "status")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}
