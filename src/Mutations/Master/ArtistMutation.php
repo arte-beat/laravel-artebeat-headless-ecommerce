@@ -39,11 +39,11 @@ class ArtistMutation extends Controller
         }
 
         $data = $args['input'];
-        $file = $args['file'];
+        $file = isset($args['file']) ? $args['file']  : null;
 
         $validator = Validator::make($data, [
             'artist_name'   => 'string|required',
-            'artist_type'   => 'numeric|required',
+            // 'artist_type'   => 'numeric|required',
         ]);
         
         if ($validator->fails()) {
@@ -79,11 +79,11 @@ class ArtistMutation extends Controller
         $data = $args['input'];
         $id = $args['id'];
 
-        $file = $args['file'];
+        $file = isset($args['file']) ? $args['file']  : null;
 
         $validator = Validator::make($data, [
             'artist_name'   => 'string|required',
-            'artist_type'   => 'numeric|required',
+            // 'artist_type'   => 'numeric|required',
         ]);
 
         if ($validator->fails()) {
