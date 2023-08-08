@@ -6,39 +6,46 @@ extend type Query @guard {
 }
 
 extend type Mutation @guard {
-    createArtist(file: Upload!, input: ArtistInput!): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@store")
+    createArtist(
+    # file: Upload!, 
+    input: ArtistInput!
+    ): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@store")
 
-    updateArtist(id: ID!, file: Upload, input: ArtistInput!): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@update")
+    updateArtist(
+        id: ID!, 
+        # file: Upload, 
+        input: ArtistInput!
+    ): Artist @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@update")
 
     deleteArtist(id: ID!): Artist @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@delete")
 }
 
 input ArtistInput {
     artist_name: String!
-    artist_type: Int!
-    description: String!
-    website: String!
-    tiktok: String!
-    twitter: String!
-    instagram: String!
+    # artist_type: Int!
+    # description: String!
+    # website: String!
+    # tiktok: String!
+    # twitter: String!
+    # instagram: String!
 }
 
 input FilterArtistInput {
     id: Int
     artist_name: String
-    artist_type: Int
+    # artist_type: Int
 }
 
 type Artist {
     id: ID!
     artist_name: String! @rename(attribute: "artist_name")
     artist_type: String! @rename(attribute: "artist_type")
-    image: String! @rename(attribute: "image")
-    description: String! @rename(attribute: "description")
-    website: String! @rename(attribute: "website")
-    tiktok: String! @rename(attribute: "tiktok")
-    twitter: String! @rename(attribute: "twitter")
-    instagram: String! @rename(attribute: "instagram")
+    # image: String! @rename(attribute: "image")
+    # description: String! @rename(attribute: "description")
+    # website: String! @rename(attribute: "website")
+    # tiktok: String! @rename(attribute: "tiktok")
+    # twitter: String! @rename(attribute: "twitter")
+    # instagram: String! @rename(attribute: "instagram")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String

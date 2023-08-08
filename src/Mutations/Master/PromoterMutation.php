@@ -40,10 +40,10 @@ class PromoterMutation extends Controller
 
         $validator = Validator::make($data, [
             'promoter_name' => 'string|required',
-            'promoter_artist_type' => 'numeric|required',
-            'promoter_phone' => 'string|required',
-            'promoter_email' => 'string|required',
-            'promoter_status' => 'numeric|required',
+            // 'promoter_artist_type' => 'numeric|required',
+            // 'promoter_phone' => 'string|required',
+            // 'promoter_email' => 'string|required',
+            // 'promoter_status' => 'numeric|required',
         ]);
         
         if ($validator->fails()) {
@@ -75,10 +75,10 @@ class PromoterMutation extends Controller
 
         $validator = Validator::make($data, [
             'promoter_name' => 'string|required',
-            'promoter_artist_type' => 'numeric|required',
-            'promoter_phone' => 'string|required',
-            'promoter_email' => 'string|required',
-            'promoter_status' => 'numeric|required',
+            // 'promoter_artist_type' => 'numeric|required',
+            // 'promoter_phone' => 'string|required',
+            // 'promoter_email' => 'string|required',
+            // 'promoter_status' => 'numeric|required',
         ]);
 
         if ($validator->fails()) {

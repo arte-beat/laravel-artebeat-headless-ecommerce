@@ -12,6 +12,8 @@ use Webkul\Core\Contracts\Validations\Slug;
 use Webkul\Product\Http\Controllers\Controller;
 use Webkul\Product\Repositories\ProductFlatRepository;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Product\Repositories\ArtistRepository;
+use Webkul\Product\Repositories\PromoterRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Models\ProductAttributeValue;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
@@ -27,12 +29,16 @@ class ProductMutation extends Controller
      * Create a new controller instance.
      *
      * @param  \Webkul\Product\Repositories\ProductRepository  $productRepository
+     * @param  \Webkul\Product\Repositories\ArtistRepository  $artistRepository
+     * @param  \Webkul\Product\Repositories\PromoterRepository  $promoterRepository
      * @param  \Webkul\Product\Repositories\ProductFlatRepository  $productFlatRepository
      * @param  \Webkul\Product\Repositories\ProductAttributeValueRepository $productAttributeValueRepository
      * @return void
      */
     public function __construct(
         protected ProductRepository $productRepository,
+        protected ArtistRepository $artistRepository,
+        protected PromoterRepository $promoterRepository,
         protected ProductFlatRepository $productFlatRepository,
         protected ProductAttributeValueRepository $productAttributeValueRepository
     ) {
@@ -595,21 +601,41 @@ class ProductMutation extends Controller
         }
 
         $data = $args['input'];
+        $eventId = $args['product_id'];
 
-        $validator = Validator::make($data, [
-            'product_id' => 'numeric|required',
-        ]);
-        
-        if ($validator->fails()) {
-            throw new Exception($validator->messages());
+        $artistIds = $data['artistIds'];
+        $artistNames = $data['artistNames'];
+        $artistTypes = $data['artistTypes'];
+
+        $promoterIds = $data['promoterIds'];
+        $promoterNames = $data['promoterNames'];
+        $promoterTypes = $data['promoterTypes'];
+
+        // $artistIds = isset($data['artists']) ? $data['artists'] :  [];
+        // $promoterIds = isset($data['promoters']) ? $data['promoters'] :  [];
+
+        if (count($artistIds) + count($artistNames) != count($artistTypes)){
+            throw new Exception('Number of Artist types do not much number of Artists provided');
+        }
+        if (count($promoterIds) + count($promoterNames) != count($promoterTypes)){
+            throw new Exception('Number of Promoter types do not much number of Promoters provided');
         }
 
-        $eventId = $data['product_id'];
-        $artists = isset($data['artists']) ? $data['artists'] :  [];
-        $promoters = isset($data['promoters']) ? $data['promoters'] :  [];
-
         try {
-            $event = $this->productRepository->syncEventPerformers($eventId, $artists, $promoters);
+            // Register Artists and promoters
+            if(count($artistNames) != 0){
+                $newArtists = $this->artistRepository->createArtistsByName($artistNames);
+                foreach ($newArtists as $artist) {
+                    array_push($artistIds, $artist->id);
+                }
+            }
+            if(count($promoterNames) != 0){
+                $newPromoters = $this->promoterRepository->createPromotersByName($promoterNames);
+                forEach ($newPromoters as $promoter) {
+                    array_push($promoterIds, $promoter->id);
+                }
+            }
+            $event = $this->productRepository->syncEventPerformers($eventId, $artistIds, $promoterIds, $artistTypes, $promoterTypes);
             return $event;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
