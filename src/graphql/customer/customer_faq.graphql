@@ -1,0 +1,8 @@
+#extend type Query {
+#
+#    getFaqs(isBatched: Boolean @scope): [FaqResponse!] @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\Product\\Models\\Faq")
+#}
+
+extend type Query @guard(with: ["api"]) {
+    getFaqs: [FaqResponse]! @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\FilterFaq@faqFilter")
+}
