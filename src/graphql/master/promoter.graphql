@@ -20,7 +20,7 @@ extend type Mutation @guard {
 
 input PromoterInput {
     promoter_name: String!
-    promoter_artist_type: Int!
+    promoter_artist_type: Int
     # promoter_phone: String!
     # promoter_email: String!
     # promoter_status: Int!
@@ -34,7 +34,7 @@ input FilterPromoterInput {
 type Promoter {
     id: ID!
     promoter_name: String! @rename(attribute: "promoter_name")
-    promoter_type: Int! @rename(attribute: "promoter_type")
+    promoter_type: Int @rename(attribute: "promoter_type")
     promoter_artist_type: Int @rename(attribute: "promoter_artist_type")
     # promoter_phone: String! @rename(attribute: "promoter_phone")
     # promoter_email: String! @rename(attribute: "promoter_email")
