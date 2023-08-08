@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\Product\Repositories\ArtistRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
@@ -87,7 +88,7 @@ class ArtistMutation extends Controller
         ]);
 
         if ($validator->fails()) {
-            throw new Exception($validator->messages());
+            throw new CustomException('validation message',$validator->messages());
         }
 
         try {
