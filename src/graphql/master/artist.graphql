@@ -22,7 +22,7 @@ extend type Mutation @guard {
 
 input ArtistInput {
     artist_name: String!
-    # artist_type: Int!
+    artist_type: Int
     # description: String!
     # website: String!
     # tiktok: String!
@@ -39,7 +39,7 @@ input FilterArtistInput {
 type Artist {
     id: ID!
     artist_name: String! @rename(attribute: "artist_name")
-    artist_type: String! @rename(attribute: "artist_type")
+    artist_type: String @rename(attribute: "artist_type")
     # image: String! @rename(attribute: "image")
     # description: String! @rename(attribute: "description")
     # website: String! @rename(attribute: "website")
