@@ -13,7 +13,7 @@ class FilterEvents extends BaseFilter
      * @param  array $input
      * @return \Illuminate\Http\Response
      */
-    public function __call($query, $input)
+    public function __invoke($query, $input)
     {
         $arguments = $this->getFilterParams($input);
         if(isset($arguments['name'])) {
