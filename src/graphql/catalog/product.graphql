@@ -53,6 +53,8 @@ input EventBookingInput {
     channel: String!
     name: String!
     description: String!
+    is_feature_event: Int
+    is_hero_event: Int
     booking: CreateBookingInput
 }
 
@@ -155,6 +157,8 @@ input FilterEventsInput {
     name: String
     owner_type: String
     owner_id: Int
+    is_feature_event: Int
+    is_hero_event: Int
 }
 
 
@@ -183,6 +187,8 @@ input SyncEventPerformerInput {
 type EventBookingResponse {
     id: ID!
     parentId: ID @rename(attribute: "parent_id")
+    isHeroEvent: Int @rename(attribute: "is_hero_event")
+    isFeatureEvent: Int @rename(attribute: "is_feature_event")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
