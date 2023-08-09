@@ -2,6 +2,7 @@
 
 namespace Webkul\GraphQLAPI\Mutations\Shop\Product;
 
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -68,6 +69,24 @@ class ProductMutation extends Controller
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function similarEventFilter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+        $query = $query
+            ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
+            ->addSelect('products.*')
+            ->where('products.id', '!=', $args['input']['event_id'])
+            ->where('products.type', '=', 'booking')
+            ->where('booking_products.event_type', '=', $args['input']['event_type'])
+            ->where('booking_products.available_from', '>', Carbon::now())
+            ->orderBy('products.id', 'DESC');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+
+        $similarProducts = $query->paginate($count,['*'],'page',$page);
+        return $similarProducts;
     }
 
     public function particularEventFilter($rootValue, array $args, GraphQLContext $context)
