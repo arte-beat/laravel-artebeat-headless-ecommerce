@@ -26,6 +26,12 @@ class FilterEvents extends BaseFilter
         if(!empty($arguments['owner_id'])) {
             $query->where('owner_id', '=', $arguments['owner_id']);
         }
+        if(!empty($arguments['is_feature_event'])) {
+            $query->where('is_feature_event', '=', $arguments['is_feature_event']);
+        }
+        if(!empty($arguments['is_hero_event'])) {
+            $query->where('is_hero_event', '=', $arguments['is_hero_event']);
+        }
         return $query;
     }
 }
