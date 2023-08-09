@@ -7,6 +7,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\Rule;
+use Webkul\Product\Models\Product;
+use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\Product\Helpers\ProductType;
 use Webkul\Core\Contracts\Validations\Slug;
 use Webkul\Product\Http\Controllers\Controller;
@@ -45,6 +48,31 @@ class ProductMutation extends Controller
         $this->guard = 'admin-api';
         auth()->setDefaultDriver($this->guard);
         $this->_config = request('_config');
+    }
+
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function eventFilter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+        $query->where('type', 'booking');
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+        if(!empty($args['input']['owner_type'])) {
+            $query->where('owner_type', 'like', '%' . urldecode($args['input']['owner_type']) . '%');
+        }
+        if(!empty($args['input']['owner_id'])) {
+            $query->where('owner_id', '=', $args['input']['owner_id']);
+        }
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
     }
 
     /**
@@ -111,8 +139,23 @@ class ProductMutation extends Controller
         }
 
         $data = $args['input'];
-
         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+
+        $validator = Validator::make($data, [
+            'name'   => 'string|required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        $event = new Product();
+        $eventdata = $event::where('sku', '=', $data['sku'])->first();
+
+        if (!empty($eventdata)) {
+            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+        }
+
         $data['type'] = 'booking';
         $data['attribute_family_id'] = 1;
         try {
@@ -164,6 +207,20 @@ class ProductMutation extends Controller
 //            if($index === 1) {
                 //echo "<pre>"; print_r($data);
                 $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                $validator = Validator::make($data, [
+                    'name'   => 'string|required',
+                ]);
+
+                if ($validator->fails()) {
+                    throw new Exception($validator->messages());
+                }
+
+                $event = new Product();
+                $eventdata = $event::where('sku', '=', $data['sku'])->first();
+
+                if (!empty($eventdata)) {
+                    throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+                }
                 $data['type'] = 'simple';
                 $data['attribute_family_id'] = 1;
                 $data['parent_id'] = $data['product_id'];
@@ -225,6 +282,20 @@ class ProductMutation extends Controller
                     $id = $data['id'];
                     try {
                         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                        $validator = Validator::make($data, [
+                            'name'   => 'string|required',
+                        ]);
+
+                        if ($validator->fails()) {
+                            throw new Exception($validator->messages());
+                        }
+
+                        $event = new Product();
+                        $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
+
+                        if (!empty($eventdata)) {
+                            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+                        }
                         Event::dispatch('catalog.product.update.before', $id);
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
@@ -263,6 +334,22 @@ class ProductMutation extends Controller
         $product = $this->productRepository->findOrFail($id);
 
         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+
+        $validator = Validator::make($data, [
+            'name'   => 'string|required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        $event = new Product();
+        $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
+
+        if (!empty($eventdata)) {
+            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+        }
+
         if(!empty($product)) {
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
