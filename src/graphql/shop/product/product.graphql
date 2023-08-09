@@ -1,7 +1,9 @@
 extend type Query {
     productBySlug(slug: String): ProductFlat @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\ProductListingQuery@findBySlugOrFail")
 
-    getEventsByEventOrganizer(input: FilterEventsInputByEventOrganizer @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\FilterEvents")): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+#    getEventsByEventOrganizer(input: FilterEventsInputByEventOrganizer @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\FilterEvents")): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+
+    getEventsByEventOrganizer(input: FilterEventsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\FilterEvents")): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@eventFilter")
 
     getEventByEventOrganizer(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 

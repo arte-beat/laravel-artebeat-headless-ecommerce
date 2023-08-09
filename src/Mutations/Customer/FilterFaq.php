@@ -33,15 +33,12 @@ class FilterFaq extends Controller
      */
     public function faqFilter($rootValue, array $args, GraphQLContext $context)
     {
-
         $status = 1; // Get the status argument from the query
         $query = \Webkul\Product\Models\Faq::query();
-
-        // Apply the status filter
         $query->where('status', $status);
-
-        // Paginate and return the results
-        return $query->paginate(10);
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
     }
 
 
