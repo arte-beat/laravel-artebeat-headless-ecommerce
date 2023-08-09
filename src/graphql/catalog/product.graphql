@@ -11,7 +11,7 @@ extend type Query {
 
     relatedProducts(productId: Int!): [Product] @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Catalog\\ProductContent@getRelatedProducts")
 
-    getEvents(input: FilterEventsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterEvents")): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
+    getEvents(input: FilterEventsInput ): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
 
     getEvent(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
@@ -159,6 +159,7 @@ input FilterEventsInput {
     owner_id: Int
     is_feature_event: Int
     is_hero_event: Int
+    weekly_events : Int
 }
 
 

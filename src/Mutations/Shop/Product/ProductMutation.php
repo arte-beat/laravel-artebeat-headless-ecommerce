@@ -4,6 +4,7 @@ namespace Webkul\GraphQLAPI\Mutations\Shop\Product;
 
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
@@ -64,6 +65,47 @@ class ProductMutation extends Controller
         $owner = bagisto_graphql()->guard($this->guard)->user();
         if(!empty($owner))
             $query->where('owner_id', $owner->id);
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function particularEventFilter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+
+        if(!empty($args['input']['weekly_events'])) {
+
+            $lastDayOfWeek = date('Y-m-d',strtotime('next Sunday'));
+            $today = date('Y-m-d');
+            $query->where('products.type', 'booking');
+            if(isset($args['input']['name'])) {
+                $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+                $query->where('products.sku', 'like', '%' . urldecode($name) . '%');
+            }
+            $query = $query->distinct()
+                ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
+                ->addSelect('products.*')
+                ->where('booking_products.available_from', '<=', $lastDayOfWeek)
+                ->where('booking_products.available_from', '>=', $today);
+
+
+        }
+        else{
+            $query->where('type', 'booking');
+            if(isset($args['input']['name'])) {
+                $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+                $query->where('sku', 'like', '%' . urldecode($name) . '%');
+            }
+            if(!empty($args['input']['is_feature_event'])) {
+                $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+            }
+            if(!empty($args['input']['is_hero_event'])) {
+
+                $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+            }
+        }
+
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);

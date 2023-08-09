@@ -70,6 +70,13 @@ class ProductMutation extends Controller
         if(!empty($args['input']['owner_id'])) {
             $query->where('owner_id', '=', $args['input']['owner_id']);
         }
+        if(!empty($args['input']['is_feature_event'])) {
+            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+        }
+        if(!empty($args['input']['is_hero_event'])) {
+            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+        }
+
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
