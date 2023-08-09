@@ -35,6 +35,7 @@ type Promoter {
     id: ID!
     promoter_name: String! @rename(attribute: "promoter_name")
     promoter_type: Int @rename(attribute: "promoter_type")
+    event_promoter_type: Int @rename(attribute: "pivot_promoter_type")
     promoter_artist_type: Int @rename(attribute: "promoter_artist_type")
     # promoter_phone: String! @rename(attribute: "promoter_phone")
     # promoter_email: String! @rename(attribute: "promoter_email")

@@ -39,7 +39,8 @@ input FilterArtistInput {
 type Artist {
     id: ID!
     artist_name: String! @rename(attribute: "artist_name")
-    artist_type: String @rename(attribute: "artist_type")
+    artist_type: Int @rename(attribute: "artist_type")
+    event_artist_type: Int @rename(attribute: "pivot_artist_type")
     # image: String! @rename(attribute: "image")
     # description: String! @rename(attribute: "description")
     # website: String! @rename(attribute: "website")
