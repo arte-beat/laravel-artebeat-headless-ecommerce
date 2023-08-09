@@ -5,6 +5,8 @@ extend type Query {
 
     getEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@eventFilter")
 
+    getSimilarEvents(input: SimilarFilterEventsInput!): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@similarEventFilter")
+
     getParticularEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@particularEventFilter")
 
     getEventByEventOrganizer(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
@@ -45,4 +47,9 @@ extend type Mutation @guard(with: ["api"]) {
 
 input FilterEventsInputByEventOrganizer {
     name: String
+}
+
+input SimilarFilterEventsInput {
+    event_id : Int
+    event_type : Int
 }
