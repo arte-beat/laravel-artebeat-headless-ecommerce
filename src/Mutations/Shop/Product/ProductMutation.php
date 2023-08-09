@@ -80,7 +80,7 @@ class ProductMutation extends Controller
             ->where('products.id', '!=', $args['input']['event_id'])
             ->where('products.type', '=', 'booking')
             ->where('booking_products.event_type', '=', $args['input']['event_type'])
-            ->where('booking_products.available_from', '>', Carbon::now())
+            ->where('booking_products.available_from', '>=', date('Y-m-d'))
             ->orderBy('products.id', 'DESC');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
