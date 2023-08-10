@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Product\Repositories\EventCategoryRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use Webkul\Product\Models\EventCategory;
 
 class EventCategoryMutation extends Controller
 {
@@ -110,5 +111,17 @@ class EventCategoryMutation extends Controller
         } catch(\Exception $e) {
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Event category']));
         }
+    }
+
+    public function filterEventCategory($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\EventCategory::query();
+        if(isset($args['input']['name']) && !empty($args['input']['name'])) {
+            $query->where('name', 'like', '%' . urldecode($args['input']['name']) . '%');
+        }
+        $query->orderBy('id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
     }
 }

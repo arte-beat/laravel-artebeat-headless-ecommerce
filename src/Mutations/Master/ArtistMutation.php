@@ -10,6 +10,7 @@ use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\Product\Repositories\ArtistRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use Webkul\Product\Models\Artist;
 
 class ArtistMutation extends Controller
 {
@@ -127,5 +128,25 @@ class ArtistMutation extends Controller
         } catch(\Exception $e) {
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Artist']));
         }
+    }
+
+    public function filterArtists($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Artist::query();
+
+        if(!empty($args['input']['artist_name']) && !empty($args['input']['artist_type'])) {
+            $query->where('artist_name', 'like', '%' . urldecode($args['input']['artist_name']) . '%')->where('artist_type', '=', $args['input']['artist_type']);
+        }
+        if(isset($args['input']['artist_name'])) {
+             $query->where('artist_name', 'like', '%' . urldecode($args['input']['artist_name']) . '%');
+        }
+        if(!empty($args['input']['artist_type'])) {
+            $query->where('artist_type', '=', $args['input']['artist_type']);
+        }
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
     }
 }

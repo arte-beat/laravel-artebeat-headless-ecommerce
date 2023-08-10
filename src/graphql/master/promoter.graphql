@@ -1,6 +1,6 @@
 # Promoter Related APIs
 extend type Query @guard {
-    promoters(input: FilterPromoterInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Master\\FilterPromoter")): [Promoter!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\Product\\Models\\Promoter")
+    promoters(input: FilterPromoterInput): [Promoter!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\PromoterMutation@filterPromoter")
 
     promoter(id: ID @eq): Promoter @find(model: "Webkul\\Product\\Models\\Promoter")
 }
