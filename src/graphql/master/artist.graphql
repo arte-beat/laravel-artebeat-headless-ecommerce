@@ -40,7 +40,7 @@ type Artist {
     id: ID!
     artist_name: String! @rename(attribute: "artist_name")
     artist_type: Int @rename(attribute: "artist_type")
-    event_artist_type: Int @rename(attribute: "pivot_artist_type")
+    pivot: ArtistPivot
     # image: String! @rename(attribute: "image")
     # description: String! @rename(attribute: "description")
     # website: String! @rename(attribute: "website")
@@ -50,4 +50,8 @@ type Artist {
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
+}
+
+type ArtistPivot {
+    artist_type: Int
 }
