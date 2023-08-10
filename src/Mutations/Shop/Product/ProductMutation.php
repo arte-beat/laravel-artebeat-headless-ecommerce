@@ -276,7 +276,7 @@ class ProductMutation extends Controller
             if ($validator->fails()) {
                 throw new Exception($validator->messages());
             }
-
+            $product = $this->productRepository->findOrFail($data['product_id']);
             $event = new Product();
             $eventdata = $event::where('sku', '=', $data['sku'])->first();
 
@@ -351,6 +351,7 @@ class ProductMutation extends Controller
                     if ($validator->fails()) {
                         throw new Exception($validator->messages());
                     }
+                    $product = $this->productRepository->findOrFail($data['product_id']);
 
                     $event = new Product();
                     $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
