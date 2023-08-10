@@ -51,6 +51,7 @@ class ForgotPasswordMutation extends Controller
      */
     public function forgot($rootValue, array $args , GraphQLContext $context)
     {
+
         if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
@@ -81,7 +82,7 @@ class ForgotPasswordMutation extends Controller
 
             $OTP = (new OTPGenerationHelper())->generateNumericOTP(config('otp.generate_otp_number'));
             $encryptedKeyText = json_encode(["customerId" => $customer['id'], "otp" => $OTP]);
-            $verifyLink = config('otp.front_end_url').Crypt::encryptString($encryptedKeyText);
+            $verifyLink = config('otp.front_end_customer_url').Crypt::encryptString($encryptedKeyText);
             $userOTP = [
                 'user_id' => $customer['id'],
                 'user_type' => config('otp.customer_user_type'),
