@@ -19,6 +19,7 @@ use Webkul\Product\Repositories\PromoterRepository;
 use Webkul\Product\Repositories\ArtistRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Models\ProductAttributeValue;
+use Webkul\Product\Models\Promoter;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 class ProductMutation extends Controller
@@ -66,6 +67,9 @@ class ProductMutation extends Controller
         $owner = bagisto_graphql()->guard($this->guard)->user();
         if(!empty($owner))
             $query->where('owner_id', $owner->id);
+
+        $query->orderBy('id', 'desc');
+
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
@@ -107,7 +111,7 @@ class ProductMutation extends Controller
                 ->addSelect('products.*')
                 ->where('booking_products.available_from', '<=', $lastDayOfWeek)
                 ->where('booking_products.available_from', '>=', $today);
-
+            $query->orderBy('products.id', 'desc');
 
         }
         else{
@@ -123,6 +127,7 @@ class ProductMutation extends Controller
 
                 $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
             }
+            $query->orderBy('id', 'desc');
         }
 
         $count = isset($args['first']) ? $args['first'] : 10;
@@ -266,8 +271,6 @@ class ProductMutation extends Controller
         $multipleData = $args['input'];
         $multipleFiles = $args['files'];
         foreach ($multipleData as $index => $data) {
-//            if($index === 1) {
-            //echo "<pre>"; print_r($data);
             $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
             $validator = Validator::make($data, [
                 'name'   => 'string|required',
@@ -279,7 +282,7 @@ class ProductMutation extends Controller
             $product = $this->productRepository->findOrFail($data['product_id']);
             $event = new Product();
             $eventdata = $event::where('sku', '=', $data['sku'])->first();
-
+            $product = $this->productRepository->findOrFail($data['product_id']);
             if (!empty($eventdata)) {
                 throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
             }
@@ -591,5 +594,20 @@ class ProductMutation extends Controller
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
+    }
+
+    public function filterPromoter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Promoter::query();
+
+        if(isset($args['input']['promoter_name']) && !empty($args['input']['promoter_name'])) {
+
+            $query->where('promoter_name', 'like', '%' . urldecode($args['input']['promoter_name']) . '%');
+        }
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
     }
 }

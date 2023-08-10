@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Product\Repositories\PromoterRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use Webkul\Product\Models\Promoter;
 
 class PromoterMutation extends Controller
 {
@@ -117,4 +118,22 @@ class PromoterMutation extends Controller
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Promoter']));
         }
     }
+
+    public function filterPromoter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Promoter::query();
+
+
+
+        if(isset($args['input']['promoter_name']) && !empty($args['input']['promoter_name'])) {
+
+            $query->where('promoter_name', 'like', '%' . urldecode($args['input']['promoter_name']) . '%');
+        }
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
 }

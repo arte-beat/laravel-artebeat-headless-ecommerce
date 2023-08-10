@@ -76,6 +76,7 @@ class ProductMutation extends Controller
         if(!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
         }
+        $query->orderBy('id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;

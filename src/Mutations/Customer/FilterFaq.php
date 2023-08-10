@@ -38,6 +38,7 @@ class FilterFaq extends Controller
         $query->where('status', $status);
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
+
         return $query->paginate($count,['*'],'page',$page);
     }
 

@@ -13,6 +13,7 @@ use Webkul\Admin\Mail\NewCustomerNotification;
 use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Customer\Repositories\CustomerGroupRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use Webkul\Customer\Models\Customer;
 
 class CustomerMutation extends Controller
 {
@@ -164,5 +165,28 @@ class CustomerMutation extends Controller
         } catch(\Exception $e) {
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Customer']));
         }
+    }
+
+    public function filterCustomer($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Customer\Models\Customer::query();
+
+        if(isset($args['input']['name']) && !empty($args['input']['name'])) {
+            $query->where(function ($nameQuery) use ($args) {
+                $nameQuery->where('customers.first_name', 'LIKE', '%' . $args['input']['name'] . '%');
+                $nameQuery->orWhere('customers.last_name', 'LIKE', '%' . $args['input']['name'] . '%');
+            });
+        }
+        if(isset($args['input']['phone']) && !empty($args['input']['phone'])) {
+            $query->where('phone', 'like', '%' . urldecode($args['input']['phone']) . '%');
+        }
+        if(isset($args['input']['email']) && !empty($args['input']['email'])) {
+            $query->where('email', 'like', '%' . urldecode($args['input']['email']) . '%');
+        }
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
     }
 }

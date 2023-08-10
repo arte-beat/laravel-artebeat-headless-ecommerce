@@ -12,7 +12,7 @@ extend type Query {
     getEventByEventOrganizer(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     # Promoter Related Queries
-    getPromotersByEventOrganizer(input: FilterPromoterInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\FilterPromoters")): [Promoter!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\Product\\Models\\Promoter")
+    getPromotersByEventOrganizer(input: FilterPromoterInput): [Promoter!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterPromoter")
 
     getPromoterByEventOrganizer(id: ID @eq): Promoter @find(model: "Webkul\\Product\\Models\\Promoter")
 }
