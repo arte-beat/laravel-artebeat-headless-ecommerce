@@ -22,7 +22,9 @@ extend type Mutation @guard {
         input: CreateCmsPageInput!
     ): CmsPage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@update")
 
-    deleteCmsPage(id: ID!): CmsPage @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@delete")
+    # deleteCmsPage(id: ID!): CmsPage @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@delete")
+
+    toggleCmsPageStatus(id: ID!): CmsPage @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@toggleStatus")
 }
 
 input FilterCmsPageInput {
@@ -44,6 +46,13 @@ input FilterCmsPageTranslationInput {
 input CreateCmsPageInput {
     layout: String
     pageTitle: String! @rename(attribute: "page_title")
+    
+    columnName: String @rename(attribute: "column_name")
+    sequenceNumber: Int @rename(attribute: "sequence_number")
+    pageName: String @rename(attribute: "page_name")
+    file: String # Upload Image
+    description: String
+
     channels: [Int!]
     htmlContent: String @rename(attribute: "html_content")
     metaTitle: String @rename(attribute: "meta_title")
@@ -55,6 +64,7 @@ input CreateCmsPageInput {
 
 type CmsPage {
     id: ID!
+    status : Int! 
     layout: String
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
@@ -69,6 +79,11 @@ type CmsTranslation {
     metaDescription: String @rename(attribute: "meta_description")
     metaTitle: String @rename(attribute: "meta_title")
     pageTitle: String @rename(attribute: "page_title")
+    columnName: String @rename(attribute: "column_name")
+    sequenceNumber: Int @rename(attribute: "sequence_number")
+    pageName: String @rename(attribute: "page_name")
+    file: String @rename(attribute: "page_image") # Upload Image
+    description: String @rename(attribute: "description") 
     metaKeywords: String @rename(attribute: "meta_keywords")
     htmlContent: String @rename(attribute: "html_content")
     locale: String!

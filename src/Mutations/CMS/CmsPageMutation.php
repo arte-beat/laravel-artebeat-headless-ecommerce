@@ -8,6 +8,8 @@ use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\CMS\Repositories\CmsRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
+use Illuminate\Support\Facades\Storage;
+
 class CmsPageMutation extends Controller
 {
     /**
@@ -39,6 +41,10 @@ class CmsPageMutation extends Controller
 
         $data = $args['input'];
 
+        $file = isset($data['file']) ? $data['file']  : null;
+
+        // dd($data);
+
         $validator = Validator::make($data, [
             'url_key'      => ['required', 'unique:cms_page_translations,url_key', new \Webkul\Core\Contracts\Validations\Slug],
             'page_title'   => 'required',
@@ -51,6 +57,12 @@ class CmsPageMutation extends Controller
         }
 
         try {
+            if ($file != null) {
+                $imgNameForDB = basename($file);
+                Storage::disk('cms')->put($imgNameForDB, $file);
+                $data['page_image'] = $imgNameForDB;
+            }
+            // dd($data);
             $page = $this->cmsRepository->create($data);
 
             return $page;
@@ -77,6 +89,8 @@ class CmsPageMutation extends Controller
         $data['locale'] = $args['input']['locale'];
         $id = $args['id'];
 
+        $file = isset($data['file']) ? $data['file']  : null;
+
         unset($data[$locale]['channels']);
         unset($data[$locale]['locale']);
 
@@ -96,6 +110,11 @@ class CmsPageMutation extends Controller
         }
 
         try {
+            if ($file != null) {
+                $imgNameForDB = basename($file);
+                Storage::disk('cms')->put($imgNameForDB, $file);
+                $data['page_image'] = $imgNameForDB;
+            }
             $page = $this->cmsRepository->update($data, $id);
 
             return $page;
@@ -128,6 +147,41 @@ class CmsPageMutation extends Controller
                 return ['success' => trans('admin::app.response.delete-success', ['name' => 'CMS Page'])];
             } else {
                 throw new Exception(trans('admin::app.cms.pages.delete-failure'));
+            }
+        } catch (Exception $e) {
+
+            throw new Exception($e->getMessage());
+        }
+    }
+    /**
+     * Toggle status of the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function toggleStatus($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+
+        $page = $this->cmsRepository->find($id);
+
+        try {
+            if ($page != Null) {
+                if($page->status == 1){
+                    $page->status = 2;
+                } else {
+                    $page->status = 1; 
+                };
+
+                $page->save();
+
+                return $page;
+            } else {
+                throw new Exception(trans('admin::app.cms.pages.update-failure'));
             }
         } catch (Exception $e) {
 
