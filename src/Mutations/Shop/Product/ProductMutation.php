@@ -161,8 +161,9 @@ class ProductMutation extends Controller
             throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
         }
 
-        $data['type'] = str_replace(" ", "-", 'booking');
+        $data['type'] = 'booking';
         $data['attribute_family_id'] = 1;
+        $data['status'] = 1;
 
         try {
             $owner = bagisto_graphql()->guard($this->guard)->user();
@@ -229,10 +230,6 @@ class ProductMutation extends Controller
         if (!empty($eventdata)) {
             throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
         }
-
-        $data['type'] = str_replace(" ", "-", 'booking');
-        $data['attribute_family_id'] = 1;
-
         if(!empty($product)) {
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
@@ -285,6 +282,7 @@ class ProductMutation extends Controller
             }
             $data['type'] = 'simple';
             $data['attribute_family_id'] = 1;
+            $data['status'] = 1;
             $data['parent_id'] = $data['product_id'];
             try {
                 $owner = bagisto_graphql()->guard($this->guard)->user();

@@ -89,7 +89,7 @@ class CartMutation extends Controller
             $product = $this->productRepository->findOrFail($data['product_id']);
 
             $data = bagisto_graphql()->manageInputForCart($product, $data);
-            
+//            dd($data);
             $cart = Cart::addProduct($data['product_id'], $data);
             
             if ( isset($cart->id)) {
