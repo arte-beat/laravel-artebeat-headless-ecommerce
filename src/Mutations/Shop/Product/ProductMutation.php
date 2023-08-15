@@ -20,6 +20,7 @@ use Webkul\Product\Repositories\ArtistRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Models\ProductAttributeValue;
 use Webkul\Product\Models\Promoter;
+use Webkul\Product\Models\Showcase;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 class ProductMutation extends Controller
@@ -604,6 +605,28 @@ class ProductMutation extends Controller
         }
         $query->orderBy('id', 'desc');
 
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function getShowcase($rootValue, array $args, GraphQLContext $context)
+    {
+        $showcase = Showcase::latest()->first();
+        if ($showcase) {
+            return $showcase;
+        }
+
+        return null;
+    }
+
+    public function filterEventCategory($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\EventCategory::query();
+        if(isset($args['input']['name']) && !empty($args['input']['name'])) {
+            $query->where('name', 'like', '%' . urldecode($args['input']['name']) . '%');
+        }
+        $query->orderBy('id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
