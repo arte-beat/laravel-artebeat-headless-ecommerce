@@ -122,6 +122,9 @@ type BookingProduct {
     youtube: String!
     showLocation: Boolean @rename(attribute: "show_location")
     availableEveryWeek: Boolean @rename(attribute: "available_every_week")
+    eventDate: String @rename(attribute: "event_date")
+    eventTime: String @rename(attribute: "event_time")
+    eventDuration: String @rename(attribute: "event_duration")
     availableFrom: DateTime @rename(attribute: "available_from")
     availableTo: DateTime @rename(attribute: "available_to")
     productId: ID! @rename(attribute: "product_id")
