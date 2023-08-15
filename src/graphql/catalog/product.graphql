@@ -233,8 +233,6 @@ type EventBookingResponse {
     isHeroEvent: Int @rename(attribute: "is_hero_event")
     isFeatureEvent: Int @rename(attribute: "is_feature_event")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
-    eventDate: String @rename(attribute: "event_date")
-    eventTime: String @rename(attribute: "event_time")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     booking: BookingProduct @hasOne(relation: "booking_product")
