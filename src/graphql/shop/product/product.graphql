@@ -1,4 +1,4 @@
-extend type Query {
+extend type Query @guard(with: ["api"]){
     productBySlug(slug: String): ProductFlat @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\ProductListingQuery@findBySlugOrFail")
 
 #    getEventsByEventOrganizer(input: FilterEventsInputByEventOrganizer @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\FilterEvents")): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
@@ -15,6 +15,12 @@ extend type Query {
     getPromotersByEventOrganizer(input: FilterPromoterInput): [Promoter!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterPromoter")
 
     getPromoterByEventOrganizer(id: ID @eq): Promoter @find(model: "Webkul\\Product\\Models\\Promoter")
+
+    getShowcaseByEventOrganizer: ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getShowcase")
+
+    getMerchantByEventOrganizer(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+
+    eventCategoriesByEventOrganizer(input: FilterEventCategoryInput ): [EventCategory!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterEventCategory")
 }
 
 extend type Mutation @guard(with: ["api"]) {

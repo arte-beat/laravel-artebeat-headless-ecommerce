@@ -1,6 +1,6 @@
 #Catalog\Product Related API
 
-extend type Query {
+extend type Query @guard{
     products(input: FilterProductsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterProducts")): [Product!] @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     product(id: ID @eq): Product @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
@@ -16,6 +16,14 @@ extend type Query {
     getEvent(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     getTickets(input: FilterTicketsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterTickets")): [TicketBookingResponse!] @paginate(type: "paginator", defaultCount:10 model: "Webkul\\Product\\Models\\EventTickets")
+
+    getShowcase: ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Catalog\\ProductContent@getShowcase")
+
+    getShowcase(id: ID @eq): ShowCaseResponse @find(model: "Webkul\\Product\\Models\\Showcase")
+
+    getShowcases: [ShowCaseResponse!] @paginate(type: "paginator", defaultCount:10 model: "Webkul\\Product\\Models\\Showcase")
+
+    getMerchant(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 }
 
 extend type Mutation @guard {
@@ -38,6 +46,17 @@ extend type Mutation @guard {
     createMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeMerchantEventBooking")
 
     updateMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateMerchantEventBooking")
+
+    createShowcase(image: Upload, header_image: Upload, section_file: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeShowCase")
+
+    updateShowcase(image: Upload, header_image: Upload, section_file: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowCase")
+
+    deleteShowcase(id: ID!): Artist @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@deleteShowcase")
+
+    createShowcaseCollection(files: [[Upload]], input: [ShowCaseCollectionInput]!): [ShowCaseCollectionResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeShowcaseCollection")
+
+    updateShowcaseCollection(files: [[Upload]], input: [ShowCaseCollectionInput]!): [ShowCaseCollectionResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowcaseCollection")
+
 }
 
 input CreateProductInput {
@@ -67,6 +86,29 @@ input MerchantEventBookingInput {
     description: String!
     price: Float
     quantity: [QuantityInput]
+}
+
+input ShowCaseCollectionInput {
+    product_id: Int
+    showcase_id: Int
+    channel: String
+    locale: String
+    showcase_id: Int!
+    name: String!
+    description: String!
+    price: Float
+    quantity: [QuantityInput]
+}
+
+input ShowCaseInput {
+    id: Int
+    title: String!
+    introduction: String!
+    description: String!
+    website: String
+    tiktok: String
+    twitter: String
+    instagram: String
 }
 
 input QuantityInput {
@@ -191,6 +233,8 @@ type EventBookingResponse {
     isHeroEvent: Int @rename(attribute: "is_hero_event")
     isFeatureEvent: Int @rename(attribute: "is_feature_event")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    eventDate: String @rename(attribute: "event_date")
+    eventTime: String @rename(attribute: "event_time")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     booking: BookingProduct @hasOne(relation: "booking_product")
@@ -225,6 +269,34 @@ type MerchantEventBookingResponse {
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     images: [Image!] @hasMany
     quantities: [Quantity!] @hasMany
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}
+
+type ShowCaseCollectionResponse {
+    product_id: ID! @rename(attribute: "id")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    images: [Image!] @hasMany
+    quantities: [Quantity!] @hasMany
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}
+
+type ShowCaseResponse {
+    id: ID!
+    title: String!
+    introduction: String!
+    description: String!
+    image: String @rename(attribute: "image_link")
+    header_image: String @rename(attribute: "header_image_link")
+    section_file: String @rename(attribute: "section_file_link")
+    website: String
+    tiktok: String
+    twitter: String
+    instagram: String
+    collections: [ShowCaseCollectionResponse!] @hasMany
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String

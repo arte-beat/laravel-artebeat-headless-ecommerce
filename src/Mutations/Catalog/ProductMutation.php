@@ -16,6 +16,7 @@ use Webkul\Product\Http\Controllers\Controller;
 use Webkul\Product\Repositories\ProductFlatRepository;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Product\Repositories\ArtistRepository;
+use Webkul\Product\Repositories\ShowcaseRepository;
 use Webkul\Product\Repositories\PromoterRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Models\ProductAttributeValue;
@@ -33,6 +34,7 @@ class ProductMutation extends Controller
      *
      * @param  \Webkul\Product\Repositories\ProductRepository  $productRepository
      * @param  \Webkul\Product\Repositories\ArtistRepository  $artistRepository
+     * @param  \Webkul\Product\Repositories\ShowcaseRepository  $showcaseRepository
      * @param  \Webkul\Product\Repositories\PromoterRepository  $promoterRepository
      * @param  \Webkul\Product\Repositories\ProductFlatRepository  $productFlatRepository
      * @param  \Webkul\Product\Repositories\ProductAttributeValueRepository $productAttributeValueRepository
@@ -41,6 +43,7 @@ class ProductMutation extends Controller
     public function __construct(
         protected ProductRepository $productRepository,
         protected ArtistRepository $artistRepository,
+        protected ShowcaseRepository $showcaseRepository,
         protected PromoterRepository $promoterRepository,
         protected ProductFlatRepository $productFlatRepository,
         protected ProductAttributeValueRepository $productAttributeValueRepository
@@ -149,20 +152,24 @@ class ProductMutation extends Controller
         $data = $args['input'];
         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
 
+//        $validator = Validator::make($data, [
+//            'name'   => 'string|required',
+//        ]);
+
         $validator = Validator::make($data, [
-            'name'   => 'string|required',
+            'sku'   => ['required', 'unique:products,sku', new Slug],
         ]);
 
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
 
-        $event = new Product();
-        $eventdata = $event::where('sku', '=', $data['sku'])->first();
-
-        if (!empty($eventdata)) {
-            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-        }
+//        $event = new Product();
+//        $eventdata = $event::where('sku', '=', $data['sku'])->first();
+//
+//        if (!empty($eventdata)) {
+//            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+//        }
 
         $data['type'] = 'booking';
         $data['attribute_family_id'] = 1;
@@ -198,12 +205,6 @@ class ProductMutation extends Controller
         }
     }
 
-    /**
-     * Store the specified resource in storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function storeMerchantEventBooking($rootValue, array $args, GraphQLContext $context)
     {
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
@@ -215,20 +216,24 @@ class ProductMutation extends Controller
 //            if($index === 1) {
                 //echo "<pre>"; print_r($data);
                 $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+//                $validator = Validator::make($data, [
+//                    'name'   => 'string|required',
+//                ]);
+
                 $validator = Validator::make($data, [
-                    'name'   => 'string|required',
+                    'sku'    => ['required', 'unique:products,sku', new Slug],
                 ]);
 
                 if ($validator->fails()) {
                     throw new Exception($validator->messages());
                 }
 
-                $event = new Product();
-                $eventdata = $event::where('sku', '=', $data['sku'])->first();
-
-                if (!empty($eventdata)) {
-                    throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-                }
+//                $event = new Product();
+//                $eventdata = $event::where('sku', '=', $data['sku'])->first();
+//
+//                if (!empty($eventdata)) {
+//                    throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+//                }
                 $data['type'] = 'simple';
                 $data['attribute_family_id'] = 1;
                 $data['parent_id'] = $data['product_id'];
@@ -268,7 +273,6 @@ class ProductMutation extends Controller
         return $updateProduct;
     }
 
-
     /**
      * Store the specified resource in storage.
      *
@@ -284,26 +288,201 @@ class ProductMutation extends Controller
         $multipleFiles = $args['files'];
         foreach ($multipleData as $index => $data) {
 //            if($index === 1) {
-                //echo "<pre>"; print_r($data);
-                $product = $this->productRepository->findOrFail($data['id']);
+            //echo "<pre>"; print_r($data);
+            $product = $this->productRepository->findOrFail($data['id']);
+            if (!empty($product)) {
+                $id = $data['id'];
+                try {
+                    $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+//                    $validator = Validator::make($data, [
+//                        'name'   => 'string|required',
+//                    ]);
+
+                    $validator = Validator::make($data, [
+                        'sku'   => ['required', 'unique:products,sku,'.$id, new Slug],
+                    ]);
+
+                    if ($validator->fails()) {
+                        throw new Exception($validator->messages());
+                    }
+
+//                    $event = new Product();
+//                    $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
+//
+//                    if (!empty($eventdata)) {
+//                        throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+//                    }
+                    Event::dispatch('catalog.product.update.before', $id);
+                    $updateProduct[$index] = $this->productRepository->update($data, $id);
+                    Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                    if ($multipleFiles != null) {
+                        $files = $multipleFiles[$index];
+                        bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                    }
+                    $this->productRepository->syncQuantities($id, $data['quantity']);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            } else {
+                throw new Exception("Unable to process at the moment. Please try again after sometime.");
+            }
+//            }
+        }
+        return $updateProduct;
+    }
+
+    public function storeShowCase($rootValue, array $args, GraphQLContext $context){
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+        $file = isset($args['image']) ? $args['image']  : null;
+        $header_image = isset($args['header_image']) ? $args['header_image']  : null;
+        $section_file = isset($args['section_file']) ? $args['section_file']  : null;
+
+        $validator = Validator::make($data, [
+            'title'         => 'string|required',
+            'introduction'  => 'string|required',
+            'description'   => 'string|required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        try {
+            if ($file != null) {
+                $showcaseImgNameForDB = basename($file). '.' . $file->getClientOriginalExtension();
+                Storage::disk('showcase')->put($showcaseImgNameForDB, $file->getContent());
+                $data['image'] = $showcaseImgNameForDB;
+            }
+            if ($header_image != null) {
+                $showcaseHeaderImgNameForDB = basename($header_image). '.' . $header_image->getClientOriginalExtension();
+                Storage::disk('showcase')->put($showcaseHeaderImgNameForDB, $header_image->getContent());
+                $data['header_image'] = $showcaseHeaderImgNameForDB;
+            }
+            if ($section_file != null) {
+                $showcaseSectionFileNameForDB = basename($section_file). '.' . $section_file->getClientOriginalExtension();
+                Storage::disk('showcase')->put($showcaseSectionFileNameForDB, $section_file->getContent());
+                $data['section_file'] = $showcaseSectionFileNameForDB;
+            }
+            $showcase = $this->showcaseRepository->create($data);
+            return $showcase;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    public function updateShowCase($rootValue, array $args, GraphQLContext $context){
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+        $id = $args['input']['id'];
+
+        $showcase = $this->showcaseRepository->findOrFail($id);
+
+        $file = isset($args['image']) ? $args['image']  : null;
+        $header_image = isset($args['header_image']) ? $args['header_image']  : null;
+        $section_file = isset($args['section_file']) ? $args['section_file']  : null;
+
+        $validator = Validator::make($data, [
+            'title'         => 'string|required',
+            'introduction'  => 'string|required',
+            'description'   => 'string|required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        if(!empty($showcase)) {
+            try {
+                if ($file != null) {
+                    $showcaseImgNameForDB = basename($file) . '.' . $file->getClientOriginalExtension();
+                    Storage::disk('showcase')->put($showcaseImgNameForDB, $file->getContent());
+                    $data['image'] = $showcaseImgNameForDB;
+                }
+                if ($header_image != null) {
+                    $showcaseHeaderImgNameForDB = basename($header_image) . '.' . $header_image->getClientOriginalExtension();
+                    Storage::disk('showcase')->put($showcaseHeaderImgNameForDB, $header_image->getContent());
+                    $data['header_image'] = $showcaseHeaderImgNameForDB;
+                }
+                if ($section_file != null) {
+                    $showcaseSectionFileNameForDB = basename($section_file) . '.' . $section_file->getClientOriginalExtension();
+                    Storage::disk('showcase')->put($showcaseSectionFileNameForDB, $section_file->getContent());
+                    $data['section_file'] = $showcaseSectionFileNameForDB;
+                }
+                $showcase = $this->showcaseRepository->update($data, $id);
+                return $showcase;
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+        }else{
+            throw new Exception("Unable to process at the moment. Please try again after sometime.");
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function deleteShowcase($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+        $showcase = $this->showcaseRepository->findOrFail($id);
+
+        try {
+            $this->showcaseRepository->delete($id);
+            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Showcase'])];
+        } catch(\Exception $e) {
+            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Showcase']));
+        }
+    }
+
+    public function storeShowcaseCollection($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        $multipleData = $args['input'];
+        $multipleFiles = $args['files'];
+        foreach ($multipleData as $index => $data) {
+            $showcase = $this->showcaseRepository->findOrFail($data['showcase_id']);
+            if (!empty($showcase)) {
+                $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                $validator = Validator::make($data, [
+                    'sku' => ['required', 'unique:products,sku', new Slug],
+                ]);
+
+                if ($validator->fails()) {
+                    throw new Exception($validator->messages());
+                }
+                $data['type'] = 'simple';
+                $data['attribute_family_id'] = 1;
+                try {
+                    $owner = bagisto_graphql()->guard($this->guard)->user();
+                    $data['owner_id'] = $owner->id;
+                    $data['owner_type'] = 'admin';
+
+                    Event::dispatch('catalog.product.create.before');
+                    $product = $this->productRepository->create($data);
+                    Event::dispatch('catalog.product.create.after', $product);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
                 if (!empty($product)) {
-                    $id = $data['id'];
+                    $id = $product->id;
                     try {
-                        $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
-                        $validator = Validator::make($data, [
-                            'name'   => 'string|required',
-                        ]);
-
-                        if ($validator->fails()) {
-                            throw new Exception($validator->messages());
-                        }
-
-                        $event = new Product();
-                        $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
-
-                        if (!empty($eventdata)) {
-                            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-                        }
                         Event::dispatch('catalog.product.update.before', $id);
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
@@ -312,14 +491,57 @@ class ProductMutation extends Controller
                             $files = $multipleFiles[$index];
                             bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
                         }
+
                         $this->productRepository->syncQuantities($id, $data['quantity']);
+                        $this->productRepository->syncCollectionWithProduct($id, $data['showcase_id']);
                     } catch (Exception $e) {
                         throw new Exception($e->getMessage());
                     }
                 } else {
                     throw new Exception("Unable to process at the moment. Please try again after sometime.");
                 }
-//            }
+            }
+        }
+        return $updateProduct;
+    }
+
+    public function updateShowcaseCollection($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        $multipleData = $args['input'];
+        $multipleFiles = $args['files'];
+        foreach ($multipleData as $index => $data) {
+            $product = $this->productRepository->findOrFail($data['product_id']);
+            $showcase = $this->showcaseRepository->findOrFail($data['showcase_id']);
+            if (!empty($product) && !empty($showcase)) {
+                $productId = $data['product_id'];
+                try {
+                    $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                    $validator = Validator::make($data, [
+                        'sku'   => ['required', 'unique:products,sku,'.$productId, new Slug],
+                    ]);
+
+                    if ($validator->fails()) {
+                        throw new Exception($validator->messages());
+                    }
+                    Event::dispatch('catalog.product.update.before', $productId);
+                    $updateProduct[$index] = $this->productRepository->update($data, $productId);
+                    Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                    if ($multipleFiles != null) {
+                        $files = $multipleFiles[$index];
+                        bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                    }
+                    $this->productRepository->syncQuantities($productId, $data['quantity']);
+                    $this->productRepository->syncCollectionWithProduct($productId, $data['showcase_id']);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            } else {
+                throw new Exception("Unable to process at the moment. Please try again after sometime.");
+            }
         }
         return $updateProduct;
     }
@@ -343,20 +565,24 @@ class ProductMutation extends Controller
 
         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
 
+//        $validator = Validator::make($data, [
+//            'name'   => 'string|required',
+//        ]);
+
         $validator = Validator::make($data, [
-            'name'   => 'string|required',
+            'sku'   => ['required', 'unique:products,sku,'.$id, new Slug],
         ]);
 
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
 
-        $event = new Product();
-        $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
-
-        if (!empty($eventdata)) {
-            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-        }
+//        $event = new Product();
+//        $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
+//
+//        if (!empty($eventdata)) {
+//            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+//        }
 
         if(!empty($product)) {
             // Only in case of booking product type
@@ -397,7 +623,6 @@ class ProductMutation extends Controller
             throw new Exception("Unable to process at the moment. Please try again after sometime.");
         }
     }
-
 
     /**
      * Update the specified resource in storage.

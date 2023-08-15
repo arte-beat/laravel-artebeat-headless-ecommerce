@@ -9,6 +9,7 @@ use Webkul\Product\Helpers\ConfigurableOption as ProductConfigurableHelper;
 use Webkul\Product\Helpers\View as ProductViewHelper;
 use Webkul\Product\Helpers\Review;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Product\Models\Showcase;
 
 class ProductContent extends BaseFilter
 {
@@ -120,6 +121,16 @@ class ProductContent extends BaseFilter
 
         if ($product) {
             return $product->related_products()->whereIn('products.type', ['simple', 'virtual', 'configurable'])->get();
+        }
+
+        return null;
+    }
+
+    public function getShowcase($rootValue, array $args, GraphQLContext $context)
+    {
+        $showcase = Showcase::latest()->first();
+        if ($showcase) {
+            return $showcase;
         }
 
         return null;
