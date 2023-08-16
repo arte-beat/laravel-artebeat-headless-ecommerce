@@ -338,49 +338,91 @@ class ProductMutation extends Controller
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
         $multipleData = $args['input'];
-        $multipleFiles = $args['files'];
-
         $multipleDeleteData = $args['deleteInput'];
+        $multipleFiles = $args['files'];
         foreach ($multipleDeleteData as $deleteData) {
             Product::where("id", "=", $deleteData['id'])->delete();
             ProductImage::where("product_id", "=", $deleteData['id'])->delete();
         }
-
         foreach ($multipleData as $index => $data) {
-            $product = $this->productRepository->findOrFail($data['id']);
-            if (!empty($product)) {
-                $id = $data['id'];
+            if(isset($data['product_id']) && empty($data['id'])) {
+                $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                $validator = Validator::make($data, [
+                    'sku'    => ['required', 'unique:products,sku', new Slug],
+                ]);
+
+                if ($validator->fails()) {
+                    throw new Exception($validator->messages());
+                }
+                $data['type'] = 'simple';
+                $data['attribute_family_id'] = 1;
+                $data['parent_id'] = $data['product_id'];
                 try {
-                    $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
-                    $validator = Validator::make($data, [
-                        'name'   => 'string|required',
-                    ]);
+                    $owner = bagisto_graphql()->guard($this->guard)->user();
+                    $data['owner_id'] = $owner->id;
+                    $data['owner_type'] = 'admin';
 
-                    if ($validator->fails()) {
-                        throw new Exception($validator->messages());
-                    }
-                    $product = $this->productRepository->findOrFail($data['product_id']);
-
-                    $event = new Product();
-                    $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
-
-                    if (!empty($eventdata)) {
-                        throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-                    }
-                    Event::dispatch('catalog.product.update.before', $id);
-                    $updateProduct[$index] = $this->productRepository->update($data, $id);
-                    Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
-
-                    if ($multipleFiles != null) {
-                        $files = $multipleFiles[$index];
-                        bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
-                    }
-                    $this->productRepository->syncQuantities($id, $data['quantity']);
+                    Event::dispatch('catalog.product.create.before');
+                    $product = $this->productRepository->create($data);
+                    Event::dispatch('catalog.product.create.after', $product);
                 } catch (Exception $e) {
                     throw new Exception($e->getMessage());
                 }
-            } else {
-                throw new Exception("Unable to process at the moment. Please try again after sometime.");
+
+                if (!empty($product)) {
+                    $id = $product->id;
+                    try {
+                        Event::dispatch('catalog.product.update.before', $id);
+                        $updateProduct[$index] = $this->productRepository->update($data, $id);
+                        Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                        if ($multipleFiles != null) {
+                            $files = $multipleFiles[$index];
+                            bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                        }
+
+                        $this->productRepository->syncQuantities($id, $data['quantity']);
+                    } catch (Exception $e) {
+                        throw new Exception($e->getMessage());
+                    }
+                } else {
+                    throw new Exception("Unable to process at the moment. Please try again after sometime.");
+                }
+            }else {
+                $id = $data['id'];
+                $product = $this->productRepository->findOrFail($id);
+                if (!empty($product)) {
+                    try {
+                        $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                        $validator = Validator::make($data, [
+                            'sku' => ['required', 'unique:products,sku,' . $id, new Slug],
+                        ]);
+
+                        if ($validator->fails()) {
+                            throw new Exception($validator->messages());
+                        }
+                        Event::dispatch('catalog.product.update.before', $id);
+                        $updateProduct[$index] = $this->productRepository->update($data, $id);
+                        Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+//                        if(!empty($data['removeImages'])) {
+//                            $removeImagesArr = $data['removeImages'];
+//                            foreach ($removeImagesArr as $removeImage) {
+//                                ProductImage::where("id", "=", $removeImage['image_id'])->delete();
+//                            }
+//                        }
+//                        dd($index, $multipleFiles);
+                        if ($multipleFiles != null) {
+                            $files = $multipleFiles[$index];
+                            bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
+                        }
+                        $this->productRepository->syncQuantities($id, $data['quantity']);
+                    } catch (Exception $e) {
+                        throw new Exception($e->getMessage());
+                    }
+                } else {
+                    throw new Exception("Unable to process at the moment. Please try again after sometime.");
+                }
             }
         }
         return $updateProduct;

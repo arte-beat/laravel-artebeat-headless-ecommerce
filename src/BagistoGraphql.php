@@ -394,6 +394,55 @@ class BagistoGraphql
     }
 
     /**
+     * @param  array  $data
+     * @param  \Webkul\Product\Contracts\Product  $product
+     * @param Array $image_urls
+     * @param String $path
+     * @param String $type
+     * @return void
+     */
+    public function uploadMerchantImages($files, $product, $path, $type = 'image')
+    {
+        $model_path = $path . $product->id . '/';
+        $image_dir_path = storage_path('app/public/' . $model_path);
+        if (! file_exists($image_dir_path)) {
+            mkdir(storage_path('app/public/' . $model_path), 0777, true);
+        }
+        $previousImageIds = $productImageArray = $product->images()->pluck('id');
+        if ($files) {
+            foreach ($productImageArray->toArray() as $productImageId) {
+                if (is_numeric($index = $previousImageIds->search($productImageId))) {
+                    $previousImageIds->forget($index);
+                }
+                $this->productImageRepository->delete($productImageId);
+            }
+
+            Storage::disk('product')->deleteDirectory($product->id);
+            foreach ($files as $imageId => $file) {
+                $imgNameForDB = basename($file) . '.' . $file->getClientOriginalExtension();
+                if (! $this->getImageMIMEType($imgNameForDB, $type)) {
+                    continue;
+                }
+
+                Storage::disk('product')->put($product->id.'/'.$imgNameForDB, $file->getContent());
+                $params = [
+                    'type'       => $type,
+                    'path'       => $imgNameForDB,
+                    'product_id' => $product->id,
+                ];
+                $this->productImageRepository->create($params);
+            }
+        } else {
+            foreach ($previousImageIds as $imageId) {
+                if ($imageModel = $this->productImageRepository->find($imageId)) {
+                    Storage::delete($imageModel->path);
+                    $this->productVideoRepository->delete($imageId);
+                }
+            }
+        }
+    }
+
+    /**
      * To validate the image url
      *
      * @param String|null $imageURL
