@@ -42,7 +42,11 @@ class CmsPageMutation extends Controller
         $data = $args['input'];
 
         $validator = Validator::make($data, [
-            'url_key'      => ['required', 'unique:cms_page_translations,url_key', new \Webkul\Core\Contracts\Validations\Slug],
+            'url_key' => ['required', new \Webkul\Core\Contracts\Validations\Slug, function ($attribute, $value, $fail) {
+                if (!$this->cmsRepository->isUrlKeyUnique($value)) {
+                    $fail(trans('admin::app.response.already-taken', ['name' => 'Page']));
+                }
+            }],
             'page_title'   => 'required',
             'html_content' => 'required',
         ]);
@@ -75,8 +79,8 @@ class CmsPageMutation extends Controller
         $data = $args['input'];
 
         $validator = Validator::make($data, [
-            'url_key' => ['required', new \Webkul\Core\Contracts\Validations\Slug, function ($attribute, $value, $fail) use ($id) {
-                if (!$this->cmsRepository->isUrlKeyUnique($id, $value)) {
+            'url_key' => ['required', new \Webkul\Core\Contracts\Validations\Slug, function ($attribute, $value, $fail) {
+                if (!$this->cmsRepository->isUrlKeyUnique($value)) {
                     $fail(trans('admin::app.response.already-taken', ['name' => 'Page']));
                 }
             }],
