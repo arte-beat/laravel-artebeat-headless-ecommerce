@@ -3,23 +3,16 @@ extend type Query {
     cmsPages(input: FilterCmsPageInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Cms\\FilterCmsPage")): [CmsPage!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\CMS\\Models\\CmsPage")
 
     cmsPage(id: ID @eq): CmsPage @find(model: "Webkul\\CMS\\Models\\CmsPage")
-
-    cmsPageTranslations(input: FilterCmsPageTranslationInput! @builder(method: "Webkul\\GraphQLAPI\\Queries\\Cms\\FilterCmsPageTranslation")): [CmsTranslation!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\CMS\\MOdels\\CmsPageTranslation")
-
-    cmsPageTranslation(
-        id: ID @eq,
-        input: FilterCmsPageTranslationInput! @builder(method: "Webkul\\GraphQLAPI\\Queries\\Cms\\FilterCmsPageTranslation")
-    ): CmsTranslation @find(model: "Webkul\\CMS\\MOdels\\CmsPageTranslation")
 }
 
 extend type Mutation @guard {
     createCmsPage(
-        input: CreateCmsPageInput!
+        input: CmsPageInput!
     ): CmsPage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@store")
 
      updateCmsPage(
         id: ID!,
-        input: CreateCmsPageInput!
+        input: CmsPageInput!
     ): CmsPage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@update")
 
     # deleteCmsPage(id: ID!): CmsPage @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@delete")
@@ -31,61 +24,31 @@ input FilterCmsPageInput {
     id: Int
     pageTitle: String @rename(attribute: "page_title")
     urlKey: String @rename(attribute: "url_key")
-}
-
-input FilterCmsPageTranslationInput {
-    cmsPageId: Int! @rename(attribute: "cms_page_id")
-    id: Int
-    pageTitle: String @rename(attribute: "page_title")
-    urlKey: String @rename(attribute: "url_key")
     metaTitle: String @rename(attribute: "meta_title")
     metaKeywords: String @rename(attribute: "meta_keywords")
-    locale: String
 }
 
-input CreateCmsPageInput {
-    layout: String
+input CmsPageInput {
     pageTitle: String! @rename(attribute: "page_title")
-    
-    columnName: String @rename(attribute: "column_name")
-    sequenceNumber: Int @rename(attribute: "sequence_number")
-    pageName: String @rename(attribute: "page_name")
-    file: String # Upload Image
-    description: String
-
-    channels: [Int!]
-    htmlContent: String @rename(attribute: "html_content")
-    metaTitle: String @rename(attribute: "meta_title")
     urlKey: String! @rename(attribute: "url_key")
+    htmlContent: String! @rename(attribute: "html_content")
+    pageName: String @rename(attribute: "page_name")
+    metaTitle: String @rename(attribute: "meta_title")
     metaKeywords: String @rename(attribute: "meta_keywords")
     metaDescription: String @rename(attribute: "meta_description")
-    locale: String
 }
 
 type CmsPage {
     id: ID!
-    status : Int! 
-    layout: String
-    createdAt: DateTime @rename(attribute: "created_at")
-    updatedAt: DateTime @rename(attribute: "updated_at")
-    translations: [CmsTranslation!] @hasMany
-    channels: [Channel!] @belongsToMany
-    success: String
-}
-
-type CmsTranslation {
-    id: ID!
     urlKey: String! @rename(attribute: "url_key")
+    status: Int!
     metaDescription: String @rename(attribute: "meta_description")
     metaTitle: String @rename(attribute: "meta_title")
-    pageTitle: String @rename(attribute: "page_title")
-    columnName: String @rename(attribute: "column_name")
-    sequenceNumber: Int @rename(attribute: "sequence_number")
-    pageName: String @rename(attribute: "page_name")
-    file: String @rename(attribute: "page_image") # Upload Image
-    description: String @rename(attribute: "description") 
     metaKeywords: String @rename(attribute: "meta_keywords")
+    pageTitle: String @rename(attribute: "page_title")
+    pageName: String @rename(attribute: "page_name")
     htmlContent: String @rename(attribute: "html_content")
-    locale: String!
-    cmsPageId: ID! @rename(attribute: "cms_page_id")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
 }

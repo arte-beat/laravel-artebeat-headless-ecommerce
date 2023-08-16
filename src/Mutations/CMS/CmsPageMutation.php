@@ -41,14 +41,9 @@ class CmsPageMutation extends Controller
 
         $data = $args['input'];
 
-        $file = isset($data['file']) ? $data['file']  : null;
-
-        // dd($data);
-
         $validator = Validator::make($data, [
             'url_key'      => ['required', 'unique:cms_page_translations,url_key', new \Webkul\Core\Contracts\Validations\Slug],
             'page_title'   => 'required',
-            'channels'     => 'required',
             'html_content' => 'required',
         ]);
 
@@ -57,14 +52,7 @@ class CmsPageMutation extends Controller
         }
 
         try {
-            if ($file != null) {
-                $imgNameForDB = basename($file);
-                Storage::disk('cms')->put($imgNameForDB, $file);
-                $data['page_image'] = $imgNameForDB;
-            }
-            // dd($data);
             $page = $this->cmsRepository->create($data);
-
             return $page;
         } catch (\Exception $e) {
             throw new Exception($e->getMessage());
@@ -83,26 +71,17 @@ class CmsPageMutation extends Controller
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
-        $locale = $args['input']['locale'] ?: app()->getLocale();
-        $data[$locale] = $args['input'];
-        $data['channels'] = $args['input']['channels'];
-        $data['locale'] = $args['input']['locale'];
         $id = $args['id'];
-
-        $file = isset($data['file']) ? $data['file']  : null;
-
-        unset($data[$locale]['channels']);
-        unset($data[$locale]['locale']);
+        $data = $args['input'];
 
         $validator = Validator::make($data, [
-            $locale . '.url_key'      => ['required', new \Webkul\Core\Contracts\Validations\Slug, function ($attribute, $value, $fail) use ($id) {
+            'url_key' => ['required', new \Webkul\Core\Contracts\Validations\Slug, function ($attribute, $value, $fail) use ($id) {
                 if (!$this->cmsRepository->isUrlKeyUnique($id, $value)) {
                     $fail(trans('admin::app.response.already-taken', ['name' => 'Page']));
                 }
             }],
-            $locale . '.page_title'   => 'required',
-            $locale . '.html_content' => 'required',
-            'channels'                => 'required',
+            'page_title'   => 'required',
+            'html_content' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -110,11 +89,6 @@ class CmsPageMutation extends Controller
         }
 
         try {
-            if ($file != null) {
-                $imgNameForDB = basename($file);
-                Storage::disk('cms')->put($imgNameForDB, $file);
-                $data['page_image'] = $imgNameForDB;
-            }
             $page = $this->cmsRepository->update($data, $id);
 
             return $page;
