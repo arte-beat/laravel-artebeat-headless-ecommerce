@@ -48,7 +48,7 @@ extend type Mutation @guard(with: ["api"]) {
 
     createMerchantEventBookingByEventOrganizer(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@storeMerchantEventBooking")
 
-    updateMerchantEventBookingByEventOrganizer(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@updateMerchantEventBooking")
+    updateMerchantEventBookingByEventOrganizer(files: [[Upload]], input: [MerchantEventBookingInput]!, deleteInput: [DeleteInput]): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@updateMerchantEventBooking")
 }
 
 input FilterEventsInputByEventOrganizer {

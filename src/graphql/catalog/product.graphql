@@ -45,7 +45,7 @@ extend type Mutation @guard {
     
     createMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeMerchantEventBooking")
 
-    updateMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateMerchantEventBooking")
+    updateMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!, deleteInput: [DeleteInput]): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateMerchantEventBooking")
 
     createShowcase(image: Upload, header_image: Upload, section_file: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeShowCase")
 
@@ -55,7 +55,7 @@ extend type Mutation @guard {
 
     createShowcaseCollection(files: [[Upload]], input: [ShowCaseCollectionInput]!): [ShowCaseCollectionResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeShowcaseCollection")
 
-    updateShowcaseCollection(files: [[Upload]], input: [ShowCaseCollectionInput]!): [ShowCaseCollectionResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowcaseCollection")
+    updateShowcaseCollection(files: [[Upload]], input: [ShowCaseCollectionInput]!, deleteInput: [DeleteInput]): [ShowCaseCollectionResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowcaseCollection")
 
 }
 
@@ -86,6 +86,10 @@ input MerchantEventBookingInput {
     description: String!
     price: Float
     quantity: [QuantityInput]
+}
+
+input DeleteInput {
+    id: Int
 }
 
 input ShowCaseCollectionInput {
