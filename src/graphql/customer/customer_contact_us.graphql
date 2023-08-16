@@ -5,12 +5,12 @@ extend type Query @guard {
     contactUsMessage(id: ID @eq): ContactUsMessage @find(model: "Webkul\\Customer\\Models\\ContactUsMessages")
 }
 
-extend type Mutation @guard {
+extend type Mutation {
     createContactUsMessage(
         input: CreateContactUsMessageInput!
     ): ContactUsMessage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ContactUsMutation@storeContactUsMessage")
     
-    toggleContactUsMessageReadStatus(id: ID!): ContactUsMessage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ContactUsMutation@toggleReadStatus")
+    toggleContactUsMessageReadStatus(id: ID!): ContactUsMessage @guard  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ContactUsMutation@toggleReadStatus")
 }
 
 input CreateContactUsMessageInput {

@@ -1,5 +1,5 @@
 # Customer\TermsAndConditions Related APIs
-extend type Query @guard {
+extend type Query {
     getTermsAndConditions(id: ID @eq): TermsAndConditions @find(model: "Webkul\\Customer\\Models\\TermsAndConditions")
 }
 
