@@ -7,7 +7,7 @@ use Webkul\GraphQLAPI\Queries\BaseFilter;
 class FilterCmsPage extends BaseFilter
 {
     /**
-     * filter the data .
+     * filter the data.
      *
      * @param  object  $query
      * @param  array $input
@@ -17,43 +17,26 @@ class FilterCmsPage extends BaseFilter
     {
         $arguments = $this->getFilterParams($input);
 
-        //filter Both the relationship Address for page_title and url_key
-       if ( isset($arguments['page_title']) && isset($arguments['url_key']) ) {
+        if (isset($arguments['page_title'])) {
+            $query->where('page_title', 'like', '%'. $arguments['page_title']. '%');
+        }
 
-            $pageTitle = $input['page_title'];
+        if (isset($arguments['url_key'])) {
+            $query->where('url_key', 'like', '%'. $arguments['url_key']. '%');
+        }
 
-            $urlKey = $input['url_key'];
+        if (isset($arguments['status'])) {
+            $query->where('status', $arguments['status']);
+        }
 
-            unset($arguments['page_title']);
+        if (isset($arguments['meta_title'])) {
+            $query->where('meta_title', 'like', '%'. $arguments['meta_title']. '%');
+        }
 
-            unset($arguments['url_key']);
+        if (isset($arguments['meta_keywords'])) {
+            $query->where('meta_keywords', 'like', '%'. $arguments['meta_keywords']. '%');
+        }
 
-            return $query->where([
-                    "page_title" => $pageTitle,
-                    "url_key"    => $urlKey
-                ])->where($arguments);
-        }  
-
-        // get the page_title value and store in $pageTitle variable
-        if ( isset($arguments['page_title'])) {
-
-            $pageTitle = $arguments['page_title'];
-
-            unset($arguments['page_title']);
-
-            return $query->where("page_title", $pageTitle)->where($arguments);
-        }     
-
-        // get the url_key value and store in $urlKey variable
-        if ( isset($arguments['url_key'])) {
-
-            $urlKey = $arguments['url_key'];
-
-            unset($arguments['url_key']);
-
-            return $query->where("url_key", $urlKey)->where($arguments);
-        } 
-
-        return $query->where($arguments);
+        return $query;
     } 
 }  

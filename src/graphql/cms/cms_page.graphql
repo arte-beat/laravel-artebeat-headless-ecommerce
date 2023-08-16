@@ -22,6 +22,7 @@ extend type Mutation @guard {
 
 input FilterCmsPageInput {
     id: Int
+    status: Int
     pageTitle: String @rename(attribute: "page_title")
     urlKey: String @rename(attribute: "url_key")
     metaTitle: String @rename(attribute: "meta_title")

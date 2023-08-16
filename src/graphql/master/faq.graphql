@@ -1,6 +1,7 @@
 # Faq Related APIs
-extend type Query @guard {
-    getAllFaqs: [FaqResponse!] @paginate(type: "paginator" defaultCount: 10 model: "Webkul\\Product\\Models\\Faq")
+extend type Query {
+    getAllFaqs(input: FilterFaqInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Customer\\FilterFaq")): [FaqResponse!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\Product\\Models\\Faq")
+
     getFaqsById(id: ID @eq): FaqResponse @find(model: "Webkul\\Product\\Models\\Faq")
 
 }
@@ -25,6 +26,7 @@ input FaqInput {
 
 input FilterFaqInput {
     id: Int
+    question: String
     status: Int
 }
 
