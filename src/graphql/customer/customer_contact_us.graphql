@@ -1,0 +1,48 @@
+# Customer\ContactUsMessages Related APIs
+extend type Query @guard {
+    contactUsMessages(input: FilterContactUsMessagesInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Customer\\FilterContactUsMessages")): [ContactUsMessage!] @paginate(type: "paginator" defaultCount:10 model: "Webkul\\Customer\\Models\\ContactUsMessages")
+
+    contactUsMessage(id: ID @eq): ContactUsMessage @find(model: "Webkul\\Customer\\Models\\ContactUsMessages")
+}
+
+extend type Mutation @guard {
+    createContactUsMessage(
+        input: CreateContactUsMessageInput!
+    ): ContactUsMessage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ContactUsMutation@storeContactUsMessage")
+    
+    toggleContactUsMessageReadStatus(id: ID!): ContactUsMessage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ContactUsMutation@toggleReadStatus")
+}
+
+input CreateContactUsMessageInput {
+    firstName: String! @rename(attribute: "first_name")
+    lastName: String! @rename(attribute: "last_name")
+    email: String!
+    phone: String
+    address: String
+    subject: String!
+    message: String!
+}
+
+input FilterContactUsMessagesInput {
+    id: Int
+    firstName: String @rename(attribute: "first_name")
+    lastName: String @rename(attribute: "last_name")
+    email: String
+    phone: String
+    readStatus: Int @rename(attribute: "read_status")
+}
+
+type ContactUsMessage {
+    id: ID!
+    firstName: String! @rename(attribute: "first_name")
+    lastName: String! @rename(attribute: "last_name")
+    email: String!
+    address: String
+    phone: String
+    subject: String!
+    message: String!
+    readStatus: Int @rename(attribute: "read_status")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}
