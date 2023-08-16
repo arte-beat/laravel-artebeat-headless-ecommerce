@@ -86,6 +86,11 @@ input MerchantEventBookingInput {
     description: String!
     price: Float
     quantity: [QuantityInput]
+    removeImages: [RemoveImagesInput]
+}
+
+input RemoveImagesInput {
+    image_id: Int!
 }
 
 input DeleteInput {
