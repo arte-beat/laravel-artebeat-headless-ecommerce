@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
 use Webkul\Product\Helpers\ProductType;
 use Webkul\Product\Models\Product;
+use Webkul\Product\Models\ProductImage;
 use Webkul\Core\Contracts\Validations\Slug;
 use Webkul\Product\Http\Controllers\Controller;
 use Webkul\Product\Repositories\ProductFlatRepository;
@@ -338,9 +339,14 @@ class ProductMutation extends Controller
         }
         $multipleData = $args['input'];
         $multipleFiles = $args['files'];
+
+        $multipleDeleteData = $args['deleteInput'];
+        foreach ($multipleDeleteData as $deleteData) {
+            Product::where("id", "=", $deleteData['id'])->delete();
+            ProductImage::where("product_id", "=", $deleteData['id'])->delete();
+        }
+
         foreach ($multipleData as $index => $data) {
-//            if($index === 1) {
-            //echo "<pre>"; print_r($data);
             $product = $this->productRepository->findOrFail($data['id']);
             if (!empty($product)) {
                 $id = $data['id'];
@@ -376,7 +382,6 @@ class ProductMutation extends Controller
             } else {
                 throw new Exception("Unable to process at the moment. Please try again after sometime.");
             }
-//            }
         }
         return $updateProduct;
     }

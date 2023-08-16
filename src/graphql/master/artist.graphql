@@ -1,5 +1,5 @@
 # Artist Related APIs
-extend type Query @guard {
+extend type Query @guard(with: ["api", "admin-api"]) {
     artists(input: FilterArtistInput): [Artist!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ArtistMutation@filterArtists")
 
     artist(id: ID @eq): Artist @find(model: "Webkul\\Product\\Models\\Artist")

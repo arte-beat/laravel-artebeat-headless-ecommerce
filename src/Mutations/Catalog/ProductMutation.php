@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\Rule;
 use Webkul\Product\Models\Product;
+use Webkul\Product\Models\ProductImage;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\Product\Helpers\ProductType;
 use Webkul\Core\Contracts\Validations\Slug;
@@ -285,19 +286,18 @@ class ProductMutation extends Controller
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
         $multipleData = $args['input'];
+        $multipleDeleteData = $args['deleteInput'];
         $multipleFiles = $args['files'];
+        foreach ($multipleDeleteData as $deleteData) {
+            Product::where("id", "=", $deleteData['id'])->delete();
+            ProductImage::where("product_id", "=", $deleteData['id'])->delete();
+        }
         foreach ($multipleData as $index => $data) {
-//            if($index === 1) {
-            //echo "<pre>"; print_r($data);
             $product = $this->productRepository->findOrFail($data['id']);
             if (!empty($product)) {
                 $id = $data['id'];
                 try {
                     $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
-//                    $validator = Validator::make($data, [
-//                        'name'   => 'string|required',
-//                    ]);
-
                     $validator = Validator::make($data, [
                         'sku'   => ['required', 'unique:products,sku,'.$id, new Slug],
                     ]);
@@ -305,13 +305,6 @@ class ProductMutation extends Controller
                     if ($validator->fails()) {
                         throw new Exception($validator->messages());
                     }
-
-//                    $event = new Product();
-//                    $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
-//
-//                    if (!empty($eventdata)) {
-//                        throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-//                    }
                     Event::dispatch('catalog.product.update.before', $id);
                     $updateProduct[$index] = $this->productRepository->update($data, $id);
                     Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
@@ -327,7 +320,6 @@ class ProductMutation extends Controller
             } else {
                 throw new Exception("Unable to process at the moment. Please try again after sometime.");
             }
-//            }
         }
         return $updateProduct;
     }
@@ -512,6 +504,11 @@ class ProductMutation extends Controller
         }
         $multipleData = $args['input'];
         $multipleFiles = $args['files'];
+        $multipleDeleteData = $args['deleteInput'];
+        foreach ($multipleDeleteData as $deleteData) {
+            Product::where("id", "=", $deleteData['id'])->delete();
+            ProductImage::where("product_id", "=", $deleteData['id'])->delete();
+        }
         foreach ($multipleData as $index => $data) {
             $product = $this->productRepository->findOrFail($data['product_id']);
             $showcase = $this->showcaseRepository->findOrFail($data['showcase_id']);
