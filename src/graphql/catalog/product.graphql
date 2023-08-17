@@ -88,11 +88,6 @@ input MerchantEventBookingInput {
     description: String!
     price: Float
     quantity: [QuantityInput]
-    removeImages: [RemoveImagesInput]
-}
-
-input RemoveImagesInput {
-    image_id: Int!
 }
 
 input DeleteInput {
@@ -392,7 +387,7 @@ type ProductFlat {
     status: Boolean
     visibleIndividually: Boolean @rename(attribute: "visible_individually")
     thumbnail: String
-    price: Float
+    price: Float @rename(attribute: "product_price")
     cost: Float
     specialPrice: Float @rename(attribute: "special_price")
     specialPriceFrom: String @rename(attribute: "special_price_from")
