@@ -132,7 +132,6 @@ class ProductContent extends BaseFilter
         if ($showcase) {
             return $showcase;
         }
-
         return null;
     }
 
