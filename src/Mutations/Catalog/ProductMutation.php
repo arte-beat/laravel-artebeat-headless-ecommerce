@@ -92,6 +92,28 @@ class ProductMutation extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
+    public function collectionFilter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+        $query->where('type', 'simple');
+        $query->where('product_type', 'showcase');
+        $query->where('parent_id', NULL);
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+//        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store($rootValue, array $args, GraphQLContext $context)
     {
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
@@ -498,6 +520,7 @@ class ProductMutation extends Controller
                     throw new Exception($validator->messages());
                 }
                 $data['type'] = 'simple';
+                $data['product_type'] = 'showcase';
                 $data['attribute_family_id'] = 1;
                 try {
                     $owner = bagisto_graphql()->guard($this->guard)->user();

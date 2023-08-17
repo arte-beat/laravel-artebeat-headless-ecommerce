@@ -19,11 +19,13 @@ extend type Query @guard{
 
     getShowcase: ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Catalog\\ProductContent@getShowcase")
 
-    getShowcase(id: ID @eq): ShowCaseResponse @find(model: "Webkul\\Product\\Models\\Showcase")
+#    getShowcaseById(id: ID @eq): ShowCaseResponse @find(model: "Webkul\\Product\\Models\\Showcase")
 
-    getShowcases: [ShowCaseResponse!] @paginate(type: "paginator", defaultCount:10 model: "Webkul\\Product\\Models\\Showcase")
+#    getShowcases: [ShowCaseResponse!] @paginate(type: "paginator", defaultCount:10 model: "Webkul\\Product\\Models\\Showcase")
 
     getMerchant(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+
+    getCollections(input: FilterCollectionsInput ): [ShowCaseCollectionResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@collectionFilter")
 }
 
 extend type Mutation @guard {
@@ -118,6 +120,7 @@ input ShowCaseInput {
     tiktok: String
     twitter: String
     instagram: String
+    collection_desc: String
 }
 
 input QuantityInput {
@@ -202,6 +205,11 @@ input FilterProductsInput {
     parentId: ID @rename(attribute: "parent_id")
     attributeFamily: String @rename(attribute: "attribute_family")
     qty: Int
+}
+
+input FilterCollectionsInput {
+    id: ID
+    name: String
 }
 
 input FilterEventsInput {
@@ -303,6 +311,7 @@ type ShowCaseResponse {
     tiktok: String
     twitter: String
     instagram: String
+    collection_desc: String
     collections: [ShowCaseCollectionResponse!] @hasMany
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
