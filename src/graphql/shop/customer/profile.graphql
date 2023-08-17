@@ -1,23 +1,24 @@
-#Shop\Customer\Account Related APIs
+#Shop\Customer\Profile Related APIs
 extend type Query @guard(with: ["api"]) {
-    accountInfo: AccountInfoResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AccountMutation@get")
+    # Please
+    getProfile: ProfileInfoResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@get")
 }
 
 extend type Mutation @guard(with: ["api"]) {
-    updateAccount(
-        input: UpdateAccountInput!
-    ): AccountInfoResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AccountMutation@update")
+    updateProfile(
+        input: UpdateProfileInput!
+    ): ProfileInfoResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@update")
 
     changeCustomerType(
         input: ChangeCustomerTypeInput!
-    ): ChangeCustomerTypeResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AccountMutation@changeCustomerType")
+    ): ChangeCustomerTypeResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@changeCustomerType")
 
-    deleteAccount(
-        input: DeleteAccountInput!
-    ): AccountDeleteResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AccountMutation@delete")
+    deleteProfile(
+        input: DeleteProfileInput!
+    ): ProfileDeleteResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@delete")
 }
 
-input UpdateAccountInput {
+input UpdateProfileInput {
     firstName: String! @rename(attribute: "first_name")
     lastName: String! @rename(attribute: "last_name")
     gender: String!
@@ -36,11 +37,11 @@ input ChangeCustomerTypeInput {
     password: String!
 }
 
-input DeleteAccountInput {
+input DeleteProfileInput {
     password: String!
 }
 
-type AccountInfoResult {
+type ProfileInfoResult {
     status: Boolean
     message: String
     customer: Customer
@@ -51,7 +52,7 @@ type ChangeCustomerTypeResponse {
     success: String
 }
 
-type AccountDeleteResponse {
+type ProfileDeleteResponse {
     status: Boolean
     success: String
 }

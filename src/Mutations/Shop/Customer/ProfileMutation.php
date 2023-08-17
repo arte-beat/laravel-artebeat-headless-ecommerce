@@ -13,7 +13,7 @@ use Webkul\Customer\Http\Controllers\Controller;
 use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 
-class AccountMutation extends Controller
+class ProfileMutation extends Controller
 {
     /**
      * Contains current guard

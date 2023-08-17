@@ -12,7 +12,7 @@ extend type Mutation @guard {
 
      updateCmsPage(
         id: ID!,
-        input: CmsPageInput!
+        input: CmsPageUpdateInput!
     ): CmsPage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@update")
 
     # deleteCmsPage(id: ID!): CmsPage @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\CMS\\CmsPageMutation@delete")
@@ -33,6 +33,16 @@ input CmsPageInput {
     pageTitle: String! @rename(attribute: "page_title")
     urlKey: String! @rename(attribute: "url_key")
     htmlContent: String! @rename(attribute: "html_content")
+    pageName: String @rename(attribute: "page_name")
+    metaTitle: String @rename(attribute: "meta_title")
+    metaKeywords: String @rename(attribute: "meta_keywords")
+    metaDescription: String @rename(attribute: "meta_description")
+}
+
+input CmsPageUpdateInput {
+    pageTitle: String @rename(attribute: "page_title")
+    urlKey: String @rename(attribute: "url_key")
+    htmlContent: String @rename(attribute: "html_content")
     pageName: String @rename(attribute: "page_name")
     metaTitle: String @rename(attribute: "meta_title")
     metaKeywords: String @rename(attribute: "meta_keywords")
