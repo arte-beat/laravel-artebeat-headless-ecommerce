@@ -19,10 +19,10 @@ extend type Mutation @guard(with: ["api"]) {
 }
 
 input UpdateProfileInput {
-    firstName: String! @rename(attribute: "first_name")
-    lastName: String! @rename(attribute: "last_name")
-    gender: String!
-    email: String!
+    firstName: String @rename(attribute: "first_name")
+    lastName: String @rename(attribute: "last_name")
+    gender: String
+    email: String
     dateOfBirth: String @rename(attribute: "date_of_birth")
     phone: String
     oldpassword: String
