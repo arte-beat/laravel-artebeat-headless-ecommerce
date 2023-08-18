@@ -122,29 +122,8 @@ class ProfileMutation extends Controller
         
         $isPasswordChanged = false;
         
-        $validator = Validator::make($data, [
-            'first_name'            => 'string|required',
-            'last_name'             => 'string|required',
-            'gender'                => 'required',
-            'date_of_birth'         => 'string|before:today',
-            'email'                 => 'email|unique:customers,email,' . $customer->id,
-            'oldpassword'           => 'required_with:password',
-            'password'              => 'confirmed|min:6|required_with:oldpassword',
-            'password_confirmation' => 'required_with:password',
-            'upload_type'           => 'in:file,path,base64',
-            'image.*'               => 'mimes:bmp,jpeg,jpg,png,webp',
-        ]);
-        
-        if ($validator->fails()) {
-            $errorMessage = [];
-            foreach ($validator->messages()->toArray() as $field => $message) {
-                $errorMessage[] = is_array($message) ? $message[0] : $message;
-            }
-            
-            throw new CustomException(
-                implode(" ,", $errorMessage),
-                'Invalid Update Customer Details.'
-            );
+        if (count($data) == 0) {
+            throw new CustomException('Nothing to update','Invalid Update Profile Details.');
         }
 
         try {
