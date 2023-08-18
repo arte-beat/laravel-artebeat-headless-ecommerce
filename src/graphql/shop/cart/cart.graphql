@@ -10,6 +10,10 @@ extend type Mutation {
     addItemToCart(
         input: AddItemToCartInput!
     ): CartItemResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\CartMutation@store")
+
+    addItemsToCart(
+        input: AddItemsToCartInput!
+    ): CartItemResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\CartMutation@addToCart")
   
     updateItemToCart(
         input: UpdateItemToCartInput!
@@ -30,16 +34,22 @@ input AddItemToCartInput {
     # Used in case of adding Grouped Product to Cart
     selectedConfigurableOption: Int @rename(attribute: "selected_configurable_option")
     superAttribute: [ConfigurableProductInput!] @rename(attribute: "super_attribute")
-    
+
     # Used in case of adding Grouped Product to Cart
     qty: [GroupedProductInput!]
 
     # Used in case of adding Downloadable Product to Cart
     links: [Int!]
-    
+
     # Used in case of adding Bundled Product to Cart
     bundleOptions: [BundledOptionsInput!] @rename(attribute: "bundle_options")
-    
+
+    # Used in case of adding booking Product to Cart
+    booking: BookingProductInput
+}
+
+input AddItemsToCartInput {
+    productId: ID! @rename(attribute: "product_id")
     # Used in case of adding booking Product to Cart
     booking: BookingProductInput
 }
@@ -61,7 +71,7 @@ input BundledOptionsInput {
 }
 
 input BookingProductInput {
-#    date: String!
+    date: String!
 #    slot: BookingSlotInput!
     qty: [EventTicketBookingInput!]
     note: String

@@ -107,6 +107,40 @@ class CartMutation extends Controller
     }
 
     /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function addToCart($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+        if (! isset($data['product_id']) || (isset($data['product_id']) && !$data['product_id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        try {
+            $product = $this->productRepository->findOrFail($data['product_id']);
+            $data = bagisto_graphql()->manageInputForCartItems($product, $data);
+            $cart = Cart::addItemsToCart($data['product_id'], $data);
+            if ( isset($cart->id)) {
+                return [
+                    'status'    => true,
+                    'message'   => trans('bagisto_graphql::app.shop.response.success-add-to-cart'),
+                    'cart'      => $cart,
+                ];
+            } else {
+                return $cart;
+            }
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    /**
      * Update the specified resource in storage.
      *
      * @param  int  $id
