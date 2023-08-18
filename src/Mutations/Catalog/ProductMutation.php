@@ -361,9 +361,15 @@ class ProductMutation extends Controller
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
+                        if(!empty($data['removeImages'])) {
+                            $removeImagesArr = $data['removeImages'];
+                            foreach ($removeImagesArr as $removeImage) {
+                                ProductImage::where("id", "=", $removeImage['id'])->delete();
+                            }
+                        }
                         if ($multipleFiles != null) {
                             $files = $multipleFiles[$index];
-                            bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                            bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
                         }
                         $this->productRepository->syncQuantities($id, $data['quantity']);
                     } catch (Exception $e) {
@@ -595,9 +601,15 @@ class ProductMutation extends Controller
                             $updateProduct[$index] = $this->productRepository->update($data, $id);
                             Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
+                            if(!empty($data['removeImages'])) {
+                                $removeImagesArr = $data['removeImages'];
+                                foreach ($removeImagesArr as $removeImage) {
+                                    ProductImage::where("id", "=", $removeImage['id'])->delete();
+                                }
+                            }
                             if ($multipleFiles != null) {
                                 $files = $multipleFiles[$index];
-                                bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                                bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
                             }
 
                             $this->productRepository->syncQuantities($id, $data['quantity']);
