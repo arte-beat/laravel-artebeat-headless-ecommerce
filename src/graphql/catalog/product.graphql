@@ -13,6 +13,8 @@ extend type Query @guard{
 
     getEvents(input: FilterEventsInput ): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
 
+    getallMerchants(input: FilterEventsInput ): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@merchFilter")
+
     getEvent(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     getTickets(input: FilterTicketsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterTickets")): [TicketBookingResponse!] @paginate(type: "paginator", defaultCount:10 model: "Webkul\\Product\\Models\\EventTickets")
@@ -248,6 +250,7 @@ input SyncEventPerformerInput {
 type EventBookingResponse {
     id: ID!
     parentId: ID @rename(attribute: "parent_id")
+    parent: EventBookingResponse @belongsTo(relation: "parent")
     isHeroEvent: Int @rename(attribute: "is_hero_event")
     isFeatureEvent: Int @rename(attribute: "is_feature_event")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")

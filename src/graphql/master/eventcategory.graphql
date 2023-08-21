@@ -20,7 +20,6 @@ extend type Mutation @guard {
 
 input EventCategoryInput {
     name: String!
-    description: String!
 }
 
 input FilterEventCategoryInput {
@@ -31,7 +30,7 @@ input FilterEventCategoryInput {
 type EventCategory {
     id: ID!
     name: String! @rename(attribute: "name")
-    description: String! @rename(attribute: "description")
+#    description: String! @rename(attribute: "description")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String

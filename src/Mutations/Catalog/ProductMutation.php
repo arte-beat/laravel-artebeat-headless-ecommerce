@@ -87,6 +87,21 @@ class ProductMutation extends Controller
         return $query->paginate($count,['*'],'page',$page);
     }
 
+
+    public function merchFilter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+        $query->where('type', 'simple');
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+        $query->orderBy('id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
     /**
      * Store a newly created resource in storage.
      *
