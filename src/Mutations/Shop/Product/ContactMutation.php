@@ -9,9 +9,6 @@ use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\Product\Models\ContactMsg;
 use Webkul\Product\Repositories\ContactMsgRepository;
-use function Webkul\GraphQLAPI\Mutations\Master\auth;
-use function Webkul\GraphQLAPI\Mutations\Master\request;
-use function Webkul\GraphQLAPI\Mutations\Master\trans;
 
 class ContactMutation extends Controller
 {
