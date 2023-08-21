@@ -249,6 +249,7 @@ input SyncEventPerformerInput {
 
 type EventBookingResponse {
     id: ID!
+    type: String!
     parentId: ID @rename(attribute: "parent_id")
     parent: EventBookingResponse @belongsTo(relation: "parent")
     isHeroEvent: Int @rename(attribute: "is_hero_event")
