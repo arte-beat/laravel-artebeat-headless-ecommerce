@@ -13,7 +13,7 @@ extend type Query @guard{
 
     getEvents(input: FilterEventsInput ): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
 
-    getallMerchants(input: FilterEventsInput ): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@merchFilter")
+    getallMerchants(input: FilterEventsInput ): [MerchantResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@merchFilter")
 
     getEvent(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
@@ -263,6 +263,21 @@ type EventBookingResponse {
     promoters: [Promoter] @hasMany
     merchants: [MerchantEventBookingResponse!] @hasMany
     success: String
+    owner: Owner! @hasOne
+}
+
+type MerchantResponse {
+    id: ID!
+    type: String!
+    parentId: ID @rename(attribute: "parent_id")
+    parent: EventBookingResponse @belongsTo(relation: "parent")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    images: [Image!] @hasMany
+    quantities: [Quantity!] @hasMany
+    owner: Owner! @hasOne
+    success: String
 }
 
 type TicketBookingResponse {
@@ -272,6 +287,11 @@ type TicketBookingResponse {
     ticketType: TicketType @hasOne(relation: "product_event_ticket_type")
     price: Float
     qty: Float
+}
+type Owner {
+    id: ID!
+    name: String!
+    email:String!
 }
 
 type TicketType {
