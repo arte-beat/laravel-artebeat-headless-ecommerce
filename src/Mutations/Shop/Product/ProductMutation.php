@@ -164,7 +164,7 @@ class ProductMutation extends Controller
         $query = $query->distinct()
             ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
             ->addSelect('products.*')
-            ->where('booking_products.available_to', '<', $today);
+            ->where('booking_products.available_from', '<', $today);
         $query->orderBy('products.id', 'desc');
 
         if(isset($args['input']['name'])) {
@@ -206,7 +206,7 @@ class ProductMutation extends Controller
         $query = $query->distinct()
             ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
             ->addSelect('products.*')
-            ->where('booking_products.available_to', '>=', $today);
+            ->where('booking_products.available_from', '>=', $today);
         $query->orderBy('products.id', 'desc');
 
         if(isset($args['input']['name'])) {
