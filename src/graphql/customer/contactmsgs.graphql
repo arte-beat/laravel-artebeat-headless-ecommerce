@@ -1,0 +1,48 @@
+extend type Query @guard(with: ["admin-api"]) {
+    getallContactmgs(input: FilterContactInput): [ContactOutput!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ContactMutation@filterContactmsgs")
+
+    getContactmgsbyId(id: ID @eq): ContactOutput @find(model: "Webkul\\Product\\Models\\ContactMsg")
+}
+
+
+extend type Mutation {
+    createContactmsgs (
+        input: ContactInput!
+    ): ContactOutput @guard(with: ["api"]) @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ContactMutation@store")
+
+    updateContactmsgs(
+        id: ID!,
+        input: ContactInput!
+    ): ContactOutput @guard(with: ["admin-api"]) @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ContactMutation@update")
+
+    deleteContactmsgs(id: ID!): ContactOutput @guard(with: ["admin-api"]) @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ContactMutation@delete")
+}
+
+input ContactInput {
+    name: String!
+    email: String!
+    phone: String!
+    address: String!
+    subject: String!
+    message: String!
+}
+
+input FilterContactInput {
+    name: String!
+    email: String!
+    phone: String!
+}
+
+type ContactOutput {
+    id: ID
+    name: String
+    email: String
+    phone: String
+    address: String
+    subject: String
+    message: String
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    read_status: String
+    success : String
+}

@@ -1,32 +1,34 @@
 <?php
 
-namespace Webkul\GraphQLAPI\Mutations\Master;
+namespace Webkul\GraphQLAPI\Mutations\Shop\Product;
 
 use Exception;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
+use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
-use Webkul\Product\Repositories\ContactmsgRepository;
-use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
-use Webkul\Product\Models\Contactmsg;
+use Webkul\Product\Models\ContactMsg;
+use Webkul\Product\Repositories\ContactMsgRepository;
+use function Webkul\GraphQLAPI\Mutations\Master\auth;
+use function Webkul\GraphQLAPI\Mutations\Master\request;
+use function Webkul\GraphQLAPI\Mutations\Master\trans;
 
 class ContactMutation extends Controller
 {
     /**
      * Create a new controller instance.
      *
-     * @param \Webkul\Product\Repositories\ContactmsgRepository  $contactmsgRepository
+     * @param \Webkul\Product\Repositories\ContactMsgRepository  $contactmsgRepository
      * @return void
      */
     public function __construct(
         protected ContactmsgRepository $contactmsgRepository,
     )
     {
-        $this->guard = 'admin-api';
-        auth()->setDefaultDriver($this->guard);
-        $this->_config = request('_config');
+//        $this->guard = 'api';
+//        auth()->setDefaultDriver($this->guard);
+//        $this->_config = request('_config');
+//        $this->middleware('auth:' . $this->guard);
     }
 
     /**
@@ -52,7 +54,7 @@ class ContactMutation extends Controller
             'message'   => 'string|required',
             'phone'   => 'numeric|required',
         ]);
-        
+
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
@@ -135,11 +137,11 @@ class ContactMutation extends Controller
             $query->where('name', 'like', '%' . urldecode($args['input']['name']) . '%');
         }
         if(isset($args['input']['email'])) {
-             $query->where('email', 'like', '%' . urldecode($args['input']['email']) . '%');
+            $query->where('email', 'like', '%' . urldecode($args['input']['email']) . '%');
         }
 
         if(isset($args['input']['phone'])) {
-             $query->where('phone', 'like', '%' . urldecode($args['input']['phone']) . '%');
+            $query->where('phone', 'like', '%' . urldecode($args['input']['phone']) . '%');
         }
 
         $query->orderBy('id', 'desc');
