@@ -22,6 +22,15 @@ extend type Query @guard(with: ["api"]){
 
     eventCategoriesByEventOrganizer(input: FilterEventCategoryInput ): [EventCategory!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterEventCategory")
 }
+extend type Query @guard(with: ["api", "admin-api"]){
+    getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
+
+    getCollectionByShowcase(id:ID!, input: FilterCollectionsInput ): [ShowCaseCollectionResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getShowcaseCollectionByShowcase")
+
+    getPastEvents(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getPastEvents")
+
+    getFutureEvents(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getFutureEvents")
+}
 
 extend type Mutation @guard(with: ["api"]) {
     createEventBookingByEventOrganizer(input: EventBookingInput!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@storeEventBooking")
