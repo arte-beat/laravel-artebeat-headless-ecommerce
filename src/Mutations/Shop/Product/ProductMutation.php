@@ -154,7 +154,7 @@ class ProductMutation extends Controller
     {
         $query = \Webkul\Product\Models\Product::query();
 
-        $today = date('Y-m-d');
+        $today = date('Y-m-d h:i:s');
         $query->where('products.type', 'booking');
 
         if(isset($args['input']['name'])) {
@@ -196,7 +196,7 @@ class ProductMutation extends Controller
     {
         $query = \Webkul\Product\Models\Product::query();
 
-        $today = date('Y-m-d');
+        $today = date('Y-m-d h:i:s');
         $query->where('products.type', 'booking');
 
         if(isset($args['input']['name'])) {
