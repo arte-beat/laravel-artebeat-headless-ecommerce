@@ -1,6 +1,6 @@
 <?php
 
-namespace Webkul\GraphQLAPI\Mutations\Shop\Customer;
+namespace Webkul\GraphQLAPI\Mutations\Shop\Product;
 
 use Exception;
 use Illuminate\Support\Facades\Validator;
@@ -25,9 +25,10 @@ class ContactMutation extends Controller
         protected ContactmsgRepository $contactmsgRepository,
     )
     {
-        $this->guard = 'admin-api';
-        auth()->setDefaultDriver($this->guard);
-        $this->_config = request('_config');
+//        $this->guard = 'api';
+//        auth()->setDefaultDriver($this->guard);
+//        $this->_config = request('_config');
+//        $this->middleware('auth:' . $this->guard);
     }
 
     /**
