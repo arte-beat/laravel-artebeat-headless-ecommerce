@@ -19,6 +19,7 @@ use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Product\Repositories\PromoterRepository;
 use Webkul\Product\Repositories\ArtistRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
+use Webkul\Product\Repositories\ShowcaseRepository;
 use Webkul\Product\Models\ProductAttributeValue;
 use Webkul\Product\Models\Promoter;
 use Webkul\Product\Models\Showcase;
@@ -44,7 +45,8 @@ class ProductMutation extends Controller
         protected PromoterRepository $promoterRepository,
         protected ArtistRepository $artistRepository,
         protected ProductFlatRepository $productFlatRepository,
-        protected ProductAttributeValueRepository $productAttributeValueRepository
+        protected ProductAttributeValueRepository $productAttributeValueRepository,
+        protected ShowcaseRepository $showcaseRepository
     ) {
         $this->guard = 'api';
         auth()->setDefaultDriver($this->guard);
@@ -69,6 +71,156 @@ class ProductMutation extends Controller
         $owner = bagisto_graphql()->guard($this->guard)->user();
         if(!empty($owner))
             $query->where('owner_id', $owner->id);
+
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMerchantByEvent($rootValue, array $args, GraphQLContext $context)
+    {
+        $productId = $args['id'];
+
+        $query = \Webkul\Product\Models\Product::query();
+
+        // @dd($query);
+
+        $query->find($productId)->where('type', 'simple');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+
+        $query = $query->distinct()
+            ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
+            ->addSelect('products.*');
+        $query->orderBy('products.id', 'desc');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+
+        if(!empty($args['input']['is_feature_event'])) {
+            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+        }
+
+        if(!empty($args['input']['is_hero_event'])) {
+            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+        }
+
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getShowcaseCollectionByShowcase($rootValue, array $args, GraphQLContext $context)
+    {
+        $showcaseId = $args['id'];
+
+        $collection = $this->showcaseRepository->getShowcaseCollectionByShowcaseId($showcaseId);
+
+        if ($collection) {
+            $count = isset($args['first']) ? $args['first'] : 10;
+            $page = isset($args['page']) ? $args['page'] : 1;
+            
+            return $collection->paginate($count,['*'],'page',$page);
+        }
+        return null;
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPastEvents($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+
+        $today = date('Y-m-d h:i:s');
+        $query->where('products.type', 'booking');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('products.sku', 'like', '%' . urldecode($name) . '%');
+        }
+        $query = $query->distinct()
+            ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
+            ->addSelect('products.*')
+            ->where('booking_products.available_from', '<', $today);
+        $query->orderBy('products.id', 'desc');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+
+        if(!empty($args['input']['is_feature_event'])) {
+            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+        }
+
+        if(!empty($args['input']['is_hero_event'])) {
+            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+        }
+
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getFutureEvents($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+
+        $today = date('Y-m-d h:i:s');
+        $query->where('products.type', 'booking');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('products.sku', 'like', '%' . urldecode($name) . '%');
+        }
+        $query = $query->distinct()
+            ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
+            ->addSelect('products.*')
+            ->where('booking_products.available_from', '>=', $today);
+        $query->orderBy('products.id', 'desc');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+
+        if(!empty($args['input']['is_feature_event'])) {
+            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+        }
+
+        if(!empty($args['input']['is_hero_event'])) {
+            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+        }
 
         $query->orderBy('id', 'desc');
 
