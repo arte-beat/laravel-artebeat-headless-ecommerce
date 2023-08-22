@@ -30,6 +30,8 @@ extend type Query @guard(with: ["api", "admin-api"]){
     getPastEvents(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getPastEvents")
 
     getFutureEvents(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getFutureEvents")
+
+    getOngoingEvents(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getOngoingEvents")
 }
 
 extend type Mutation @guard(with: ["api"]) {

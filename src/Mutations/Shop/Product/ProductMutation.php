@@ -229,6 +229,44 @@ class ProductMutation extends Controller
         return $query->paginate($count,['*'],'page',$page);
     }
 
+    public function getOngoingEvents($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Product::query();
+
+        $now = now();
+        $query->where('products.type', 'booking');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('products.sku', 'like', '%' . urldecode($name) . '%');
+        }
+        $query = $query->distinct()
+            ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
+            ->addSelect('products.*')
+            ->whereRaw('? between booking_products.available_from and booking_products.available_to', [$now]);
+
+        $query->orderBy('products.id', 'desc');
+
+        if(isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+
+        if(!empty($args['input']['is_feature_event'])) {
+            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+        }
+
+        if(!empty($args['input']['is_hero_event'])) {
+            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+        }
+
+        $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
     public function similarEventFilter($rootValue, array $args, GraphQLContext $context)
     {
         $query = \Webkul\Product\Models\Product::query();
