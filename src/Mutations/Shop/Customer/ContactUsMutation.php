@@ -46,10 +46,9 @@ class ContactUsMutation extends Controller
     {
         $data = $args['input'];
         $data['read_status'] = 1; //unread
-        
+
         $validator = Validator::make($data, [
-            'first_name'  => 'string|required',
-            'last_name'  => 'string|required',
+            'name'  => 'string|required',
             'email'  => 'string',
             'subject' => 'string|required',
             'message' => 'string|required',

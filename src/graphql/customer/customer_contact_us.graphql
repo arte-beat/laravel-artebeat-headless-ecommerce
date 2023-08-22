@@ -14,19 +14,17 @@ extend type Mutation {
 }
 
 input CreateContactUsMessageInput {
-    firstName: String! @rename(attribute: "first_name")
-    lastName: String! @rename(attribute: "last_name")
+    name: String!
     email: String!
     phone: String
-    address: String
+#    address: String
     subject: String!
     message: String!
 }
 
 input FilterContactUsMessagesInput {
     id: Int
-    firstName: String @rename(attribute: "first_name")
-    lastName: String @rename(attribute: "last_name")
+    name: String
     email: String
     phone: String
     readStatus: Int @rename(attribute: "read_status")
@@ -34,13 +32,12 @@ input FilterContactUsMessagesInput {
 
 type ContactUsMessage {
     id: ID!
-    firstName: String! @rename(attribute: "first_name")
-    lastName: String! @rename(attribute: "last_name")
-    email: String!
-    address: String
+    name: String
+    email: String
+#    address: String
     phone: String
-    subject: String!
-    message: String!
+    subject: String
+    message: String
     readStatus: Int @rename(attribute: "read_status")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")

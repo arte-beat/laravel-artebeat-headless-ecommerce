@@ -6,9 +6,9 @@ extend type Query @guard(with: ["admin-api"]) {
 
 
 extend type Mutation {
-    createContactmsgs (
-        input: ContactInput!
-    ): ContactOutput @guard(with: ["api"]) @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ContactMutation@store")
+#    createContactmsgs (
+#        input: ContactInput!
+#    ): ContactOutput @guard(with: ["api"]) @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ContactMutation@store")
 
     updateContactmsgs(
         id: ID!,
