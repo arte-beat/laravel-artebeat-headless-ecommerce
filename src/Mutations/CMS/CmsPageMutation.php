@@ -79,8 +79,8 @@ class CmsPageMutation extends Controller
         $data = $args['input'];
 
         $validator = Validator::make($data, [
-            'url_key' => [ new \Webkul\Core\Contracts\Validations\Slug, function ($attribute, $value, $fail) {
-                if (!$this->cmsRepository->isUrlKeyUnique($value)) {
+            'url_key' => [ new \Webkul\Core\Contracts\Validations\Slug, function ($attribute, $value, $fail) use ($id) {
+                if (!$this->cmsRepository->isUrlKeyUnique($value, $id)) {
                     $fail(trans('admin::app.response.already-taken', ['name' => 'Page']));
                 }
             }],
