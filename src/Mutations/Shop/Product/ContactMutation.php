@@ -33,37 +33,37 @@ class ContactMutation extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store($rootValue, array $args, GraphQLContext $context)
-    {
-
-
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
-            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
-        }
-
-        $data = $args['input'];
-        $file = isset($args['file']) ? $args['file']  : null;
-
-        $validator = Validator::make($data, [
-            'name'   => 'string|required',
-            'email'   => 'string|required',
-            'subject'   => 'string|required',
-            'message'   => 'string|required',
-            'phone'   => 'numeric|required',
-        ]);
-
-        if ($validator->fails()) {
-            throw new Exception($validator->messages());
-        }
-
-        try {
-
-            $contactmsg = $this->contactmsgRepository->create($data);
-            return $contactmsg;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
-        }
-    }
+//    public function store($rootValue, array $args, GraphQLContext $context)
+//    {
+//
+//
+//        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+//            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+//        }
+//
+//        $data = $args['input'];
+//        $file = isset($args['file']) ? $args['file']  : null;
+//
+//        $validator = Validator::make($data, [
+//            'name'   => 'string|required',
+//            'email'   => 'string|required',
+//            'subject'   => 'string|required',
+//            'message'   => 'string|required',
+//            'phone'   => 'numeric|required',
+//        ]);
+//
+//        if ($validator->fails()) {
+//            throw new Exception($validator->messages());
+//        }
+//
+//        try {
+//
+//            $contactmsg = $this->contactmsgRepository->create($data);
+//            return $contactmsg;
+//        } catch (Exception $e) {
+//            throw new Exception($e->getMessage());
+//        }
+//    }
 
     /**
      * Update the specified resource in storage.
