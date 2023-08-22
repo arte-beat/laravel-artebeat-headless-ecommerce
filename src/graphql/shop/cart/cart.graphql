@@ -29,7 +29,7 @@ extend type Mutation {
 input AddItemToCartInput {
     isBuyNow: Boolean @rename(attribute: "is_buy_now")
     productId: ID! @rename(attribute: "product_id")
-    quantity: Int!
+#    quantity: Int!
 
     # Used in case of adding Grouped Product to Cart
     selectedConfigurableOption: Int @rename(attribute: "selected_configurable_option")
@@ -71,7 +71,7 @@ input BundledOptionsInput {
 }
 
 input BookingProductInput {
-    date: String!
+#    date: String!
 #    slot: BookingSlotInput!
     qty: [EventTicketBookingInput!]
     note: String
