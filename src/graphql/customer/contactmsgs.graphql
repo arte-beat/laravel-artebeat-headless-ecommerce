@@ -28,9 +28,9 @@ input ContactInput {
 }
 
 input FilterContactInput {
-    name: String!
-    email: String!
-    phone: String!
+    name: String
+    email: String
+    phone: String
 }
 
 type ContactOutput {
