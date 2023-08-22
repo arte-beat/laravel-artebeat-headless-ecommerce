@@ -276,7 +276,7 @@ type MerchantResponse {
     updatedAt: DateTime @rename(attribute: "updated_at")
     images: [Image!] @hasMany
     quantities: [Quantity!] @hasMany
-    owner: Owner! @hasOne
+    owner: Owner @hasOne
     success: String
 }
 
