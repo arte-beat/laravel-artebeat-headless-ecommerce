@@ -505,8 +505,10 @@ class ProductMutation extends Controller
                     Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                     if ($multipleFiles != null) {
-                        $files = $multipleFiles[$index];
-                        bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                        if(isset($multipleFiles[$index])) {
+                            $files = $multipleFiles[$index];
+                            bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                        }
                     }
 
                     $this->productRepository->syncQuantities($id, $data['quantity']);
@@ -573,8 +575,10 @@ class ProductMutation extends Controller
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                         if ($multipleFiles != null) {
-                            $files = $multipleFiles[$index];
-                            bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                            if(isset($multipleFiles[$index])) {
+                                $files = $multipleFiles[$index];
+                                bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                            }
                         }
 
                         $this->productRepository->syncQuantities($id, $data['quantity']);
