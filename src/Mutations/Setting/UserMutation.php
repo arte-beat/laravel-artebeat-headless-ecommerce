@@ -452,12 +452,19 @@ class UserMutation extends Controller
 
 
         $owner = bagisto_graphql()->guard($this->guard)->user();
-        $data = $args['input'];
+       // $data = $args['input'];
         $id = $owner->id;
-        if(isset($args['name']) ) {
-            $data['name'] =$args['name'];
+
+        if(!empty($args['input']['name'])) {
+
+            $data['name'] = $args['input']['name'];
         }
-        if(isset($args['oldPassword']) && isset($args['newPassword']) && isset($args['password_confirmation'])){
+
+        if(!empty($args['input']['oldPassword']) && !empty($args['input']['newPassword']) && !empty($args['input']['password_confirmation'])){
+
+            $data['oldPassword'] = $args['input']['oldPassword'];
+            $data['newPassword'] = $args['input']['newPassword'];
+            $data['password_confirmation'] = $args['input']['password_confirmation'];
 
             $validator = Validator::make($data, [
                 'oldPassword' => 'nullable',
