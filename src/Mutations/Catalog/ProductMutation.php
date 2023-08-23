@@ -382,9 +382,11 @@ class ProductMutation extends Controller
                                 ProductImage::where("id", "=", $removeImage['id'])->delete();
                             }
                         }
-                        if ($multipleFiles != null) {
-                            $files = $multipleFiles[$index];
-                            bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
+                        if(isset($multipleFiles[$index])) {
+                            if ($multipleFiles != null) {
+                                $files = $multipleFiles[$index];
+                                bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
+                            }
                         }
                         $this->productRepository->syncQuantities($id, $data['quantity']);
                     } catch (Exception $e) {
