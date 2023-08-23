@@ -64,6 +64,7 @@ input AdminInput {
     name: String
     oldPassword: String
     newPassword: String
+    removeImage: Boolean
     passwordConfirmation: String @rename(attribute: "password_confirmation")
 }
 
@@ -135,7 +136,6 @@ type AdminUserResponse {
     apiToken: String @rename(attribute: "api_token")
     image: String @rename(attribute: "image_link")
     status: Boolean
-
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
