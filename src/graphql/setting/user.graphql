@@ -120,6 +120,7 @@ type User {
     apiToken: String! @rename(attribute: "api_token")
     roleId: Int! @rename(attribute: "role_id")
     status: Boolean!
+    image: String @rename(attribute: "image_link")
     role: Role! @belongsTo(relation: "role")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
