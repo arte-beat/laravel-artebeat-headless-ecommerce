@@ -12,7 +12,7 @@ extend type Mutation @guard {
 
     updateCustomerAddress(
         id: ID!,
-        input: CreateCustomerAddressInput!
+        input: UpdateCustomerAddressInput!
     ): CustomerAddress  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerAddressMutation@update")
     
     deleteCustomerAddress(id: ID!): Customer  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerAddressMutation@delete")
@@ -24,6 +24,23 @@ input CreateCustomerAddressInput {
     firstName: String! @rename(attribute: "first_name")
     lastName: String! @rename(attribute: "last_name")
     email: String
+    gender: String
+    address1: String!
+    address2: String
+    country: String!
+    state: String!
+    city: String!
+    postcode: String!
+    phone: String!
+    vatId: String @rename(attribute: "vat_id")
+    defaultAddress: Boolean @rename(attribute: "default_address")
+}
+
+input UpdateCustomerAddressInput {
+    customerId: Int! @rename(attribute: "customer_id")
+    companyName: String @rename(attribute: "company_name")
+    firstName: String! @rename(attribute: "first_name")
+    lastName: String! @rename(attribute: "last_name")
     gender: String
     address1: String!
     address2: String

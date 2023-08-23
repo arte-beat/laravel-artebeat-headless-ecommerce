@@ -24,6 +24,7 @@ use Webkul\Product\Models\ProductAttributeValue;
 use Webkul\Product\Models\Promoter;
 use Webkul\Product\Models\Showcase;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use Webkul\Customer\Repositories\CustomerRepository;
 
 class ProductMutation extends Controller
 {
@@ -38,6 +39,7 @@ class ProductMutation extends Controller
      * @param  \Webkul\Product\Repositories\ProductRepository  $productRepository
      * @param  \Webkul\Product\Repositories\ProductFlatRepository  $productFlatRepository
      * @param  \Webkul\Product\Repositories\ProductAttributeValueRepository $productAttributeValueRepository
+     * @param  \Webkul\Customer\Repositories\CustomerRepository $customerRepository
      * @return void
      */
     public function __construct(
@@ -46,7 +48,8 @@ class ProductMutation extends Controller
         protected ArtistRepository $artistRepository,
         protected ProductFlatRepository $productFlatRepository,
         protected ProductAttributeValueRepository $productAttributeValueRepository,
-        protected ShowcaseRepository $showcaseRepository
+        protected ShowcaseRepository $showcaseRepository,
+        protected CustomerRepository $customerRepository
     ) {
         $this->guard = 'api';
         auth()->setDefaultDriver($this->guard);
@@ -367,7 +370,10 @@ class ProductMutation extends Controller
             $data['owner_id'] = $owner->id;
             $data['owner_type'] = 'customer';
 
-            Event::dispatch('catalog.product.create.before');
+            $updatedData['customer_type'] = 2; // Event Manager
+            $customer = $this->customerRepository->update($updatedData,$owner->id);
+
+                Event::dispatch('catalog.product.create.before');
             $product = $this->productRepository->create($data);
             Event::dispatch('catalog.product.create.after', $product);
         } catch (Exception $e) {
