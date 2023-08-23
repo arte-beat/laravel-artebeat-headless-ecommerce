@@ -12,7 +12,7 @@ extend type Mutation @guard {
 
     updateCustomer(
         id: ID!,
-        input: CreateCustomerInput!
+        input: UpdateCustomerInput!
     ): Customer @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@update")
     
     deleteCustomer(id: ID!): Customer @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@delete")
@@ -23,6 +23,17 @@ input CreateCustomerInput {
     lastName: String! @rename(attribute: "last_name")
     gender: String!
     email: String!
+    dateOfBirth: String @rename(attribute: "date_of_birth")
+#    customerGroupId: Int! @rename(attribute: "customer_group_id")
+    phone: String
+    notes: String
+    status: Boolean
+}
+
+input UpdateCustomerInput {
+    firstName: String! @rename(attribute: "first_name")
+    lastName: String! @rename(attribute: "last_name")
+    gender: String!
     dateOfBirth: String @rename(attribute: "date_of_birth")
 #    customerGroupId: Int! @rename(attribute: "customer_group_id")
     phone: String

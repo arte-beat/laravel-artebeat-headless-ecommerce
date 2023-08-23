@@ -107,7 +107,6 @@ class CustomerMutation extends Controller
             'first_name'        => 'string|required',
             'last_name'         => 'string|required',
             'gender'            => 'required',
-            'email'             => 'required|unique:customers,email,' . $id,
             'date_of_birth'     => 'date|before:today',
 //            'customer_group_id' => 'required|numeric',
         ]);

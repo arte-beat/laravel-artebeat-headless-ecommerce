@@ -123,7 +123,6 @@ class UserMutation extends Controller
 
         $validator = Validator::make($data, [
             'name' => 'required',
-            'email' => 'email|unique:admins,email,' . $id,
             'password' => 'nullable',
             'password_confirmation' => 'nullable|required_with:password|same:password',
             'status' => 'sometimes',
@@ -455,45 +454,52 @@ class UserMutation extends Controller
         $owner = bagisto_graphql()->guard($this->guard)->user();
         $data = $args['input'];
         $id = $owner->id;
-
-        $validator = Validator::make($data, [
-            'email' => 'email|unique:admins,email,' . $id,
-            'oldPassword' => 'nullable',
-            'newPassword' => 'nullable',
-            'password_confirmation' => 'nullable|required_with:newPassword|same:newPassword',
-
-        ]);
-
-        if ($validator->fails()) {
-            throw new Exception($validator->messages());
+        if(isset($args['name']) ) {
+            $data['name'] =$args['name'];
         }
-        $customer = bagisto_graphql()->guard($this->guard)->user();
+        if(isset($args['oldPassword']) && isset($args['newPassword']) && isset($args['password_confirmation'])){
 
-        if (Hash::check($data['oldPassword'], $customer->password)) {
-            try {
-                if (!$data['newPassword']) {
-                    unset($data['newPassword']);
-                } else {
-                    $data['password'] = bcrypt($data['newPassword']);
+            $validator = Validator::make($data, [
+                'oldPassword' => 'nullable',
+                'newPassword' => 'nullable',
+                'password_confirmation' => 'nullable|required_with:newPassword|same:newPassword',
+
+            ]);
+
+            if ($validator->fails()) {
+                throw new Exception($validator->messages());
+            }
+
+            if (Hash::check($data['oldPassword'], $owner->password)) {
+                try {
+                    if (!$data['newPassword']) {
+                        unset($data['newPassword']);
+                    } else {
+                        $data['password'] = bcrypt($data['newPassword']);
+                    }
+
+
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
                 }
-
-
+            } else {
+                throw new Exception(trans('shop::app.customer.account.address.delete.wrong-password'));
+            }
+        }
+        if(isset($args['image']) ) {
+            $file = isset($args['image']) ? $args['image'] : null;
+            try {
+                if ($file != null) {
+                    $image = basename($file) . '.' . $file->getClientOriginalExtension();
+                    Storage::disk('admin')->put($image, $file->getContent());
+                    $data['image'] = $image;
+                }
             } catch (Exception $e) {
                 throw new Exception($e->getMessage());
             }
-        } else {
-            throw new Exception(trans('shop::app.customer.account.address.delete.wrong-password'));
+
         }
-        $file = isset($args['image']) ? $args['image']  : null;
-        try {
-            if ($file != null) {
-                $image = basename($file) . '.' . $file->getClientOriginalExtension();
-                Storage::disk('admin')->put($image, $file->getContent());
-                $data['image'] = $image;
-            }
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
-        }
+
         $admin = $this->adminRepository->update($data, $id);
 
         return $admin;

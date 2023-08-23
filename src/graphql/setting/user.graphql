@@ -14,7 +14,7 @@ extend type Mutation {
 
     updateUser(
         id: ID!,
-        input: CreateUserInput!
+        input: UpdateUserInput!
     ): User @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\UserMutation@update")
     
     deleteUser(id: ID!): User @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\UserMutation@delete")
@@ -43,22 +43,28 @@ extend type Mutation {
 #    updateAdminProfile(image: Upload, header_image: Upload, section_file: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowCase")
 }
 
+
 input CreateUserInput {
     name: String!
     email: String!
-    newPassword: String!
-    oldPassword: String!
+    password: String!
+    passwordConfirmation: String @rename(attribute: "password_confirmation")
+    roleId: Int! @rename(attribute: "role_id")
+    status: Boolean!
+}
+input UpdateUserInput {
+    name: String!
+    password: String!
     passwordConfirmation: String @rename(attribute: "password_confirmation")
     roleId: Int! @rename(attribute: "role_id")
     status: Boolean!
 }
 
 input AdminInput {
-    email: String
+    name: String
     oldPassword: String
     newPassword: String
     passwordConfirmation: String @rename(attribute: "password_confirmation")
-
 }
 
 input CreateUserLoginInput {
