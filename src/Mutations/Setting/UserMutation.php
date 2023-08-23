@@ -493,6 +493,10 @@ class UserMutation extends Controller
                 throw new Exception(trans('shop::app.customer.account.address.delete.wrong-password'));
             }
         }
+        if(!empty($args['input']['removeImage']) && $args['input']['removeImage'] == true)
+        {
+            $data['image'] = '';
+        }
         if(isset($args['image']) ) {
             $file = isset($args['image']) ? $args['image'] : null;
             try {
