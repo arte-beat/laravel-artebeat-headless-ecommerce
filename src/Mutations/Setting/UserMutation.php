@@ -23,6 +23,8 @@ use Webkul\User\Repositories\AdminRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use App\Helpers\OTPGenerationHelper;
 use App\Events\SendOTPEvent;
+use Illuminate\Support\Facades\Storage;
+
 
 
 class UserMutation extends Controller
@@ -37,14 +39,15 @@ class UserMutation extends Controller
     /**
      * Create a new controller instance.
      *
-     * @param  \Webkul\User\Repositories\AdminRepository  $adminRepository
-     * @param  \Webkul\User\Repositories\RoleRepository  $roleRepository
+     * @param \Webkul\User\Repositories\AdminRepository $adminRepository
+     * @param \Webkul\User\Repositories\RoleRepository $roleRepository
      * @return void
      */
     public function __construct(
-       protected AdminRepository $adminRepository,
-       protected RoleRepository $roleRepository
-    ) {
+        protected AdminRepository $adminRepository,
+        protected RoleRepository  $roleRepository
+    )
+    {
         $this->guard = 'admin-api';
 
         auth()->setDefaultDriver($this->guard);
@@ -62,17 +65,17 @@ class UserMutation extends Controller
         }
 
         $data = $args['input'];
-        if($data['role_id'] == env('SUPER_ADMIN')){
+        if ($data['role_id'] == env('SUPER_ADMIN')) {
             throw new Exception('{"role_id":["You are not allowed to create super admin."]}');
         }
 
         $validator = Validator::make($data, [
-            'name'     => 'required',
-            'email'    => 'email|unique:admins,email',
+            'name' => 'required',
+            'email' => 'email|unique:admins,email',
             'password' => 'nullable',
             'password_confirmation' => 'nullable|required_with:password|same:password',
-            'status'   => 'sometimes',
-            'role_id'  => 'required',
+            'status' => 'sometimes',
+            'role_id' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -100,7 +103,7 @@ class UserMutation extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function update($rootValue, array $args, GraphQLContext $context)
@@ -111,20 +114,20 @@ class UserMutation extends Controller
 
         $data = $args['input'];
         $id = $args['id'];
-        if($id == env('SUPER_ADMIN')){
+        if ($id == env('SUPER_ADMIN')) {
             throw new Exception('{"role_id":["You are not allowed to update super admin."]}');
         }
-        if($data['role_id'] == env('SUPER_ADMIN')){
+        if ($data['role_id'] == env('SUPER_ADMIN')) {
             throw new Exception('{"role_id":["You are not allowed to update super admin in another profile."]}');
         }
 
         $validator = Validator::make($data, [
-            'name'     => 'required',
-            'email'    => 'email|unique:admins,email,' . $id,
+            'name' => 'required',
+            'email' => 'email|unique:admins,email,' . $id,
             'password' => 'nullable',
             'password_confirmation' => 'nullable|required_with:password|same:password',
-            'status'   => 'sometimes',
-            'role_id'  => 'required',
+            'status' => 'sometimes',
+            'role_id' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -164,7 +167,7 @@ class UserMutation extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function delete($rootValue, array $args, GraphQLContext $context)
@@ -174,7 +177,7 @@ class UserMutation extends Controller
         }
 
         $id = $args['id'];
-        if($id == env('SUPER_ADMIN')){
+        if ($id == env('SUPER_ADMIN')) {
             throw new Exception('{"id":["You are not allowed to delete super admin."]}');
         }
         $user = $this->adminRepository->findOrFail($id);
@@ -210,8 +213,8 @@ class UserMutation extends Controller
         $data = $args['input'];
 
         $validator = Validator::make($data, [
-            'email'     => 'required|email',
-            'password'  => 'required',
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -221,8 +224,8 @@ class UserMutation extends Controller
         $remember = isset($data['remember']) ? $data['remember'] : 0;
 
         if (!$jwtToken = JWTAuth::attempt([
-            'email'     => $data['email'],
-            'password'  => $data['password'],
+            'email' => $data['email'],
+            'password' => $data['password'],
         ], $remember)) {
             throw new Exception(trans('admin::app.users.users.login-error'));
         }
@@ -232,18 +235,18 @@ class UserMutation extends Controller
                 bagisto_graphql()->guard($this->guard)->logout();
 
                 return [
-                    'status'    => false,
-                    'success'   => trans('admin::app.users.users.activate-warning'),
+                    'status' => false,
+                    'success' => trans('admin::app.users.users.activate-warning'),
                 ];
             }
 
             return [
-                'status'        => true,
-                'success'       => trans('bagisto_graphql::app.admin.response.success-login'),
-                'access_token'  => 'Bearer ' . $jwtToken,
-                'token_type'    => 'Bearer',
-                'expires_in'    => bagisto_graphql()->guard($this->guard)->factory()->getTTL() * 60,
-                'user'          => bagisto_graphql()->guard($this->guard)->user()
+                'status' => true,
+                'success' => trans('bagisto_graphql::app.admin.response.success-login'),
+                'access_token' => 'Bearer ' . $jwtToken,
+                'token_type' => 'Bearer',
+                'expires_in' => bagisto_graphql()->guard($this->guard)->factory()->getTTL() * 60,
+                'user' => bagisto_graphql()->guard($this->guard)->user()
             ];
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -261,14 +264,14 @@ class UserMutation extends Controller
             auth()->guard($this->guard)->logout();
 
             return [
-                'status'    => true,
-                'success'   => trans('bagisto_graphql::app.admin.response.success-logout'),
+                'status' => true,
+                'success' => trans('bagisto_graphql::app.admin.response.success-logout'),
             ];
         }
 
         return [
-            'status'    => false,
-            'success'   => trans('bagisto_graphql::app.admin.response.no-login-user'),
+            'status' => false,
+            'success' => trans('bagisto_graphql::app.admin.response.no-login-user'),
         ];
     }
 
@@ -277,9 +280,9 @@ class UserMutation extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function forgot($rootValue, array $args , GraphQLContext $context)
+    public function forgot($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
@@ -295,13 +298,13 @@ class UserMutation extends Controller
 
         try {
             $admin = Admin::where("email", "=", $data['email'])->first();
-            if(!$admin){
+            if (!$admin) {
                 throw new Exception('We are unable to find account with given email. Please try again.');
             }
 
             $OTP = (new OTPGenerationHelper())->generateNumericOTP(config('otp.generate_otp_number'));
             $encryptedKeyText = json_encode(["userId" => $admin['id'], "otp" => $OTP]);
-            $verifyLink = config('otp.front_end_url').Crypt::encryptString($encryptedKeyText);
+            $verifyLink = config('otp.front_end_url') . Crypt::encryptString($encryptedKeyText);
             $userOTP = [
                 'user_id' => $admin['id'],
                 'user_type' => config('otp.admin_user_type'),
@@ -316,8 +319,8 @@ class UserMutation extends Controller
             SendOTPEvent::dispatch($admin, $data['email'], $OTP, $verifyLink, 'admin');
 
             return [
-                'status'    => true,
-                'success'   => trans('customer::app.forget_password.reset_link_sent')
+                'status' => true,
+                'success' => trans('customer::app.forget_password.reset_link_sent')
             ];
         } catch (\Swift_RfcComplianceException $e) {
             throw new Exception(trans('customer::app.forget_password.reset_link_sent'));
@@ -331,9 +334,9 @@ class UserMutation extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function verifyForgotPasswordOTP($rootValue, array $args , GraphQLContext $context)
+    public function verifyForgotPasswordOTP($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
@@ -351,7 +354,7 @@ class UserMutation extends Controller
         $decryptedKey = Crypt::decryptString($data['encryptedKey']);
         $decryptedKeyArr = json_decode($decryptedKey);
 
-        if($decryptedKeyArr->otp != $data['otp']){
+        if ($decryptedKeyArr->otp != $data['otp']) {
             throw new Exception(config('exceptionmessages.invalid_otp'));
         }
         $admin = UserOTP::where(UserOTP::USER_ID, '=', $decryptedKeyArr->userId)
@@ -359,20 +362,20 @@ class UserMutation extends Controller
             ->orderBy(UserOTP::ID, 'desc')
             ->first();
 
-        if(empty($admin->{UserOTP::EXPIRE_AT})){
+        if (empty($admin->{UserOTP::EXPIRE_AT})) {
             throw new Exception(config('exceptionmessages.invalid_otp'));
         }
         $totalDuration = Carbon::now()->diffInMinutes(Carbon::parse($admin->{UserOTP::EXPIRE_AT}), false);
-        if($totalDuration < 1){
+        if ($totalDuration < 1) {
             throw new Exception(config('exceptionmessages.otp_expired'));
         }
 
         $admin = Admin::where("id", "=", $admin->{UserOTP::USER_ID})->first();
         return [
-            'status'    => 'success',
-            'success'   => 'Email verified successfully.',
-            'userId'   => $decryptedKeyArr->userId,
-            'email'   => $admin->email,
+            'status' => 'success',
+            'success' => 'Email verified successfully.',
+            'userId' => $decryptedKeyArr->userId,
+            'email' => $admin->email,
         ];
     }
 
@@ -381,9 +384,9 @@ class UserMutation extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function resetPassword($rootValue, array $args , GraphQLContext $context)
+    public function resetPassword($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
@@ -393,7 +396,7 @@ class UserMutation extends Controller
             'newPassword' => 'required',
             'confirmPassword' => 'required|required_with:newPassword|same:newPassword',
             'userId' => 'required',
-            'email'     => 'required|email',
+            'email' => 'required|email',
             'otp' => 'required|numeric',
         ]);
 
@@ -406,29 +409,94 @@ class UserMutation extends Controller
             ->orderBy(UserOTP::ID, 'desc')
             ->first();
 
-        if(empty($admin)){
+        if (empty($admin)) {
             throw new Exception('We are unable to find account with given user id');
         }
 
-        if($admin->otp != $data['otp']){
+        if ($admin->otp != $data['otp']) {
             throw new Exception(config('exceptionmessages.invalid_otp'));
         }
 
         $user = Admin::where("email", "=", $data['email'])->first();
-        if(empty($user)){
+        if (empty($user)) {
             throw new Exception('We are unable to find account with given email');
         }
-        if($user->email == $data['email'] && $admin->otp == $data['otp']) {
+        if ($user->email == $data['email'] && $admin->otp == $data['otp']) {
             $user::whereId($data['userId'])->update([
                 'password' => Hash::make($data['newPassword'])
             ]);
-        }else{
+        } else {
             throw new Exception('We are unable to find account with given email & user id');
         }
 
         return [
-            'status'    => 'success',
-            'success'   => 'Password changed successfully.',
+            'status' => 'success',
+            'success' => 'Password changed successfully.',
         ];
+    }
+
+
+    public function getAdminProfile($rootValue, array $args, GraphQLContext $context)
+    {
+        $owner = bagisto_graphql()->guard($this->guard)->user();
+        $user = array();
+        if(!empty($owner))
+            $user = $this->adminRepository->findOrFail($owner->id);
+        return $user;
+    }
+    public function updateAdminProfile($rootValue, array $args, GraphQLContext $context)
+    {
+
+        if ( !isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+
+        $owner = bagisto_graphql()->guard($this->guard)->user();
+        $data = $args['input'];
+        $id = $owner->id;
+
+        $validator = Validator::make($data, [
+            'email' => 'email|unique:admins,email,' . $id,
+            'oldPassword' => 'nullable',
+            'newPassword' => 'nullable',
+            'password_confirmation' => 'nullable|required_with:newPassword|same:newPassword',
+
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+
+        if (Hash::check($data['oldPassword'], $customer->password)) {
+            try {
+                if (!$data['newPassword']) {
+                    unset($data['newPassword']);
+                } else {
+                    $data['password'] = bcrypt($data['newPassword']);
+                }
+
+
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+        } else {
+            throw new Exception(trans('shop::app.customer.account.address.delete.wrong-password'));
+        }
+        $file = isset($args['image']) ? $args['image']  : null;
+        try {
+            if ($file != null) {
+                $image = basename($file) . '.' . $file->getClientOriginalExtension();
+                Storage::disk('admin')->put($image, $file->getContent());
+                $data['image'] = $image;
+            }
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+        $admin = $this->adminRepository->update($data, $id);
+
+        return $admin;
+
     }
 }
