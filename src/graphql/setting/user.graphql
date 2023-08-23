@@ -133,7 +133,7 @@ type AdminUserResponse {
     email: String
     password: String
     apiToken: String @rename(attribute: "api_token")
-
+    image: String @rename(attribute: "image_link")
     status: Boolean
 
     createdAt: DateTime @rename(attribute: "created_at")
