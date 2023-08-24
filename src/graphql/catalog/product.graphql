@@ -26,6 +26,8 @@ extend type Query @guard{
     getMerchant(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     getCollections(input: FilterCollectionsInput ): [ShowCaseCollectionResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@collectionFilter")
+
+
 }
 
 
@@ -47,6 +49,8 @@ extend type Mutation @guard {
 
     updateEventBooking(id: ID!, input: EventBookingInput!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateEventBooking")
 
+    updateBulkEventBooking(input: BulkEventsInput ): BulkEventResponse!  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateBulkEventType")
+
     uploadEventImages(product_id: ID!, files: [Upload]): UploadEventImagesResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@uploadEventImages")
 
     deleteEventBooking(id: ID!): EventBookingResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@deleteEventBooking")
@@ -67,6 +71,8 @@ extend type Mutation @guard {
 
     updateShowcaseCollection(files: [[Upload]], input: [ShowCaseCollectionInput]!, deleteInput: [DeleteInput]): [ShowCaseCollectionResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowcaseCollection")
 
+
+
 }
 
 input CreateProductInput {
@@ -85,6 +91,13 @@ input EventBookingInput {
     is_feature_event: Int
     is_hero_event: Int
     booking: CreateBookingInput
+}
+
+input BulkEventsInput
+{
+    id: [ID]!
+    is_feature_event: Int
+    is_hero_event: Int
 }
 
 input MerchantEventBookingInput {
@@ -496,4 +509,8 @@ type EventPerformerResponse {
     promoters: [Promoter!]!
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
+}
+
+type BulkEventResponse {
+    success: String
 }
