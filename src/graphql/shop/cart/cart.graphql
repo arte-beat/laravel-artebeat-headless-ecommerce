@@ -46,6 +46,16 @@ input AddItemToCartInput {
 
     # Used in case of adding booking Product to Cart
     booking: BookingProductInput
+    merchant: MerchantProductInput
+}
+
+input MerchantProductInput {
+    qty: [EventTicketMerchantInput!]
+}
+
+input EventTicketMerchantInput {
+    qtyId: Int! @rename(attribute: "qty_id")
+    quantity: Int!
 }
 
 input AddItemsToCartInput {

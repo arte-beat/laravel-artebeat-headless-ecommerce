@@ -1047,6 +1047,17 @@ class BagistoGraphql
                 break;
 
             default:
+                if ( isset($data['merchant']) && $data['merchant']) {
+                    $quantities = [];
+                    $events = $data['merchant']['qty'];
+                    foreach ($events as $key => $quantity) {
+                        if ( isset($quantity['qty_id']) && isset($quantity['quantity']) ) {
+                            $quantities[$quantity['qty_id']] = $quantity['quantity'];
+                        }
+                    }
+
+                    $data['merchant']['qty'] = $quantities;
+                }
                 break;
         }
 

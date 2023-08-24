@@ -70,10 +70,10 @@ class ProductMutation extends Controller
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
             $query->where('sku', 'like', '%' . urldecode($name) . '%');
         }
-        $query->where('owner_type', 'customer');
-        $owner = bagisto_graphql()->guard($this->guard)->user();
-        if(!empty($owner))
-            $query->where('owner_id', $owner->id);
+//        $query->where('owner_type', 'customer');
+//        $owner = bagisto_graphql()->guard($this->guard)->user();
+//        if(!empty($owner))
+//            $query->where('owner_id', $owner->id);
 
         $query->orderBy('id', 'desc');
 
