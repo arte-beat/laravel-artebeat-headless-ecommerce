@@ -1111,10 +1111,19 @@ class ProductMutation extends Controller
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
         $id = $args['input']['id'];
-      if(!empty($args['input']['is_hero_event'])) {
+
+      if(isset($args['input']['is_hero_event'])) {
           if (count($args['input']['id']) <= 5) {
               try {
-                  $data['is_hero_event'] = $args['input']['is_hero_event'];
+                  if(isset($args['input']['id']) && $args['input']['is_hero_event'] == 1)
+                  {
+                      $data['is_hero_event'] = $args['input']['is_hero_event'];
+                  }
+
+                  if(isset($args['input']['removeId'])) {
+                      $removeid = $args['input']['removeId'];
+                      $removedata['is_hero_event'] = 0;
+                  }
               } catch (Exception $e) {
                   throw new Exception($e->getMessage());
               }
@@ -1122,10 +1131,18 @@ class ProductMutation extends Controller
               throw new Exception('Maximum 5 events are allowed at a time for hero event.');
           }
 
-      } if(!empty($args['input']['is_feature_event'])) {
+      } if(isset($args['input']['is_feature_event'])) {
 
               try {
-                  $data['is_feature_event'] = $args['input']['is_feature_event'];
+
+                  if(isset($args['input']['id']) && $args['input']['is_feature_event'] == 1)
+                  {
+                      $data['is_feature_event'] = $args['input']['is_feature_event'];
+                  }
+                  if(isset($args['input']['removeId'])) {
+                      $removeid = $args['input']['removeId'];
+                      $removedata['is_feature_event'] = 0;
+                  }
               } catch (Exception $e) {
                   throw new Exception($e->getMessage());
               }
@@ -1135,6 +1152,9 @@ class ProductMutation extends Controller
             // Only in case of booking product type
             try {
                 $updateProduct = $this->productRepository->whereIn('id',$id)->update($data);
+                if(isset($args['input']['removeId'])) {
+                    $removeupdateProduct = $this->productRepository->whereIn('id',$removeid)->update($removedata);
+                }
                 return ['success' => trans('admin::app.response.update-success', ['name' => 'Event'])];
             } catch (Exception $e) {
                 throw new Exception(trans('admin::app.response.update-failed', ['name' => 'Event']));

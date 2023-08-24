@@ -96,6 +96,7 @@ input EventBookingInput {
 input BulkEventsInput
 {
     id: [ID]!
+    removeId: [ID]!
     is_feature_event: Int
     is_hero_event: Int
 }
