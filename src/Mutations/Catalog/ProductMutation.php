@@ -1099,4 +1099,48 @@ class ProductMutation extends Controller
             throw new Exception($e->getMessage());
         }
     }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function updateBulkEventType($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        $id = $args['input']['id'];
+      if(!empty($args['input']['is_hero_event'])) {
+          if (count($args['input']['id']) <= 5) {
+              try {
+                  $data['is_hero_event'] = $args['input']['is_hero_event'];
+              } catch (Exception $e) {
+                  throw new Exception($e->getMessage());
+              }
+          } else {
+              throw new Exception('Maximum 5 events are allowed at a time for hero event.');
+          }
+
+      } if(!empty($args['input']['is_feature_event'])) {
+
+              try {
+                  $data['is_feature_event'] = $args['input']['is_feature_event'];
+              } catch (Exception $e) {
+                  throw new Exception($e->getMessage());
+              }
+
+      }
+        if(!empty($args['input']['is_hero_event']) || !empty($args['input']['is_feature_event'])) {
+            // Only in case of booking product type
+            try {
+                $updateProduct = $this->productRepository->whereIn('id',$id)->update($data);
+                return ['success' => trans('admin::app.response.update-success', ['name' => 'Event'])];
+            } catch (Exception $e) {
+                throw new Exception(trans('admin::app.response.update-failed', ['name' => 'Event']));
+            }
+        }else{
+            throw new Exception("Please select an event to update.");
+        }
+    }
 }
