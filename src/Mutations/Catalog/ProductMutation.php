@@ -408,45 +408,55 @@ class ProductMutation extends Controller
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
+        $showcase = $this->showcaseRepository->get();
 
-        $data = $args['input'];
-        $file = isset($args['image']) ? $args['image']  : null;
-        $header_image = isset($args['header_image']) ? $args['header_image']  : null;
-        $section_file = isset($args['section_file']) ? $args['section_file']  : null;
+        if (count($showcase) === 0) {
+            try{
+                $data = $args['input'];
+                $file = isset($args['image']) ? $args['image']  : null;
+                $header_image = isset($args['header_image']) ? $args['header_image']  : null;
+                $section_file = isset($args['section_file']) ? $args['section_file']  : null;
 
-        $validator = Validator::make($data, [
-            'title'         => 'string|required',
-            'introduction'  => 'string|required',
-            'description'   => 'string|required',
-        ]);
+                $validator = Validator::make($data, [
+                    'title'         => 'string|required',
+                    'introduction'  => 'string|required',
+                    'description'   => 'string|required',
+                ]);
 
-        if ($validator->fails()) {
-            throw new Exception($validator->messages());
+                if ($validator->fails()) {
+                    throw new Exception($validator->messages());
+                }
+
+                try {
+                    if ($file != null) {
+                        $showcaseImgNameForDB = basename($file). '.' . $file->getClientOriginalExtension();
+                        Storage::disk('showcase')->put($showcaseImgNameForDB, $file->getContent());
+                        $data['image'] = $showcaseImgNameForDB;
+                    }
+                    if ($header_image != null) {
+                        $showcaseHeaderImgNameForDB = basename($header_image). '.' . $header_image->getClientOriginalExtension();
+                        Storage::disk('showcase')->put($showcaseHeaderImgNameForDB, $header_image->getContent());
+                        $data['header_image'] = $showcaseHeaderImgNameForDB;
+                    }
+                    if ($section_file != null) {
+                        $showcaseSectionFileNameForDB = basename($section_file). '.' . $section_file->getClientOriginalExtension();
+                        Storage::disk('showcase')->put($showcaseSectionFileNameForDB, $section_file->getContent());
+                        $data['section_file'] = $showcaseSectionFileNameForDB;
+                    }
+                    $showcase = $this->showcaseRepository->create($data);
+                    return $showcase;
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            }
+            catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+        }else {
+            throw new Exception("Showcase is  already available can't create another !!!");
         }
 
-        try {
-            if ($file != null) {
-                $showcaseImgNameForDB = basename($file). '.' . $file->getClientOriginalExtension();
-                Storage::disk('showcase')->put($showcaseImgNameForDB, $file->getContent());
-                $data['image'] = $showcaseImgNameForDB;
-            }
-            if ($header_image != null) {
-                $showcaseHeaderImgNameForDB = basename($header_image). '.' . $header_image->getClientOriginalExtension();
-                Storage::disk('showcase')->put($showcaseHeaderImgNameForDB, $header_image->getContent());
-                $data['header_image'] = $showcaseHeaderImgNameForDB;
-            }
-            if ($section_file != null) {
-                $showcaseSectionFileNameForDB = basename($section_file). '.' . $section_file->getClientOriginalExtension();
-                Storage::disk('showcase')->put($showcaseSectionFileNameForDB, $section_file->getContent());
-                $data['section_file'] = $showcaseSectionFileNameForDB;
-            }
-            $showcase = $this->showcaseRepository->create($data);
-            return $showcase;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
-        }
     }
-
     public function updateShowCase($rootValue, array $args, GraphQLContext $context){
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
