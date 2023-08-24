@@ -11,9 +11,7 @@ extend type Query @guard{
 
     relatedProducts(productId: Int!): [Product] @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Catalog\\ProductContent@getRelatedProducts")
 
-    getEvents(input: FilterEventsInput ): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
 
-    getallMerchants(input: FilterEventsInput ): [MerchantResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@merchFilter")
 
     getEvent(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
@@ -28,6 +26,14 @@ extend type Query @guard{
     getMerchant(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     getCollections(input: FilterCollectionsInput ): [ShowCaseCollectionResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@collectionFilter")
+}
+
+
+extend type Query @guard(with: ["api", "admin-api"]) {
+    getEvents(input: FilterEventsInput ): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
+
+    getallMerchants(input: FilterEventsInput ): [MerchantResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@merchFilter")
+
 }
 
 extend type Mutation @guard {
