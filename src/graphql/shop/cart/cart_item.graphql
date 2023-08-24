@@ -34,7 +34,8 @@ type CartItem {
     appliedCartRuleIds: String @rename(attribute: "applied_cart_rule_ids")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
-    eventTicket: TicketBookingProductSlots! @hasOne(relation: "event_ticket")
+    eventTicket: TicketBookingProductSlots @hasOne(relation: "event_ticket")
+    merchQuantityDetails: Quantity @hasOne(relation: "merch_quantity_details")
     formattedPrice: FormattedCartItemPriceData @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Shop\\Common\\FormattedPrice@getCartItemPriceData")
     product: EventBookingResponse! @hasOne
     productFlat: ProductFlat @rename(attribute: "product_flat")

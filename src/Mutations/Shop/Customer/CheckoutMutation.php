@@ -172,7 +172,7 @@ class CheckoutMutation extends Controller
         }
 
         $cart = Cart::getCart();
-        
+
         if ( ! $cart ) {
             throw new CustomException(
                 trans('bagisto_graphql::app.shop.response.warning-empty-cart'),
@@ -305,7 +305,7 @@ class CheckoutMutation extends Controller
                 } else {
                     $address_flag = true; 
                 }
-            
+
                 if ( $address_flag == true ) {
                     if (! $billingAddressId && isset($params['billing']['address1'])) {
                         $data['billing'] = $params['billing'];
@@ -326,8 +326,9 @@ class CheckoutMutation extends Controller
                         $data['billing']['customer_id'] = $data['shipping']['customer_id'] = null;
                     }
                 }
-                
-                if (Cart::hasError() || ! Cart::saveCustomerAddress($data)) {
+
+//                if (Cart::hasError() || ! Cart::saveCustomerAddress($data)) {
+                if (! Cart::saveCustomerAddress($data)) {
                     throw new CustomException(
                         trans('bagisto_graphql::app.shop.response.wrong-error'),
                         'Cart have some item(s), which are not allowed for guest checkout.'
@@ -524,7 +525,8 @@ class CheckoutMutation extends Controller
         }
         
         try {
-            if (Cart::hasError() || !Cart::saveShippingMethod($data['shipping_method'])) {
+//            if (Cart::hasError() || !Cart::saveShippingMethod($data['shipping_method'])) {
+            if (!Cart::saveShippingMethod($data['shipping_method'])) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.error-payment-selection'),
                     'Error in saving shipping method.'
@@ -581,7 +583,8 @@ class CheckoutMutation extends Controller
         }
         
         try {
-            if (Cart::hasError() || ! Cart::savePaymentMethod($data['payment'])) {
+//            if (Cart::hasError() || ! Cart::savePaymentMethod($data['payment'])) {
+            if (! Cart::savePaymentMethod($data['payment'])) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.error-payment-save'),
                     'Error in saving payment method.'
