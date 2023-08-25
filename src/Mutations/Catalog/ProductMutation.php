@@ -311,6 +311,7 @@ class ProductMutation extends Controller
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
+
         $multipleData = $args['input'];
         $multipleDeleteData = $args['deleteInput'];
         $multipleFiles = $args['files'];
@@ -387,6 +388,7 @@ class ProductMutation extends Controller
                                 ProductImage::where("id", "=", $removeImage['id'])->delete();
                             }
                         }
+
                         if ($multipleFiles != null) {
                             if (isset($multipleFiles[$index])) {
                                 $files = $multipleFiles[$index];
@@ -1128,7 +1130,7 @@ class ProductMutation extends Controller
         if (isset($args['input']['is_hero_event'])) {
 
             if (!empty($args['input']['id'])) {
-                $herobanner = $this->productRepository->where('is_hero_event', 1)->get();
+                $herobanner = $this->productRepository->where('is_hero_event', 1)->where('type', 'booking')->get();
                 $total = count($herobanner) + count($args['input']['id']) - count($args['input']['removeId']);
 
                 if ($total <= 5) {
@@ -1177,7 +1179,9 @@ class ProductMutation extends Controller
                 if (!empty($removeid)) {
                     $removeupdateProduct = $this->productRepository->whereIn('id', $removeid)->update($removedata);
                 }
+
                 return ['success' => trans('admin::app.response.update-success', ['name' => 'Event'])];
+
             } catch (Exception $e) {
                 throw new Exception(trans('admin::app.response.update-failed', ['name' => 'Event']));
             }
