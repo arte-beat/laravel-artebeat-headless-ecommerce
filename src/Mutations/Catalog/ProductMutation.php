@@ -1127,7 +1127,7 @@ class ProductMutation extends Controller
 
         if (isset($args['input']['is_hero_event'])) {
 
-            if (isset($args['input']['id'])) {
+            if (!empty($args['input']['id'])) {
                 $herobanner = $this->productRepository->where('is_hero_event', 1)->get();
                 $total = count($herobanner) + count($args['input']['id']) - count($args['input']['removeId']);
 
@@ -1171,8 +1171,10 @@ class ProductMutation extends Controller
         if (!empty($args['input']['is_hero_event']) || !empty($args['input']['is_feature_event'])) {
             // Only in case of booking product type
             try {
-                $updateProduct = $this->productRepository->whereIn('id', $id)->update($data);
-                if (isset($args['input']['removeId'])) {
+                if (!empty($id)) {
+                    $updateProduct = $this->productRepository->whereIn('id', $id)->update($data);
+                }
+                if (!empty($removeid)) {
                     $removeupdateProduct = $this->productRepository->whereIn('id', $removeid)->update($removedata);
                 }
                 return ['success' => trans('admin::app.response.update-success', ['name' => 'Event'])];
