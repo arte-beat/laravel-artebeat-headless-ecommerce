@@ -1120,14 +1120,20 @@ class ProductMutation extends Controller
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
-        $id = $args['input']['id'];
+      //
 
       if(isset($args['input']['is_hero_event'])) {
-          if (count($args['input']['id']) <= 5) {
+          $herobanner = $this->productRepository->where('is_hero_event',1)->get();
+          $total = count($herobanner)+count($args['input']['id'])-count($args['input']['removeId']);
+          //dd($total);
+         // dd(count($args['input']['id']));
+
+          if ($total <= 5) {
               try {
                   if(isset($args['input']['id']) && $args['input']['is_hero_event'] == 1)
                   {
                       $data['is_hero_event'] = $args['input']['is_hero_event'];
+                      $id = $args['input']['id'];
                   }
 
                   if(isset($args['input']['removeId'])) {
@@ -1148,6 +1154,7 @@ class ProductMutation extends Controller
                   if(isset($args['input']['id']) && $args['input']['is_feature_event'] == 1)
                   {
                       $data['is_feature_event'] = $args['input']['is_feature_event'];
+                      $id = $args['input']['id'];
                   }
                   if(isset($args['input']['removeId'])) {
                       $removeid = $args['input']['removeId'];
