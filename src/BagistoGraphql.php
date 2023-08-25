@@ -419,18 +419,22 @@ class BagistoGraphql
 //
 //            Storage::disk('product')->deleteDirectory($product->id);
             foreach ($files as $imageId => $file) {
-                $imgNameForDB = basename($file) . '.' . $file->getClientOriginalExtension();
-                if (! $this->getImageMIMEType($imgNameForDB, $type)) {
-                    continue;
+                if($file->getClientOriginalName() != 'merch_image_dnu_bWVyY2hfaW1hZ2VfZG51.jpeg')
+                {
+                    $imgNameForDB = basename($file) . '.' . $file->getClientOriginalExtension();
+                    if (! $this->getImageMIMEType($imgNameForDB, $type)) {
+                        continue;
+                    }
+
+                    Storage::disk('product')->put($product->id.'/'.$imgNameForDB, $file->getContent());
+                    $params = [
+                        'type'       => $type,
+                        'path'       => $imgNameForDB,
+                        'product_id' => $product->id,
+                    ];
+                    $this->productImageRepository->create($params);
                 }
 
-                Storage::disk('product')->put($product->id.'/'.$imgNameForDB, $file->getContent());
-                $params = [
-                    'type'       => $type,
-                    'path'       => $imgNameForDB,
-                    'product_id' => $product->id,
-                ];
-                $this->productImageRepository->create($params);
             }
         }
 //        else {
