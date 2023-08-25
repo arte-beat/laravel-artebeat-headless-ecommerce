@@ -33,22 +33,23 @@ class ProductMutation extends Controller
     /**
      * Create a new controller instance.
      *
-     * @param  \Webkul\Product\Repositories\ProductRepository  $productRepository
-     * @param  \Webkul\Product\Repositories\ArtistRepository  $artistRepository
-     * @param  \Webkul\Product\Repositories\ShowcaseRepository  $showcaseRepository
-     * @param  \Webkul\Product\Repositories\PromoterRepository  $promoterRepository
-     * @param  \Webkul\Product\Repositories\ProductFlatRepository  $productFlatRepository
-     * @param  \Webkul\Product\Repositories\ProductAttributeValueRepository $productAttributeValueRepository
+     * @param \Webkul\Product\Repositories\ProductRepository $productRepository
+     * @param \Webkul\Product\Repositories\ArtistRepository $artistRepository
+     * @param \Webkul\Product\Repositories\ShowcaseRepository $showcaseRepository
+     * @param \Webkul\Product\Repositories\PromoterRepository $promoterRepository
+     * @param \Webkul\Product\Repositories\ProductFlatRepository $productFlatRepository
+     * @param \Webkul\Product\Repositories\ProductAttributeValueRepository $productAttributeValueRepository
      * @return void
      */
     public function __construct(
-        protected ProductRepository $productRepository,
-        protected ArtistRepository $artistRepository,
-        protected ShowcaseRepository $showcaseRepository,
-        protected PromoterRepository $promoterRepository,
-        protected ProductFlatRepository $productFlatRepository,
+        protected ProductRepository               $productRepository,
+        protected ArtistRepository                $artistRepository,
+        protected ShowcaseRepository              $showcaseRepository,
+        protected PromoterRepository              $promoterRepository,
+        protected ProductFlatRepository           $productFlatRepository,
         protected ProductAttributeValueRepository $productAttributeValueRepository
-    ) {
+    )
+    {
         $this->guard = 'admin-api';
         auth()->setDefaultDriver($this->guard);
         $this->_config = request('_config');
@@ -64,27 +65,27 @@ class ProductMutation extends Controller
     {
         $query = \Webkul\Product\Models\Product::query();
         $query->where('type', 'booking');
-        if(isset($args['input']['name'])) {
+        if (isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
             $query->where('sku', 'like', '%' . urldecode($name) . '%');
         }
-        if(!empty($args['input']['owner_type'])) {
+        if (!empty($args['input']['owner_type'])) {
             $query->where('owner_type', 'like', '%' . urldecode($args['input']['owner_type']) . '%');
         }
-        if(!empty($args['input']['owner_id'])) {
+        if (!empty($args['input']['owner_id'])) {
             $query->where('owner_id', '=', $args['input']['owner_id']);
         }
-        if(!empty($args['input']['is_feature_event'])) {
+        if (!empty($args['input']['is_feature_event'])) {
             $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
         }
-        if(!empty($args['input']['is_hero_event'])) {
+        if (!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
         }
         $query->orderBy('id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count,['*'],'page',$page);
+        return $query->paginate($count, ['*'], 'page', $page);
     }
 
 
@@ -92,14 +93,14 @@ class ProductMutation extends Controller
     {
         $query = \Webkul\Product\Models\Product::query();
         $query->where('type', 'simple');
-        if(isset($args['input']['name'])) {
+        if (isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
             $query->where('sku', 'like', '%' . urldecode($name) . '%');
         }
         $query->orderBy('id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count,['*'],'page',$page);
+        return $query->paginate($count, ['*'], 'page', $page);
     }
 
     /**
@@ -113,7 +114,7 @@ class ProductMutation extends Controller
         $query->where('type', 'simple');
         $query->where('product_type', 'showcase');
         $query->where('parent_id', NULL);
-        if(isset($args['input']['name'])) {
+        if (isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
             $query->where('sku', 'like', '%' . urldecode($name) . '%');
         }
@@ -121,7 +122,7 @@ class ProductMutation extends Controller
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count,['*'],'page',$page);
+        return $query->paginate($count, ['*'], 'page', $page);
     }
 
     /**
@@ -145,7 +146,7 @@ class ProductMutation extends Controller
             throw new Exception(trans('admin::app.catalog.products.configurable-error'));
         }
 
-        if ( isset($data['super_attributes']) && $data['super_attributes']) {
+        if (isset($data['super_attributes']) && $data['super_attributes']) {
             $super_attributes = [];
             foreach ($data['super_attributes'] as $key => $super_attribute) {
                 if (isset($super_attribute['attribute_code']) && isset($super_attribute['values']) && is_array($super_attribute['values'])) {
@@ -156,9 +157,9 @@ class ProductMutation extends Controller
         }
 
         $validator = Validator::make($data, [
-            'type'                => 'required',
+            'type' => 'required',
             'attribute_family_id' => 'required',
-            'sku'                 => ['required', 'unique:products,sku', new Slug],
+            'sku' => ['required', 'unique:products,sku', new Slug],
         ]);
 
         if ($validator->fails()) {
@@ -178,7 +179,7 @@ class ProductMutation extends Controller
     /**
      * Store the specified resource in storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function storeEventBooking($rootValue, array $args, GraphQLContext $context)
@@ -195,7 +196,7 @@ class ProductMutation extends Controller
 //        ]);
 
         $validator = Validator::make($data, [
-            'sku'   => ['required', 'unique:products,sku', new Slug],
+            'sku' => ['required', 'unique:products,sku', new Slug],
         ]);
 
         if ($validator->fails()) {
@@ -223,7 +224,7 @@ class ProductMutation extends Controller
             throw new Exception($e->getMessage());
         }
 
-        if(!empty($product)) {
+        if (!empty($product)) {
             $id = $product->id;
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
@@ -238,7 +239,7 @@ class ProductMutation extends Controller
             } catch (Exception $e) {
                 throw new Exception($e->getMessage());
             }
-        }else{
+        } else {
             throw new Exception("Unable to process at the moment. Please try again after sometime.");
         }
     }
@@ -253,7 +254,7 @@ class ProductMutation extends Controller
         foreach ($multipleData as $index => $data) {
             $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
             $validator = Validator::make($data, [
-                'sku'    => ['required', 'unique:products,sku', new Slug],
+                'sku' => ['required', 'unique:products,sku', new Slug],
             ]);
 
             if ($validator->fails()) {
@@ -282,7 +283,7 @@ class ProductMutation extends Controller
                     Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                     if ($multipleFiles != null) {
-                        if(isset($multipleFiles[$index])) {
+                        if (isset($multipleFiles[$index])) {
                             $files = $multipleFiles[$index];
                             bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
                         }
@@ -302,7 +303,7 @@ class ProductMutation extends Controller
     /**
      * Store the specified resource in storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function updateMerchantEventBooking($rootValue, array $args, GraphQLContext $context)
@@ -318,10 +319,10 @@ class ProductMutation extends Controller
             ProductImage::where("product_id", "=", $deleteData['id'])->delete();
         }
         foreach ($multipleData as $index => $data) {
-            if(isset($data['product_id']) && empty($data['id'])) {
+            if (isset($data['product_id']) && empty($data['id'])) {
                 $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
                 $validator = Validator::make($data, [
-                    'sku'    => ['required', 'unique:products,sku', new Slug],
+                    'sku' => ['required', 'unique:products,sku', new Slug],
                 ]);
 
                 if ($validator->fails()) {
@@ -350,7 +351,7 @@ class ProductMutation extends Controller
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                         if ($multipleFiles != null) {
-                            if(isset($multipleFiles[$index])) {
+                            if (isset($multipleFiles[$index])) {
                                 $files = $multipleFiles[$index];
                                 bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
                             }
@@ -363,7 +364,7 @@ class ProductMutation extends Controller
                 } else {
                     throw new Exception("Unable to process at the moment. Please try again after sometime.");
                 }
-            }else {
+            } else {
                 $id = $data['id'];
                 $product = $this->productRepository->findOrFail($id);
                 if (!empty($product)) {
@@ -380,14 +381,14 @@ class ProductMutation extends Controller
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
-                        if(!empty($data['removeImages'])) {
+                        if (!empty($data['removeImages'])) {
                             $removeImagesArr = $data['removeImages'];
                             foreach ($removeImagesArr as $removeImage) {
                                 ProductImage::where("id", "=", $removeImage['id'])->delete();
                             }
                         }
                         if ($multipleFiles != null) {
-                            if(isset($multipleFiles[$index])) {
+                            if (isset($multipleFiles[$index])) {
                                 $files = $multipleFiles[$index];
                                 bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
                             }
@@ -404,23 +405,24 @@ class ProductMutation extends Controller
         return $updateProduct;
     }
 
-    public function storeShowCase($rootValue, array $args, GraphQLContext $context){
+    public function storeShowCase($rootValue, array $args, GraphQLContext $context)
+    {
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
         $showcase = $this->showcaseRepository->get();
 
         if (count($showcase) === 0) {
-            try{
+            try {
                 $data = $args['input'];
-                $file = isset($args['image']) ? $args['image']  : null;
-                $header_image = isset($args['header_image']) ? $args['header_image']  : null;
-                $section_file = isset($args['section_file']) ? $args['section_file']  : null;
+                $file = isset($args['image']) ? $args['image'] : null;
+                $header_image = isset($args['header_image']) ? $args['header_image'] : null;
+                $section_file = isset($args['section_file']) ? $args['section_file'] : null;
 
                 $validator = Validator::make($data, [
-                    'title'         => 'string|required',
-                    'introduction'  => 'string|required',
-                    'description'   => 'string|required',
+                    'title' => 'string|required',
+                    'introduction' => 'string|required',
+                    'description' => 'string|required',
                 ]);
 
                 if ($validator->fails()) {
@@ -429,17 +431,17 @@ class ProductMutation extends Controller
 
                 try {
                     if ($file != null) {
-                        $showcaseImgNameForDB = basename($file). '.' . $file->getClientOriginalExtension();
+                        $showcaseImgNameForDB = basename($file) . '.' . $file->getClientOriginalExtension();
                         Storage::disk('showcase')->put($showcaseImgNameForDB, $file->getContent());
                         $data['image'] = $showcaseImgNameForDB;
                     }
                     if ($header_image != null) {
-                        $showcaseHeaderImgNameForDB = basename($header_image). '.' . $header_image->getClientOriginalExtension();
+                        $showcaseHeaderImgNameForDB = basename($header_image) . '.' . $header_image->getClientOriginalExtension();
                         Storage::disk('showcase')->put($showcaseHeaderImgNameForDB, $header_image->getContent());
                         $data['header_image'] = $showcaseHeaderImgNameForDB;
                     }
                     if ($section_file != null) {
-                        $showcaseSectionFileNameForDB = basename($section_file). '.' . $section_file->getClientOriginalExtension();
+                        $showcaseSectionFileNameForDB = basename($section_file) . '.' . $section_file->getClientOriginalExtension();
                         Storage::disk('showcase')->put($showcaseSectionFileNameForDB, $section_file->getContent());
                         $data['section_file'] = $showcaseSectionFileNameForDB;
                     }
@@ -448,16 +450,17 @@ class ProductMutation extends Controller
                 } catch (Exception $e) {
                     throw new Exception($e->getMessage());
                 }
-            }
-            catch (Exception $e) {
+            } catch (Exception $e) {
                 throw new Exception($e->getMessage());
             }
-        }else {
+        } else {
             throw new Exception("Showcase is  already available can't create another !!!");
         }
 
     }
-    public function updateShowCase($rootValue, array $args, GraphQLContext $context){
+
+    public function updateShowCase($rootValue, array $args, GraphQLContext $context)
+    {
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
@@ -467,21 +470,21 @@ class ProductMutation extends Controller
 
         $showcase = $this->showcaseRepository->findOrFail($id);
 
-        $file = isset($args['image']) ? $args['image']  : null;
-        $header_image = isset($args['header_image']) ? $args['header_image']  : null;
-        $section_file = isset($args['section_file']) ? $args['section_file']  : null;
+        $file = isset($args['image']) ? $args['image'] : null;
+        $header_image = isset($args['header_image']) ? $args['header_image'] : null;
+        $section_file = isset($args['section_file']) ? $args['section_file'] : null;
 
         $validator = Validator::make($data, [
-            'title'         => 'string|required',
-            'introduction'  => 'string|required',
-            'description'   => 'string|required',
+            'title' => 'string|required',
+            'introduction' => 'string|required',
+            'description' => 'string|required',
         ]);
 
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
 
-        if(!empty($showcase)) {
+        if (!empty($showcase)) {
             try {
                 if ($file != null) {
                     $showcaseImgNameForDB = basename($file) . '.' . $file->getClientOriginalExtension();
@@ -503,7 +506,7 @@ class ProductMutation extends Controller
             } catch (Exception $e) {
                 throw new Exception($e->getMessage());
             }
-        }else{
+        } else {
             throw new Exception("Unable to process at the moment. Please try again after sometime.");
         }
     }
@@ -511,12 +514,12 @@ class ProductMutation extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function deleteShowcase($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+        if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
@@ -526,7 +529,7 @@ class ProductMutation extends Controller
         try {
             $this->showcaseRepository->delete($id);
             return ['success' => trans('admin::app.response.delete-success', ['name' => 'Showcase'])];
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Showcase']));
         }
     }
@@ -571,7 +574,7 @@ class ProductMutation extends Controller
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                         if ($multipleFiles != null) {
-                            if(isset($multipleFiles[$index])) {
+                            if (isset($multipleFiles[$index])) {
                                 $files = $multipleFiles[$index];
                                 bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
                             }
@@ -603,7 +606,7 @@ class ProductMutation extends Controller
             ProductImage::where("product_id", "=", $deleteData['id'])->delete();
         }
         foreach ($multipleData as $index => $data) {
-            if(isset($data['showcase_id']) && empty($data['product_id'])) {
+            if (isset($data['showcase_id']) && empty($data['product_id'])) {
                 $showcase = $this->showcaseRepository->findOrFail($data['showcase_id']);
                 if (!empty($showcase)) {
                     $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
@@ -634,14 +637,14 @@ class ProductMutation extends Controller
                             $updateProduct[$index] = $this->productRepository->update($data, $id);
                             Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
-                            if(!empty($data['removeImages'])) {
+                            if (!empty($data['removeImages'])) {
                                 $removeImagesArr = $data['removeImages'];
                                 foreach ($removeImagesArr as $removeImage) {
                                     ProductImage::where("id", "=", $removeImage['id'])->delete();
                                 }
                             }
                             if ($multipleFiles != null) {
-                                if(isset($multipleFiles[$index])) {
+                                if (isset($multipleFiles[$index])) {
                                     $files = $multipleFiles[$index];
                                     bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
                                 }
@@ -656,7 +659,7 @@ class ProductMutation extends Controller
                         throw new Exception("Unable to process at the moment. Please try again after sometime.");
                     }
                 }
-            }else {
+            } else {
                 $product = $this->productRepository->findOrFail($data['product_id']);
                 $showcase = $this->showcaseRepository->findOrFail($data['showcase_id']);
                 if (!empty($product) && !empty($showcase)) {
@@ -674,7 +677,7 @@ class ProductMutation extends Controller
                         $updateProduct[$index] = $this->productRepository->update($data, $productId);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
                         if ($multipleFiles != null) {
-                            if(isset($multipleFiles[$index])) {
+                            if (isset($multipleFiles[$index])) {
                                 $files = $multipleFiles[$index];
                                 bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
                             }
@@ -697,7 +700,7 @@ class ProductMutation extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function updateEventBooking($rootValue, array $args, GraphQLContext $context)
@@ -718,7 +721,7 @@ class ProductMutation extends Controller
 //        ]);
 
         $validator = Validator::make($data, [
-            'sku'   => ['required', 'unique:products,sku,'.$id, new Slug],
+            'sku' => ['required', 'unique:products,sku,' . $id, new Slug],
         ]);
 
         if ($validator->fails()) {
@@ -732,7 +735,7 @@ class ProductMutation extends Controller
 //            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
 //        }
 
-        if(!empty($product)) {
+        if (!empty($product)) {
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
                 $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
@@ -746,7 +749,7 @@ class ProductMutation extends Controller
             } catch (Exception $e) {
                 throw new Exception($e->getMessage());
             }
-        }else{
+        } else {
             throw new Exception("Unable to process at the moment. Please try again after sometime.");
         }
     }
@@ -759,7 +762,7 @@ class ProductMutation extends Controller
 
         $id = $args['product_id'];
         $product = $this->productRepository->findOrFail($id);
-        if(!empty($product)) {
+        if (!empty($product)) {
             if (isset($product->id)) {
                 $files = $args['files'];
                 if ($files != null) {
@@ -767,7 +770,7 @@ class ProductMutation extends Controller
                 }
                 return $product;
             }
-        }else{
+        } else {
             throw new Exception("Unable to process at the moment. Please try again after sometime.");
         }
     }
@@ -775,7 +778,7 @@ class ProductMutation extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function update($rootValue, array $args, GraphQLContext $context)
@@ -790,12 +793,12 @@ class ProductMutation extends Controller
         $product = $this->productRepository->findOrFail($id);
 
         // Only in case of configurable product type
-        if ( isset($product->type) && $product->type == 'configurable' && isset($data['variants']) && $data['variants']) {
+        if (isset($product->type) && $product->type == 'configurable' && isset($data['variants']) && $data['variants']) {
             $data['variants'] = bagisto_graphql()->manageConfigurableRequest($data);
         }
 
         // Only in case of grouped product type
-        if ( isset($product->type) && $product->type == 'grouped' && isset($data['links']) && $data['links']) {
+        if (isset($product->type) && $product->type == 'grouped' && isset($data['links']) && $data['links']) {
 
             if (isset($data['links'])) {
                 foreach ($data['links'] as $linkProduct) {
@@ -810,7 +813,7 @@ class ProductMutation extends Controller
         }
 
         // Only in case of downloadable product type
-        if ( isset($product->type) && $product->type == 'downloadable') {
+        if (isset($product->type) && $product->type == 'downloadable') {
             if (isset($data['downloadable_links']) && $data['downloadable_links']) {
                 $data['downloadable_links'] = bagisto_graphql()->manageDownloadableLinksRequest($product, $data);
             }
@@ -821,7 +824,7 @@ class ProductMutation extends Controller
         }
 
         // Only in case of bundle product type
-        if ( isset($product->type) && $product->type == 'bundle' && isset($data['bundle_options']) && $data['bundle_options']) {
+        if (isset($product->type) && $product->type == 'bundle' && isset($data['bundle_options']) && $data['bundle_options']) {
 
             if (isset($data['bundle_options'])) {
                 foreach ($data['bundle_options'] as $bundleProduct) {
@@ -838,12 +841,12 @@ class ProductMutation extends Controller
         }
 
         // Only in case of booking product type
-        if ( isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
+        if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
             $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
         }
 
         // Only in case of customer group price
-        if ( isset($data['customer_group_prices']) && $data['customer_group_prices']) {
+        if (isset($data['customer_group_prices']) && $data['customer_group_prices']) {
             $data['customer_group_prices'] = bagisto_graphql()->manageCustomerGroupPrices($product, $data);
         }
 
@@ -934,7 +937,7 @@ class ProductMutation extends Controller
                         foreach ($booking_slots->slots as $day => $slot) {
                             if ($booking_slots->same_slot_all_days == 0) {
                                 foreach ($slot as $timing) {
-                                    $timing['day']  = $day;
+                                    $timing['day'] = $day;
                                     $different_slots[] = $timing;
                                 }
                             } else {
@@ -942,7 +945,7 @@ class ProductMutation extends Controller
                             }
                         }
 
-                        $product->same_day_slots  = $same_slots;
+                        $product->same_day_slots = $same_slots;
                         $product->different_day_slots = $different_slots;
                     }
                 }
@@ -961,11 +964,11 @@ class ProductMutation extends Controller
 
         $validateRules =
             array_merge($product->getTypeInstance()->getTypeValidationRules(), [
-                'sku'                => ['required', 'unique:products,sku,' . $this->id, new \Webkul\Core\Contracts\Validations\Slug],
+                'sku' => ['required', 'unique:products,sku,' . $this->id, new \Webkul\Core\Contracts\Validations\Slug],
                 // 'images.*'           => 'nullable|mimes:jpeg,jpg,bmp,png',
                 'special_price_from' => 'nullable|date',
-                'special_price_to'   => 'nullable|date|after_or_equal:special_price_from',
-                'special_price'      => ['nullable', new \Webkul\Core\Contracts\Validations\Decimal, 'lt:price'],
+                'special_price_to' => 'nullable|date|after_or_equal:special_price_from',
+                'special_price' => ['nullable', new \Webkul\Core\Contracts\Validations\Decimal, 'lt:price'],
             ]);
 
         foreach ($product->getEditableAttributes() as $attribute) {
@@ -1013,12 +1016,12 @@ class ProductMutation extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function deleteEventBooking($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['id']) || ( isset($args['id']) && !$args['id'])) {
+        if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
@@ -1035,12 +1038,12 @@ class ProductMutation extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function delete($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['id']) || ( isset($args['id']) && !$args['id'])) {
+        if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
@@ -1057,14 +1060,14 @@ class ProductMutation extends Controller
         }
     }
 
-        /**
+    /**
      * Store a newly created resource in storage.
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function syncEventPerformer($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
@@ -1082,24 +1085,24 @@ class ProductMutation extends Controller
         // $artistIds = isset($data['artists']) ? $data['artists'] :  [];
         // $promoterIds = isset($data['promoters']) ? $data['promoters'] :  [];
 
-        if (count($artistIds) + count($artistNames) != count($artistTypes)){
+        if (count($artistIds) + count($artistNames) != count($artistTypes)) {
             throw new Exception('Number of Artist types do not much number of Artists provided');
         }
-        if (count($promoterIds) + count($promoterNames) != count($promoterTypes)){
+        if (count($promoterIds) + count($promoterNames) != count($promoterTypes)) {
             throw new Exception('Number of Promoter types do not much number of Promoters provided');
         }
 
         try {
             // Register Artists and promoters
-            if(count($artistNames) != 0){
+            if (count($artistNames) != 0) {
                 $newArtists = $this->artistRepository->createArtistsByName($artistNames);
                 foreach ($newArtists as $artist) {
                     array_push($artistIds, $artist->id);
                 }
             }
-            if(count($promoterNames) != 0){
+            if (count($promoterNames) != 0) {
                 $newPromoters = $this->promoterRepository->createPromotersByName($promoterNames);
-                forEach ($newPromoters as $promoter) {
+                foreach ($newPromoters as $promoter) {
                     array_push($promoterIds, $promoter->id);
                 }
             }
@@ -1120,63 +1123,63 @@ class ProductMutation extends Controller
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
-      //
+        //
 
-      if(isset($args['input']['is_hero_event'])) {
-          $herobanner = $this->productRepository->where('is_hero_event',1)->get();
-          $total = count($herobanner)+count($args['input']['id'])-count($args['input']['removeId']);
-          //dd($total);
-         // dd(count($args['input']['id']));
+        if (isset($args['input']['is_hero_event'])) {
 
-          if ($total <= 5) {
-              try {
-                  if(isset($args['input']['id']) && $args['input']['is_hero_event'] == 1)
-                  {
-                      $data['is_hero_event'] = $args['input']['is_hero_event'];
-                      $id = $args['input']['id'];
-                  }
+            if (isset($args['input']['id'])) {
+                $herobanner = $this->productRepository->where('is_hero_event', 1)->get();
+                $total = count($herobanner) + count($args['input']['id']) - count($args['input']['removeId']);
 
-                  if(isset($args['input']['removeId'])) {
-                      $removeid = $args['input']['removeId'];
-                      $removedata['is_hero_event'] = 0;
-                  }
-              } catch (Exception $e) {
-                  throw new Exception($e->getMessage());
-              }
-          } else {
-              throw new Exception('Maximum 5 events are allowed at a time for hero event.');
-          }
+                if ($total <= 5) {
+                    try {
+                        if ($args['input']['is_hero_event'] == 1) {
+                            $data['is_hero_event'] = $args['input']['is_hero_event'];
+                            $id = $args['input']['id'];
+                        }
+                    } catch (Exception $e) {
+                        throw new Exception($e->getMessage());
+                    }
+                } else {
+                    throw new Exception('Maximum 5 events are allowed at a time for hero event.');
+                }
 
-      } if(isset($args['input']['is_feature_event'])) {
+            }
+            if (isset($args['input']['removeId'])) {
+                $removeid = $args['input']['removeId'];
+                $removedata['is_hero_event'] = 0;
+            }
 
-              try {
+        }
+        if (isset($args['input']['is_feature_event'])) {
 
-                  if(isset($args['input']['id']) && $args['input']['is_feature_event'] == 1)
-                  {
-                      $data['is_feature_event'] = $args['input']['is_feature_event'];
-                      $id = $args['input']['id'];
-                  }
-                  if(isset($args['input']['removeId'])) {
-                      $removeid = $args['input']['removeId'];
-                      $removedata['is_feature_event'] = 0;
-                  }
-              } catch (Exception $e) {
-                  throw new Exception($e->getMessage());
-              }
+            try {
 
-      }
-        if(!empty($args['input']['is_hero_event']) || !empty($args['input']['is_feature_event'])) {
+                if (isset($args['input']['id']) && $args['input']['is_feature_event'] == 1) {
+                    $data['is_feature_event'] = $args['input']['is_feature_event'];
+                    $id = $args['input']['id'];
+                }
+                if (isset($args['input']['removeId'])) {
+                    $removeid = $args['input']['removeId'];
+                    $removedata['is_feature_event'] = 0;
+                }
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+
+        }
+        if (!empty($args['input']['is_hero_event']) || !empty($args['input']['is_feature_event'])) {
             // Only in case of booking product type
             try {
-                $updateProduct = $this->productRepository->whereIn('id',$id)->update($data);
-                if(isset($args['input']['removeId'])) {
-                    $removeupdateProduct = $this->productRepository->whereIn('id',$removeid)->update($removedata);
+                $updateProduct = $this->productRepository->whereIn('id', $id)->update($data);
+                if (isset($args['input']['removeId'])) {
+                    $removeupdateProduct = $this->productRepository->whereIn('id', $removeid)->update($removedata);
                 }
                 return ['success' => trans('admin::app.response.update-success', ['name' => 'Event'])];
             } catch (Exception $e) {
                 throw new Exception(trans('admin::app.response.update-failed', ['name' => 'Event']));
             }
-        }else{
+        } else {
             throw new Exception("Please select an event to update.");
         }
     }
