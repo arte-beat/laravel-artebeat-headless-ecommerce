@@ -1,0 +1,41 @@
+# Setting\CompanyDetails Related APIs
+extend type Query {
+    companyDetails(id: ID @eq): CompanyDetails @find(model: "Webkul\\Admin\\Models\\CompanyDetails")
+}
+
+extend type Mutation @guard {
+    editCompanyDetails(
+        id: ID!,
+        input: companyDetailsInput!
+    ): CompanyDetails  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\CompanyDetailsMutation@update")
+}
+
+input companyDetailsInput {
+    email: String
+    phone: String
+    country: String
+    state: String
+    zipCode: String
+    address: String
+    instagram: String
+    twitter: String
+    tiktok: String
+    website: String
+}
+
+type CompanyDetails {
+    id: ID!
+    email: String
+    phone: String
+    country: String
+    state: String
+    zipCode: String
+    address: String
+    instagram: String
+    twitter: String
+    tiktok: String
+    website: String
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}

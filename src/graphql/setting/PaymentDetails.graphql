@@ -1,0 +1,25 @@
+# Setting\PaymentDetails Related APIs
+extend type Query @guard(with: ["api", "admin-api"]) {
+    paymentDetails(id: ID @eq): PaymentDetails @find(model: "Webkul\\Admin\\Models\\PaymentDetails")
+}
+
+extend type Mutation @guard {
+    editPaymentDetails(
+        id: ID!,
+        input: paymentDetailsInput!
+    ): PaymentDetails  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\PaymentDetailsMutation@update")
+}
+
+input paymentDetailsInput {
+    stripeKey: String @rename(attribute: "stripe_key")
+    stripeSecret: String @rename(attribute: "stripe_secret")
+}
+
+type PaymentDetails {
+    id: ID!
+    stripeKey: String @rename(attribute: "stripe_key")
+    stripeSecret: String @rename(attribute: "stripe_secret")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}
