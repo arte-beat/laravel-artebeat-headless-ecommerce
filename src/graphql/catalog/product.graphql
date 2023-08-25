@@ -32,7 +32,7 @@ extend type Query @guard{
 
 
 extend type Query @guard(with: ["api", "admin-api"]) {
-    getEvents(input: FilterEventsInput ): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
+    getEvents(input: FilterEventsInput ): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@eventFilter")
 
     getallMerchants(input: FilterEventsInput ): [MerchantResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@merchFilter")
 
@@ -241,7 +241,18 @@ input FilterEventsInput {
     owner_id: Int
     is_feature_event: Int
     is_hero_event: Int
-    weekly_events : Int
+
+    ticket_price_min: Int
+    ticket_price_max: Int
+
+    distance_min:Int
+    distance_max:Int
+
+    clinet_location_longitude:Float
+    clinet_location_latitude:Float
+
+    event_category: String  # Exhibitions, Art Gallery, Immersive experience, Fashion Show
+    search_text:String #search for event name, artist and promoter
 }
 
 
