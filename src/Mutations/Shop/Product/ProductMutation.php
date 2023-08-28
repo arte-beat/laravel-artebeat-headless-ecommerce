@@ -147,15 +147,15 @@ class ProductMutation extends Controller
                 });
         }
 
-//        // owner_type: String --- customer, admin
-//        $query->where('owner_type', 'customer');
-//
-//        // owner_id: Int
-//        $owner = bagisto_graphql()->guard($this->guard)->user();
-//
-//        // owner_id: Int
-//        if(!empty($owner))
-//            $query->where('owner_id', $owner->id);
+        // owner_type: String --- customer, admin
+        $query->where('owner_type', 'customer');
+
+        // owner_id: Int
+        $owner = bagisto_graphql()->guard($this->guard)->user();
+
+        // owner_id: Int
+        if(!empty($owner))
+            $query->where('owner_id', $owner->id);
 
         $query->orderBy('id', 'desc');
 
