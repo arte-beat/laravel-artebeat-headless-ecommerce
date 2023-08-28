@@ -5,6 +5,7 @@ extend type Mutation {
 
 input PlaceOrderInput {
     token: String!
+    name: String!
     shippingId: ID
 }
 
