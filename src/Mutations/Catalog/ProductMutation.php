@@ -639,12 +639,6 @@ class ProductMutation extends Controller
                             $updateProduct[$index] = $this->productRepository->update($data, $id);
                             Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
-                            if (!empty($data['removeImages'])) {
-                                $removeImagesArr = $data['removeImages'];
-                                foreach ($removeImagesArr as $removeImage) {
-                                    ProductImage::where("id", "=", $removeImage['id'])->delete();
-                                }
-                            }
                             if ($multipleFiles != null) {
                                 if (isset($multipleFiles[$index])) {
                                     $files = $multipleFiles[$index];
@@ -678,6 +672,14 @@ class ProductMutation extends Controller
                         Event::dispatch('catalog.product.update.before', $productId);
                         $updateProduct[$index] = $this->productRepository->update($data, $productId);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                        if (!empty($data['removeImages'])) {
+                            $removeImagesArr = $data['removeImages'];
+                            foreach ($removeImagesArr as $removeImage) {
+                                ProductImage::where("id", "=", $removeImage['id'])->delete();
+                            }
+                        }
+
                         if ($multipleFiles != null) {
                             if (isset($multipleFiles[$index])) {
                                 $files = $multipleFiles[$index];
