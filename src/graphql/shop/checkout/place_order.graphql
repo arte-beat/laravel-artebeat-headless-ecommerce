@@ -1,6 +1,11 @@
 # Shop\Checkout\PlaceOrder Related API
 extend type Mutation {
-    placeOrder: PlacedOrderResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\CheckoutMutation@saveOrder")
+    placeOrder(input: PlaceOrderInput!): PlacedOrderResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\CheckoutMutation@saveOrder")
+}
+
+input PlaceOrderInput {
+    token: String!
+    shippingId: ID
 }
 
 type PlacedOrderResponse {

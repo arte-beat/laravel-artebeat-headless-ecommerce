@@ -16,6 +16,7 @@ use Webkul\Sales\Repositories\OrderRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\GraphQLAPI\Repositories\NotificationRepository;
+use Stripe;
 
 class CheckoutMutation extends Controller
 {
@@ -690,38 +691,94 @@ class CheckoutMutation extends Controller
     public function saveOrder($rootValue, array $args, GraphQLContext $context)
     {
         try {
-            if (Cart::hasError()) {
-                throw new CustomException(
-                    trans('bagisto_graphql::app.shop.response.error-placing-order'),
-                    'Some error found in cart.'
-                );
-            }
-    
-            Cart::collectTotals();
+//            if (Cart::hasError()) {
+//                throw new CustomException(
+//                    trans('bagisto_graphql::app.shop.response.error-placing-order'),
+//                    'Some error found in cart.'
+//                );
+//            }
 
+            Cart::collectTotals();
             $this->validateOrder();
-    
             $cart = Cart::getCart();
-    
-            if ($redirectUrl = Payment::getRedirectUrl($cart)) {
+
+            // Taking payment through stripe
+            Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+            $paymentSuccess = false;
+            $customerDetails = bagisto_graphql()->guard($this->guard)->user();
+            if(!empty($customerDetails) && !empty($customerDetails->email) && !empty($customerDetails->name)) {
+                $stripe_cust_id = $customerDetails->stripe_customer_id;
+                if(empty($customerDetails->stripe_customer_id)) {
+                    $stripeCustomer = Stripe\Customer::create(array(
+                        "email" => $customerDetails->email,
+                        "name" => $customerDetails->name,
+                        "source" => $args['input']['token']
+                    ));
+                    $stripe_cust_id = $stripeCustomer->id;
+                    $this->customerRepository->where('id', $customerDetails->id)->update(['stripe_customer_id' => $stripe_cust_id]);
+                }
+
+                if(isset($args['input']['shippingId'])){
+                    $shippingId = $args['input']['shippingId'];
+                    $shippingAddress = $this->customerAddressRepository->where('id', $shippingId)->first();
+
+                    $stripeCharge = Stripe\Charge::create([
+                        "amount" => 100 * $cart->grand_total,
+                        "currency" => $cart->base_currency_code,
+                        "customer" => $stripe_cust_id,
+                        //"description" => "Test payment from itsolutionstuff.com.",
+                        "shipping" => [
+                            "name" => $customerDetails->name,
+                            "address" => [
+                                "line1" => $shippingAddress->address1,
+                                "line2" => $shippingAddress->address2,
+                                "postal_code" => $shippingAddress->postcode,
+                                "city" => $shippingAddress->city,
+                                "state" => $shippingAddress->state,
+                                "country" => $shippingAddress->country,
+                            ],
+                        ]
+                    ]);
+                }else {
+                    $stripeCharge = Stripe\Charge::create([
+                        "amount" => 100 * $cart->grand_total,
+                        "currency" => $cart->base_currency_code,
+                        "customer" => $stripe_cust_id,
+                        //"description" => "Test payment from itsolutionstuff.com.",
+                    ]);
+                }
+
+                if($stripeCharge){
+                    $paymentSuccess = true;
+                }
+            }
+
+            // Old bagisto functionality
+            /*if ($redirectUrl = Payment::getRedirectUrl($cart)) {
                 return [
                     'success'           => true,
                     'redirect_url'      => $redirectUrl,
                     'selected_method'   => $cart->payment->method,
                 ];
+            }*/
+
+            if($paymentSuccess === true) {
+                $order = $this->orderRepository->create(Cart::prepareDataForOrder());
+                $this->prepareNotificationContent($order);
+                Cart::deActivateCart();
+
+                return [
+                    'success' => true,
+                    'redirect_url' => null,
+                    'order' => $order
+                ];
+            }else{
+                throw new CustomException(
+                    $e->getMessage(),
+                    'Error found in payment processing.'
+                );
             }
-    
-            $order = $this->orderRepository->create(Cart::prepareDataForOrder());
-            
-            $this->prepareNotificationContent($order);
-    
-            Cart::deActivateCart();
-    
-            return [
-                'success'       => true,
-                'redirect_url'  => null,
-                'order'         => $order
-            ];
         } catch (Exception $e) {
             throw new CustomException(
                 $e->getMessage(),
