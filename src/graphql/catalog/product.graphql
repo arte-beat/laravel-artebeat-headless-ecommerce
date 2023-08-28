@@ -90,6 +90,7 @@ input EventBookingInput {
     is_hero_event: Int
     commission: Float
     booking: CreateBookingInput
+
 }
 
 input BulkEventsInput
