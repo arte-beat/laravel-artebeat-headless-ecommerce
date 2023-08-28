@@ -1,0 +1,39 @@
+# Setting\CompanyDetails Related APIs
+extend type Query {
+    shippingFee: ShippingFee  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\FeesMutation@getShippingFee")
+    taxPercentage: TaxPercentage  @field(resolver:"Webkul\\GraphQLAPI\\Mutations\\Setting\\FeesMutation@getTaxPercentage")
+
+}
+
+extend type Mutation @guard {
+    editShippingFee(
+        input: shippingFeeInput!
+    ): ShippingFee  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\FeesMutation@updateShippingFee")
+
+    editTaxPercentage(
+        input: taxPercentageInput!
+    ): TaxPercentage  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\FeesMutation@updateTaxPercentage")
+}
+
+input shippingFeeInput {
+    fee: Float @rules(apply: ["required", "numeric"]) @rename(attribute: "shipping_fee")
+}
+input taxPercentageInput {
+    percentage : Float @rules(apply: ["required", "numeric"]) @rename(attribute: "tax_percentage")
+}
+
+type ShippingFee {
+    id: ID!
+    fee: Float! @rename(attribute: "shipping_fee")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}
+
+type TaxPercentage {
+    id: ID!
+    percentage: Float! @rename(attribute: "tax_percentage")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+}

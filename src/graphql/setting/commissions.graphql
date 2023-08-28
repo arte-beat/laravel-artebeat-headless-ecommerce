@@ -1,0 +1,55 @@
+# Setting\CommissionRate Related APIs
+extend type Query @guard(with: ["api", "admin-api"]) {
+    commissionRates(input: CommissionRateFilterInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Setting\\FilterCommissionRates")): [CommissionRate!] @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\Admin\\Models\\CommissionRate")
+
+  commissionRate(id: ID @eq): CommissionRate
+    @find(model: "Webkul\\Admin\\Models\\CommissionRate")
+}
+
+extend type Mutation @guard(with: ["api", "admin-api"]) {
+  createCommissionRate(input: commissionRateInput!): CommissionRate
+    @field(
+      resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\CommissionRateMutation@store"
+    )
+
+  editCommissionRate(id: ID!, input: commissionRateInput!): CommissionRate
+    @field(
+      resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\CommissionRateMutation@update"
+    )
+
+  deleteCommissionRate(id: ID!): CommissionRate
+    @field(
+      resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\CommissionRateMutation@delete"
+    )
+}
+
+input CommissionRateFilterInput {
+  id: [ID]
+  type: String
+  rate: Float
+  status: Int
+  event_id: ID
+  description: String
+  created_at: [DateTime]
+  updated_at: [DateTime]
+}
+
+input commissionRateInput {
+  type: String @rules(apply: ["required"])
+  rate: Float @rules(apply: ["required"])
+  event_id: ID
+  description: String
+  status: Int
+}
+
+type CommissionRate {
+  id: ID @rules(apply: ["required"])
+  type: String @rules(apply: ["required"])
+  rate: Float @rules(apply: ["required"])
+  status: Int @rules(apply: ["required"])
+  event_id: ID
+  description: String
+  createdAt: DateTime @rename(attribute: "created_at")
+  updatedAt: DateTime @rename(attribute: "updated_at")
+  success: String
+}
