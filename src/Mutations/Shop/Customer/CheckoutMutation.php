@@ -701,18 +701,17 @@ class CheckoutMutation extends Controller
             Cart::collectTotals();
             $this->validateOrder();
             $cart = Cart::getCart();
-
             // Taking payment through stripe
             Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
             $paymentSuccess = false;
             $customerDetails = bagisto_graphql()->guard($this->guard)->user();
-            if(!empty($customerDetails) && !empty($customerDetails->email) && !empty($customerDetails->name)) {
+            if(!empty($customerDetails) && !empty($customerDetails->email)) {
                 $stripe_cust_id = $customerDetails->stripe_customer_id;
                 if(empty($customerDetails->stripe_customer_id)) {
                     $stripeCustomer = Stripe\Customer::create(array(
                         "email" => $customerDetails->email,
-                        "name" => $customerDetails->name,
+                        "name" => $args['input']['name'],
                         "source" => $args['input']['token']
                     ));
                     $stripe_cust_id = $stripeCustomer->id;
@@ -729,14 +728,14 @@ class CheckoutMutation extends Controller
                         "customer" => $stripe_cust_id,
                         //"description" => "Test payment from itsolutionstuff.com.",
                         "shipping" => [
-                            "name" => $customerDetails->name,
+                            "name" => $customerDetails->name ?? 'NA',
                             "address" => [
-                                "line1" => $shippingAddress->address1,
-                                "line2" => $shippingAddress->address2,
-                                "postal_code" => $shippingAddress->postcode,
-                                "city" => $shippingAddress->city,
-                                "state" => $shippingAddress->state,
-                                "country" => $shippingAddress->country,
+                                "line1" => $shippingAddress->address1 ?? 'NA',
+                                "line2" => $shippingAddress->address2 ?? 'NA',
+                                "postal_code" => $shippingAddress->postcode ?? 'NA',
+                                "city" => $shippingAddress->city ?? 'NA',
+                                "state" => $shippingAddress->state ?? 'NA',
+                                "country" => $shippingAddress->country ?? 'NA',
                             ],
                         ]
                     ]);
