@@ -88,6 +88,7 @@ input EventBookingInput {
     description: String!
     is_feature_event: Int
     is_hero_event: Int
+    commission: Float
     booking: CreateBookingInput
 }
 
@@ -294,6 +295,7 @@ type EventBookingResponse {
     merchants: [MerchantEventBookingResponse!] @hasMany
     success: String
     owner: Owner! @hasOne
+    commission : Float
 }
 
 type MerchantResponse {
