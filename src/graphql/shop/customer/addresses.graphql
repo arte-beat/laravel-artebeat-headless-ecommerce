@@ -1,6 +1,8 @@
 #Shop\Customer\Address Related APIs
 extend type Query @guard(with: ["api"]){
-    addresses: AddressListResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AddressesMutation@addresses")
+    addresses(
+        input: FilterAddressInput!
+    ): AddressListResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AddressesMutation@addresses")
 
     address(id: ID @eq): CustomerAddress @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AddressesMutation@address")
 }
@@ -18,6 +20,9 @@ extend type Mutation @guard(with: ["api"]) {
     deleteAddress(id: ID!): AddressListResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\AddressesMutation@delete")
 }
 
+input FilterAddressInput {
+    defaultAddress: Boolean @rename(attribute: "default_address")
+}
 input CreateAddressInput {
     companyName: String @rename(attribute: "company_name")
     firstName: String! @rename(attribute: "first_name")
