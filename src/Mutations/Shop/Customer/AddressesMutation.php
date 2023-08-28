@@ -91,7 +91,16 @@ class AddressesMutation extends Controller
                 'Customer Not Login.'
             );
         }
-        
+
+        if(!isset($args['input']['default_address'])){
+            $default_address = [0, 1];
+        }
+        if(isset($args['input']['default_address']) && $args['input']['default_address'] === false){
+            $default_address = [0];
+        }
+        if(isset($args['input']['default_address']) && $args['input']['default_address'] === true){
+            $default_address = [1];
+        }
         $addresses = DB::table('addresses')
             ->distinct()
             ->select('addresses.*')
@@ -100,6 +109,7 @@ class AddressesMutation extends Controller
             ->leftJoin('country_states', 'addresses.state', '=', 'country_states.code')
             ->leftJoin('customers', 'addresses.customer_id', '=', 'customers.id')
             ->where('addresses.address_type', 'customer')
+            ->whereIn('addresses.default_address', $default_address)
             ->where('customers.id', bagisto_graphql()->guard($this->guard)->user()->id)
             ->groupBy('addresses.id')
             ->get();
