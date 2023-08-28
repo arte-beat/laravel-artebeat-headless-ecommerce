@@ -251,6 +251,7 @@ input FilterEventsInput {
 
     event_category: String  # Exhibitions, Art Gallery, Immersive experience, Fashion Show
     search_text:String #search for event name, artist and promoter
+    weekly_events : Int
 }
 
 
