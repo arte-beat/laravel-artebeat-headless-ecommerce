@@ -698,6 +698,14 @@ class CheckoutMutation extends Controller
 //                );
 //            }
 
+            $data['payment']['method'] = 'cashondelivery';
+            if (! Cart::savePaymentMethod($data['payment'])) {
+                throw new CustomException(
+                    trans('bagisto_graphql::app.shop.response.error-payment-save'),
+                    'Error in saving payment method.'
+                );
+            }
+
             Cart::collectTotals();
             $this->validateOrder();
             $cart = Cart::getCart();
