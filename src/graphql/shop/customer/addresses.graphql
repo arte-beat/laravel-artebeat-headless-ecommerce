@@ -34,6 +34,7 @@ input CreateAddressInput {
     city: String!
     postcode: String!
     phone: String!
+    email: String
     vatId: String @rename(attribute: "vat_id")
     defaultAddress: Boolean @rename(attribute: "default_address")
 }
@@ -49,6 +50,7 @@ input UpdateAddressInput {
     city: String!
     postcode: String!
     phone: String!
+    email: String
     vatId: String @rename(attribute: "vat_id")
     defaultAddress: Boolean @rename(attribute: "default_address")
 }

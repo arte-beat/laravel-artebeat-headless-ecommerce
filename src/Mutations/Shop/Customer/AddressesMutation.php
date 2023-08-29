@@ -156,7 +156,8 @@ class AddressesMutation extends Controller
             'city'          => 'string|required',
             'postcode'      => 'required',
             'phone'         => 'required',
-            'vat_id'        => new VatIdRule(),
+            'email'         => 'email',
+//            'vat_id'        => new VatIdRule(),
         ]);
         
         if ($validator->fails()) {
@@ -233,7 +234,8 @@ class AddressesMutation extends Controller
             'city'         => 'string|required',
             'postcode'     => 'required',
             'phone'        => 'required',
-            'vat_id'       => new VatIdRule(),
+            'email'         => 'email',
+//            'vat_id'       => new VatIdRule(),
         ]);
         
         if ($validator->fails()) {
