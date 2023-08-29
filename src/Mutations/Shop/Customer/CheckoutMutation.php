@@ -691,12 +691,20 @@ class CheckoutMutation extends Controller
     public function saveOrder($rootValue, array $args, GraphQLContext $context)
     {
         try {
-//            if (Cart::hasError()) {
-//                throw new CustomException(
-//                    trans('bagisto_graphql::app.shop.response.error-placing-order'),
-//                    'Some error found in cart.'
-//                );
-//            }
+            if (Cart::hasError()) {
+                throw new CustomException(
+                    trans('bagisto_graphql::app.shop.response.error-placing-order'),
+                    'Some error found in cart.'
+                );
+            }
+
+            $data['shipping_method'] = 'free_free';
+            if (!Cart::saveShippingMethod($data['shipping_method'])) {
+                throw new CustomException(
+                    trans('bagisto_graphql::app.shop.response.error-payment-selection'),
+                    'Error in saving shipping method.'
+                );
+            }
 
             $data['payment']['method'] = 'cashondelivery';
             if (! Cart::savePaymentMethod($data['payment'])) {
@@ -773,6 +781,7 @@ class CheckoutMutation extends Controller
             if($paymentSuccess === true) {
                 $order = $this->orderRepository->create(Cart::prepareDataForOrder());
                 $this->prepareNotificationContent($order);
+                Cart::updateQuantity();
                 Cart::deActivateCart();
 
                 return [
