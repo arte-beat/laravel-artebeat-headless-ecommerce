@@ -15,8 +15,13 @@ class FilterCommissionRates extends BaseFilter
      */
     public function __invoke($query, $input)
     {
+        $query = $query->with('event');
+        if(isset($input['all']) && $input['all']) {
+            return $query;
+        } else {
+            unset($input['all']);
+        }
         $arguments = $this->getFilterParams($input);
-
         return $query->where($arguments);
     }
 }

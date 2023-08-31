@@ -24,6 +24,7 @@ extend type Mutation @guard(with: ["api", "admin-api"]) {
 }
 
 input CommissionRateFilterInput {
+  all: Boolean
   id: [ID]
   type: String
   rate: Float
@@ -47,8 +48,9 @@ type CommissionRate {
   type: String @rules(apply: ["required"])
   rate: Float @rules(apply: ["required"])
   status: Int @rules(apply: ["required"])
-  event_id: ID
   description: String
+  # find one eventBooking and return Product by event_id
+  event : EventBookingResponse @rename(attribute: "event")
   createdAt: DateTime @rename(attribute: "created_at")
   updatedAt: DateTime @rename(attribute: "updated_at")
   success: String
