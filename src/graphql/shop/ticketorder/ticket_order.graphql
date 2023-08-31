@@ -1,0 +1,22 @@
+# Shop\Checkout\Addresses Related API
+extend type Mutation {
+    createTicketOrder(
+        product_id: ID!
+        input: [TicketOrderInput]!
+    ): [TicketOrderResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\TicketOrder\\TicketOrderMutation@store")
+}
+input TicketOrderInput{
+    first_name: String!
+    last_name: String!
+    email: String
+}
+type TicketOrderResponse {
+    id: ID!
+    productId: ID! @rename(attribute: "product_id")
+    firstName: String @rename(attribute: "first_name")
+    lastName: String @rename(attribute: "last_name")
+    email: String
+    createdAt: String @rename(attribute: "created_at")
+    updatedAt: String @rename(attribute: "updated_at")
+    success: String
+}
