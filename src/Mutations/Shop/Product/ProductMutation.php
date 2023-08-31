@@ -961,4 +961,27 @@ class ProductMutation extends Controller
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
     }
+
+    public function getAttemptEventsMerchant($rootValue, array $args, GraphQLContext $context)
+    {
+        $responseData = [] ;
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $owner = bagisto_graphql()->guard($this->guard)->user();
+        $args['input']['email']=$owner->email;
+        $query->whereHas('bookedProduct', function ($getAttemptedProducts) use ($args) {
+            if(!empty($args['input']['email']))
+                $getAttemptedProducts->where('orders.customer_email', '=', $args['input']['email']);
+        });
+        $query->where('type','booking');
+        $result = $query->get();
+        if(count($result) > 0){
+            foreach ($result as $index => $product) {
+                $merchants = $product->listOfBookedProductsmerchants($args['input']['limit']);
+                foreach ($merchants as $merchantindex => $merchant) {
+                    $responseData[$index][$merchantindex] = $merchant;
+                }
+            }
+        }
+         return $responseData;
+    }
 }

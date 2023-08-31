@@ -21,6 +21,10 @@ extend type Query @guard(with: ["api"]){
     getMerchantByEventOrganizer(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     eventCategoriesByEventOrganizer(input: FilterEventCategoryInput ): [EventCategory!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterEventCategory")
+
+#    getAttemptEventsMerchant(input: AttemptEventInput ): [BookedEventResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getAttemptEventsMerchant")
+
+    getAttemptEventsMerchant(input: AttemptEventInput ): [[BookedEventResponse]]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getAttemptEventsMerchant")
 }
 extend type Query @guard(with: ["api", "admin-api"]){
     getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
@@ -69,4 +73,20 @@ input FilterEventsInputByEventOrganizer {
 input SimilarFilterEventsInput {
     event_id : Int
     event_type : Int
+}
+
+input AttemptEventInput {
+    limit : Int
+}
+
+type BookedEventResponse
+{
+    id: Int
+    parentId: ID @rename(attribute: "parent_id")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    images: [Image!] @hasMany
+    quantities: [Quantity!] @hasMany
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
 }
