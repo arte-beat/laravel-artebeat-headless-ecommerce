@@ -1000,8 +1000,8 @@ class ProductMutation extends Controller
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
             ->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
             ->addSelect('products.*','booking_products.latitude', 'booking_products.longitude')
-            ->selectRaw('COUNT(addweb_cart_items.id) AS total_sold')
-            ->selectRaw(  'SQRT( POW(69.1 * (addweb_booking_products.latitude - '. $args["input"]["latitude"].'), 2) + POW(69.1 * ('.$args["input"]["longitude"].' - addweb_booking_products.longitude) * COS(addweb_booking_products.latitude / 57.3), 2)) as distance')
+            ->selectRaw('COUNT(cart_items.id) AS total_sold')
+            ->selectRaw(  'SQRT( POW(69.1 * (booking_products.latitude - '. $args["input"]["latitude"].'), 2) + POW(69.1 * ('.$args["input"]["longitude"].' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance')
             ->where('products.type', 'simple')
             ->where('orders.status', 'completed')
             ->whereNULL('products.product_type')
@@ -1018,4 +1018,38 @@ class ProductMutation extends Controller
         }
          return $responseData;
     }
+
+    public function getRandomMerchant($rootValue, array $args, GraphQLContext $context)
+    {
+        $responseData = [] ;
+        DB::enableQueryLog();
+        if(!empty($args["input"]["distance"]))
+        {
+            $distance= $args["input"]["distance"];
+        }
+        else{
+            $distance = 800;
+        }
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $result = $query->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
+            ->leftJoin('product_qty_size', 'product_qty_size.product_id', '=', 'products.id')
+            ->addSelect('products.*')
+            ->SelectRaw('COUNT(product_qty_size.qty) as total_sold')
+            ->selectRaw(  'SQRT( POW(69.1 * (booking_products.latitude - '. $args["input"]["latitude"].'), 2) + POW(69.1 * ('.$args["input"]["longitude"].' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance')
+            ->where('products.type', 'simple')
+            ->whereNULL('products.product_type')
+            ->groupBy('products.id')
+            ->havingRaw(' total_sold > 0 and distance <= '.$distance)
+            ->inRandomOrder()->get();
+        if(count($result) > 0){
+            foreach ($result as $index => $product)
+            {
+                $responseData[$index] = $product;
+
+            }
+        }
+         return $responseData;
+    }
+
+
 }
