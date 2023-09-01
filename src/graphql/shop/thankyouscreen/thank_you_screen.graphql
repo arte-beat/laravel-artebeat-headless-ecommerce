@@ -1,0 +1,34 @@
+# Shop\Checkout\Addresses Related API
+extend type Query @guard(with: ["api"]){
+    thankYouScreen(product_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
+}
+type ThankYouScreenResponse {
+    id: ID!
+    customerFirstName: String
+    customerLastName: String
+    customerEmail: String
+    customerPhone: String
+    customerAddressFirstName: String
+    customerAddressLastName: String
+    customerAddressEmail: String
+    customerAddress1: String
+    customerAddress2: String
+    customerAddressCity: String
+    customerAddressState: String
+    customerAddressCountry: String
+    customerAddressPostCode: String
+    noOfTickets: Int
+    orderId: String
+    orderPlacedOn: String
+    paymentMethod: String
+    artists: [Artist] @hasMany
+    promoters: [Promoter] @hasMany
+    booking: BookingProduct @hasOne(relation: "booking_product")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    ticketOrders: [TicketOrderResponse!] @hasMany(relation: "ticket_orders")
+    merchants: [MerchantEventBookingResponse!] @hasMany
+    images: [Image!] @hasMany
+    createdAt: String @rename(attribute: "created_at")
+    updatedAt: String @rename(attribute: "updated_at")
+    success: String
+}

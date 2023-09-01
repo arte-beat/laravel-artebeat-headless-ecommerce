@@ -1,5 +1,5 @@
 # Shop\Checkout\Addresses Related API
-extend type Mutation {
+extend type Mutation @guard(with: ["api"]){
     createTicketOrder(
         product_id: ID!
         input: [TicketOrderInput]!
