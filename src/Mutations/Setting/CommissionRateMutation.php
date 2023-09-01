@@ -42,8 +42,8 @@ class CommissionRateMutation extends Controller
         $data = $args['input'];
         
         $validator = \Validator::make($data, [
-            'type' => 'required|in:event_commission',
-            'event_id' => 'required|exists:products,id',
+            'event_id' => 'required_without:category_id|exists:products,id',
+            'category_id' => 'required_without:event_id|exists:event_category,id',
             'rate' => 'required|numeric|min:0|max:100',
             'status' => 'in:0,1',
         ]);
@@ -53,6 +53,14 @@ class CommissionRateMutation extends Controller
         }
 
         try {
+            if(isset($data['category_id']) && isset($data['event_id'])){
+                throw new Exception('Invalid Type. Please select either Category or Event'); 
+            }
+            if(isset($data['category_id'])){
+                $data['type'] = 'category_commission';
+            } else {
+                $data['type'] = 'event_commission';
+            }
             $commissionRate = $this->commissionRateRepository->store($data);
             if($commissionRate) {
                 $commissionRate->success = "Successfully Added New Commission Rate";
@@ -77,31 +85,40 @@ class CommissionRateMutation extends Controller
         $data = $args['input'];
         $data['id'] = $args['id'];
 
-        $commissionRate = $this->commissionRateRepository->find($data['id']);
+        if($data['id'] == 1 || $data['id'] == 2){
+            throw new Exception('Invalid Commission Rate. Please select a valid Commission Rate');
+        }
+        
+        if((isset($data['category_id']) && isset($data['event_id'])) || (!isset($data['category_id']) && !isset($data['event_id']) && $data['id'] != 3)){
+            throw new Exception('Invalid Type. Please select either Category or Event'); 
+        }
 
-        if($data['id'] == 1 || $data['id'] == 2 || $data['id'] == 3){
-            if($commissionRate) {
-                $data['event_id'] = null;
-                $data['description'] = $commissionRate->description;
-
-                if($commissionRate->type != $data['type']){
-                    throw new Exception('Invalid Type for this Commission Rate');
-                }
-                
-                $validator = Validator::make($data, [
-                    'rate' => 'required|numeric|min:0|max:100',
-                    'status' => 'in:0,1',
-                ]);
-            }
+        if(isset($data['category_id'])){
+            $data['type'] = 'category_commission';
+            $validator = Validator::make($data, [
+                'category_id' => 'required|exists:event_category,id',
+            ]);
+            $data['event_id'] = null;
         } else {
             $validator = Validator::make($data, [
-                'id' => 'required|not_in:1,2,3',
-                'type' => 'required|in:event_commission',
                 'event_id' => 'required|exists:products,id',
-                'rate' => 'required|numeric|min:0|max:100',
-                'status' => 'in:0,1',
             ]);
+            $data['type'] = 'event_commission';
+            $data['category_id'] = null;
         }
+
+        $commissionRate = $this->commissionRateRepository->find($data['id']);
+
+        if($data['id'] == 3 && $commissionRate){
+            $data['event_id'] = null;
+            $data['category_id'] = null;
+            $data['type'] = $commissionRate->type;
+        }
+
+        $validator = Validator::make($data, [
+            'rate' => 'required|numeric|min:0|max:100',
+            'status' => 'in:0,1',
+        ]);
 
         if ($validator->fails()) {
             throw new Exception($validator->messages());

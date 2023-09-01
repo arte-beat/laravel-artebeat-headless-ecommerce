@@ -30,15 +30,16 @@ input CommissionRateFilterInput {
   rate: Float
   status: Int
   event_id: ID
+  category_id: ID
   description: String
   created_at: [DateTime]
   updated_at: [DateTime]
 }
 
 input commissionRateInput {
-  type: String @rules(apply: ["required"])
   rate: Float @rules(apply: ["required"])
   event_id: ID
+  category_id: ID
   description: String
   status: Int
 }
@@ -51,6 +52,7 @@ type CommissionRate {
   description: String
   # find one eventBooking and return Product by event_id
   event : EventBookingResponse @rename(attribute: "event")
+  category : EventCategory @rename(attribute: "category")
   createdAt: DateTime @rename(attribute: "created_at")
   updatedAt: DateTime @rename(attribute: "updated_at")
   success: String
