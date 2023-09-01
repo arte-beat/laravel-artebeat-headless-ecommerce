@@ -1051,5 +1051,4 @@ class ProductMutation extends Controller
          return $responseData;
     }
 
-
 }
