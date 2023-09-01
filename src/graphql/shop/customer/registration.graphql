@@ -18,13 +18,8 @@ input CreateRegisterInput {
 }
 
 input CreateSocialSignUpInput {
-    firstName: String @rename(attribute: "first_name")
-    lastName: String @rename(attribute: "last_name")
-    email: String! @rules(apply: ["email"])
-    phone: String
-    signUpType: SocialSignUpType! @rename(attribute: "signup_type")
-    password: String
-    passwordConfirmation: String
+    accessToken: String! @rename(attribute: "access_token")
+    provider: SocialSignUpType! @rename(attribute: "signup_type")
     remember: Boolean
 }
 
