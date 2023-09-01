@@ -14,6 +14,7 @@ scalar Upload
 #import /shop/checkout/*.graphql
 #import /shop/product/*.graphql
 #import /shop/ticketorder/*.graphql
+#import /shop/thankyouscreen/*.graphql
 #import /catalog/*.graphql
 #import /customer/*.graphql
 #import /setting/*.graphql
