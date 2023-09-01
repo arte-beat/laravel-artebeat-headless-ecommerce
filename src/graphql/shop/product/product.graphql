@@ -25,6 +25,8 @@ extend type Query @guard(with: ["api"]){
     getAttemptEventsMerchant(input: AttemptEventInput ): [[BookedEventResponse]]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getAttemptEventsMerchant")
 
    topsellingMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@topsellingMerchant")
+
+    getRandomMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getRandomMerchant")
 }
 extend type Query @guard(with: ["api", "admin-api"]){
     getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
