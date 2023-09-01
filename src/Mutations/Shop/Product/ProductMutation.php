@@ -984,4 +984,38 @@ class ProductMutation extends Controller
         }
          return $responseData;
     }
+
+    public function topsellingMerchant($rootValue, array $args, GraphQLContext $context)
+    {
+        $responseData = [] ;
+        if(!empty($args["input"]["distance"]))
+        {
+            $distance= $args["input"]["distance"];
+        }
+        else{
+            $distance = 100;
+        }
+        $queryBuilder = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
+            ->addSelect('products.*','booking_products.latitude', 'booking_products.longitude')
+            ->selectRaw('COUNT(addweb_cart_items.id) AS total_sold')
+            ->selectRaw(  'SQRT( POW(69.1 * (addweb_booking_products.latitude - '. $args["input"]["latitude"].'), 2) + POW(69.1 * ('.$args["input"]["longitude"].' - addweb_booking_products.longitude) * COS(addweb_booking_products.latitude / 57.3), 2)) as distance')
+            ->where('products.type', 'simple')
+            ->where('orders.status', 'completed')
+            ->whereNULL('products.product_type')
+            ->groupBy('cart_items.product_id')
+            ->havingRaw(' distance <= '. $distance)
+            ->orderBy('total_sold', 'desc')->get();
+
+        if(count($queryBuilder) > 0){
+            foreach ($queryBuilder as $index => $product)
+            {
+                $responseData[$index] = $this->productRepository->findOrFail($product->id);
+
+            }
+        }
+         return $responseData;
+    }
 }

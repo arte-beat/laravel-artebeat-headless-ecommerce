@@ -22,9 +22,9 @@ extend type Query @guard(with: ["api"]){
 
     eventCategoriesByEventOrganizer(input: FilterEventCategoryInput ): [EventCategory!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterEventCategory")
 
-#    getAttemptEventsMerchant(input: AttemptEventInput ): [BookedEventResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getAttemptEventsMerchant")
-
     getAttemptEventsMerchant(input: AttemptEventInput ): [[BookedEventResponse]]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getAttemptEventsMerchant")
+
+   topsellingMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@topsellingMerchant")
 }
 extend type Query @guard(with: ["api", "admin-api"]){
     getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
@@ -77,6 +77,12 @@ input SimilarFilterEventsInput {
 
 input AttemptEventInput {
     limit : Int
+}
+
+input TopSellingProductInput {
+    distance : Int
+    latitude : Float!
+    longitude : Float!
 }
 
 type BookedEventResponse
