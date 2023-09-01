@@ -24,7 +24,7 @@ extend type Mutation @guard(with: ["api", "admin-api"]) {
 }
 
 input CommissionRateFilterInput {
-  all: Boolean
+  all: String
   id: [ID]
   type: String
   rate: Float

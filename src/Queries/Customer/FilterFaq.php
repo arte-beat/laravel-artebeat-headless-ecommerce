@@ -23,6 +23,8 @@ class FilterFaq extends BaseFilter
             $query->where('status', $input['status']);
         }
 
+        $query= $query->orderBy('created_at', 'desc');
+
         return $query;
     } 
 }  
