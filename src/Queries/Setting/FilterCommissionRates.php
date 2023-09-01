@@ -16,7 +16,7 @@ class FilterCommissionRates extends BaseFilter
     public function __invoke($query, $input)
     {
         $query = $query->with('event','category');
-        if(isset($input['all']) && $input['all']) {
+        if(isset($input['all']) && $input['all'] == "true") {
             return $query;
         } else {
             unset($input['all']);
