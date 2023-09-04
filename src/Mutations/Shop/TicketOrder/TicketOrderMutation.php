@@ -46,16 +46,15 @@ class TicketOrderMutation extends Controller
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
-        $product = $this->productRepository->findOrFail($args['product_id']);
         $multipleData = $args['input'];
         foreach ($multipleData as $index => $data) {
-            $data['product_id'] = $args['product_id'];
             $validator = Validator::make($data, [
+                'product_id'    => 'required',
                 'first_name'    => 'string|required',
                 'last_name'     => 'string|required',
                 'email'         => 'email',
             ]);
-
+            $product = $this->productRepository->findOrFail($data['product_id']);
             if ($validator->fails()) {
                 throw new Exception($validator->messages());
             }
