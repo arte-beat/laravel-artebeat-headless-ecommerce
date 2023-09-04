@@ -1,6 +1,18 @@
 # Shop\Checkout\Addresses Related API
 extend type Query @guard(with: ["api"]){
     thankYouScreen(product_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
+
+    downloadTicket(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
+
+    downloadInvoice(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadInvoice")
+
+    emailEventTicket(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailEventTicket")
+
+    emailInvoice(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailInvoice")
+}
+
+type DownloadTicketResponse{
+    url: String
 }
 type ThankYouScreenResponse {
     id: ID!
