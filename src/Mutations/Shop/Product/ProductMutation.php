@@ -1116,7 +1116,6 @@ class ProductMutation extends Controller
 
     public function getBookedMerchantListByEvent($rootValue, array $args, GraphQLContext $context)
     {
-//       DB::enableQueryLog();
         $query=  \Webkul\GraphQLAPI\Models\Catalog\Product::query()
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
@@ -1131,9 +1130,6 @@ class ProductMutation extends Controller
             ->orderBy('orders.id' ,'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-//        dd($query->paginate($count,['*'],'page',$page));
         return $query->paginate($count,['*'],'page',$page);
-
-        //return $query;
     }
 }
