@@ -156,6 +156,6 @@ type BookedMerchantResponse
     city: String
     state: String
     country: String
-    phone: Int
+    phone: String
 
 }
