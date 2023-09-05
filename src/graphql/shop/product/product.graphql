@@ -131,6 +131,7 @@ type BookedTicketResponse
     firstname: String
     lastname: String
     email: String
+    status: String
     price : Float
 }
 
@@ -158,5 +159,6 @@ type BookedMerchantResponse
     city: String
     state: String
     country: String
-    phone: Int
+    phone: String
+    status: String
 }
