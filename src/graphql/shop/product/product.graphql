@@ -31,6 +31,8 @@ extend type Query @guard(with: ["api"]){
     getMyeventsDataByEventOrganizer(product_id: ID!): MyEventsResponse!  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMyeventsDataByEventOrganizer")
 
     getBookedTicketsByEventOrganizer(product_id: ID!): BookedTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketsByEventOrganizer")
+
+    getBookedMerchantListByEvent(product_id: ID!): BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedMerchantListByEvent")
 }
 extend type Query @guard(with: ["api", "admin-api"]){
     getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
@@ -130,4 +132,30 @@ type BookedTicketResponse
     lastname: String
     email: String
     price : Float
+}
+
+type BookedMerchantResponse
+{
+    id: Int
+    quantity: Int
+    order_id: Int
+    ticket_id: Int
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+    firstname: String @rename(attribute: "first_name")
+    lastname: String @rename(attribute: "last_name")
+    email: String
+    price : Float
+    images: [Image!] @hasMany
+    quantities: [Quantity!] @hasMany
+    address_type: String
+    address1: String
+    address2: String
+    postcode: Int
+    city: String
+    state: String
+    country: String
+    phone: Int
+
 }
