@@ -87,7 +87,7 @@ class ThankYouScreenMutation extends Controller
                 ->where('products.type', 'booking')
                 ->where('cart_items.product_id', $product_id)
                 ->whereIn('orders.status', ['completed', 'pending'])
-                ->groupBy('cart_items.product_id')
+                ->groupBy('cart_items.product_id', 'cart_items.cart_id')
                 ->first();
 
             if(isset($result)) {
