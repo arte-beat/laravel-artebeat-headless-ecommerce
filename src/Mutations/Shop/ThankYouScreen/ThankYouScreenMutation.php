@@ -83,11 +83,11 @@ class ThankYouScreenMutation extends Controller
                 ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
                 ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
                 ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
-                ->selectRaw('SUM(cart_items.quantity) as quantity')
+                ->selectRaw('SUM(addweb_cart_items.quantity) as quantity')
                 ->where('products.type', 'booking')
                 ->where('cart_items.product_id', $product_id)
                 ->whereIn('orders.status', ['completed', 'pending'])
-                ->groupBy('cart_items.product_id')
+                ->groupBy('cart_items.product_id', 'cart_items.cart_id')
                 ->first();
 
             if(isset($result)) {
