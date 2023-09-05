@@ -9,6 +9,8 @@ extend type Query @guard(with: ["api"]){
     emailEventTicket(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailEventTicket")
 
     emailInvoice(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailInvoice")
+
+    getBookedMerchants(order_id: ID!): BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getBookedMerchants")
 }
 
 type DownloadTicketResponse{
