@@ -1,7 +1,6 @@
 <?php
 
 namespace Webkul\GraphQLAPI\Mutations\Shop\Product;
-
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -1022,7 +1021,7 @@ class ProductMutation extends Controller
     public function getRandomMerchant($rootValue, array $args, GraphQLContext $context)
     {
         $responseData = [] ;
-        DB::enableQueryLog();
+
         if(!empty($args["input"]["distance"]))
         {
             $distance= $args["input"]["distance"];
@@ -1034,7 +1033,7 @@ class ProductMutation extends Controller
         $result = $query->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
             ->leftJoin('product_qty_size', 'product_qty_size.product_id', '=', 'products.id')
             ->addSelect('products.*')
-            ->SelectRaw('COUNT(product_qty_size.qty) as total_sold')
+            ->SelectRaw('SUM(product_qty_size.qty) as total_sold')
             ->selectRaw(  'SQRT( POW(69.1 * (booking_products.latitude - '. $args["input"]["latitude"].'), 2) + POW(69.1 * ('.$args["input"]["longitude"].' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance')
             ->where('products.type', 'simple')
             ->whereNULL('products.product_type')
@@ -1050,5 +1049,68 @@ class ProductMutation extends Controller
         }
          return $responseData;
     }
+    public function getMyeventsDataByEventOrganizer($rootValue, array $args, GraphQLContext $context)
+    {
+        $product = $this->productRepository->findOrFail($args['product_id']);
+        $merchants = [];
+        $merchants=  \Webkul\GraphQLAPI\Models\Catalog\Product::query()->where('parent_id',1)->pluck('id');
+        $merchants->push($args['product_id']);
+        $result_price = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->Select('orders.grand_total','products.id')
+            ->where('orders.status', 'completed')
+            ->whereIn('products.id',$merchants )
+            ->groupBy('cart_items.product_id')->get();
 
+        foreach ($result_price as $individual_price)
+        {
+           $product['total_price']  += $individual_price->grand_total;
+        }
+        $result_product = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+           ->SelectRaw('SUM(cart_items.quantity) as total_sold')
+            ->where('products.type', 'booking')
+            ->where('orders.status', 'completed')
+            ->where('cart_items.product_id', $args['product_id'] )
+            ->groupBy('cart_items.product_id')->first();
+
+        $result_merchant = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+           ->SelectRaw('SUM(cart_items.quantity) as total_sold')
+            ->where('products.type', 'simple')
+            ->whereNULL('products.product_type')
+            ->where('orders.status', 'completed')
+            ->where('products.parent_id', $args['product_id'] )->first();
+
+
+        if(!empty($result_merchant)) {
+            $product['noOfMerchant'] = $result_merchant->total_sold ?? 0;
+        }
+        if(!empty($result_product)) {
+            $product['noOfTickets'] = $result_product->total_sold ?? 0;
+        }
+
+
+        return $product;
+    }
+
+    public function getBookedTicketsByEventOrganizer($rootValue, array $args, GraphQLContext $context)
+    {
+
+        $query= DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('booking_product_event_ticket_translations', 'cart_items.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
+            ->addSelect('orders.customer_first_name as firstname','orders.customer_last_name as lastname','orders.customer_email as email','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.created_at','orders.id AS order_id','booking_product_event_ticket_translations.name as ticketType','cart_items.total as price')
+            ->where('orders.status', 'completed')
+            ->where('cart_items.product_id', $args['product_id'])
+            ->orderBy('orders.id' ,'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+
+        return $query;
+    }
 }

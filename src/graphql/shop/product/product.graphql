@@ -27,6 +27,10 @@ extend type Query @guard(with: ["api"]){
    topsellingMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@topsellingMerchant")
 
     getRandomMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getRandomMerchant")
+
+    getMyeventsDataByEventOrganizer(product_id: ID!): MyEventsResponse!  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMyeventsDataByEventOrganizer")
+
+    getBookedTicketsByEventOrganizer(product_id: ID!): BookedTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketsByEventOrganizer")
 }
 extend type Query @guard(with: ["api", "admin-api"]){
     getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
@@ -97,4 +101,33 @@ type BookedEventResponse
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
+}
+
+type MyEventsResponse
+{
+    id: Int
+    noOfTickets: Int
+    noOfMerchant: Int
+    images: [Image!] @hasMany
+    artists: [Artist!]!
+    promoters: [Promoter!]!
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+    total_price : Float
+}
+
+type BookedTicketResponse
+{
+    quantity: Int
+    ticket_id: Int
+    order_id: Int
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+    ticketType: String
+    firstname: String
+    lastname: String
+    email: String
+    price : Float
 }
