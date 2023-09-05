@@ -4,6 +4,7 @@ namespace Webkul\GraphQLAPI\Mutations\Shop\ThankYouScreen;
 
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
 use Webkul\Product\Models\TicketOrder;
@@ -147,8 +148,8 @@ class ThankYouScreenMutation extends Controller
             $product['paymentMethod'] = 'Credit Card';
         }
 
-        $url = $this->productRepository->downloadTicket($product);
-        $response['url'] = $url;
+        $responseData = $this->productRepository->downloadTicket($product);
+        $response['url'] = $responseData['url'];
         return $response;
     }
     public function downloadInvoice($rootValue, array $args, GraphQLContext $context)
@@ -201,15 +202,14 @@ class ThankYouScreenMutation extends Controller
             $product['paymentMethod'] = 'Credit Card';
         }
 
-        $url = $this->productRepository->downloadTicket($product);
-        $response['url'] = $url;
+        $responseData = $this->productRepository->downloadTicket($product);
+        $response['url'] = $responseData['url'];
         return $response;
     }
     public function emailEventTicket($rootValue, array $args, GraphQLContext $context)
     {
         $product = $this->productRepository->findOrFail($args['product_id']);
         $customer = bagisto_graphql()->guard($this->guard)->user();
-        SendEventTicket::dispatch($customer);
         if(!empty($customer)) {
             $product['customerFirstName'] = $customer->first_name ?? null;
             $product['customerLastName'] = $customer->last_name ?? null;
@@ -256,15 +256,17 @@ class ThankYouScreenMutation extends Controller
             $product['paymentMethod'] = 'Credit Card';
         }
 
-        $url = $this->productRepository->downloadTicket($product);
-        $response['url'] = $url;
+        $responseData = $this->productRepository->downloadTicket($product);
+        $response['url'] = $responseData['url'];
+        $files = [$responseData['url']];
+        $path = $responseData['path'];
+        SendEventTicket::dispatch($customer, $path);
         return $response;
     }
     public function emailInvoice($rootValue, array $args, GraphQLContext $context)
     {
         $product = $this->productRepository->findOrFail($args['product_id']);
         $customer = bagisto_graphql()->guard($this->guard)->user();
-        SendEventTicket::dispatch($customer);
         if(!empty($customer)) {
             $product['customerFirstName'] = $customer->first_name ?? null;
             $product['customerLastName'] = $customer->last_name ?? null;
@@ -311,8 +313,11 @@ class ThankYouScreenMutation extends Controller
             $product['paymentMethod'] = 'Credit Card';
         }
 
-        $url = $this->productRepository->downloadTicket($product);
-        $response['url'] = $url;
+        $responseData = $this->productRepository->downloadTicket($product);
+        $response['url'] = $responseData['url'];
+        $files = [$responseData['url']];
+        $path = $responseData['path'];
+        SendEventTicket::dispatch($customer, $path);
         return $response;
     }
 }
