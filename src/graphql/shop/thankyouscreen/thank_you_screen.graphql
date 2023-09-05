@@ -1,14 +1,14 @@
 # Shop\Checkout\Addresses Related API
 extend type Query @guard(with: ["api"]){
-    thankYouScreen(order_id: ID!): [ThankYouScreenResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
+    thankYouScreen(product_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
 
-    downloadTicket(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
+    downloadTicket(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
 
-    downloadInvoice(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadInvoice")
+    downloadInvoice(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadInvoice")
 
-    emailEventTicket(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailEventTicket")
+    emailEventTicket(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailEventTicket")
 
-    emailInvoice(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailInvoice")
+    emailInvoice(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailInvoice")
 }
 
 type DownloadTicketResponse{
@@ -38,7 +38,7 @@ type ThankYouScreenResponse {
     booking: BookingProduct @hasOne(relation: "booking_product")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     ticketOrders: [TicketOrderResponse!] @hasMany(relation: "ticket_orders")
-#    merchants: [MerchantEventBookingResponse!] @hasMany
+    merchants: [MerchantEventBookingResponse!] @hasMany
     images: [Image!] @hasMany
     createdAt: String @rename(attribute: "created_at")
     updatedAt: String @rename(attribute: "updated_at")
