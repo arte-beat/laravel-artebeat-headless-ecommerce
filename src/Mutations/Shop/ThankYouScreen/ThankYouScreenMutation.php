@@ -117,6 +117,28 @@ class ThankYouScreenMutation extends Controller
         $resultEvent = $query->pluck('id');
         foreach ($resultEvent as $index => $product_id) {
             $product['thankYouScreenData'][$index] = $this->productRepository->findOrFail($product_id);
+
+
+            $result_ticket_orders = DB::table('ticket_orders')
+                ->where('ticket_orders.product_id', $product_id)
+                ->where('ticket_orders.order_id', $args['order_id'])
+                ->get();
+
+            if(count($result_ticket_orders) > 0) {
+                foreach ($result_ticket_orders as $ticket_order_index => $ticket_order) {
+                    $ticketorders[$ticket_order_index] = [
+                        'id' => $ticket_order->id,
+                        'product_id' => $ticket_order->product_id,
+                        'order_id' => $ticket_order->order_id,
+                        'first_name' => $ticket_order->first_name,
+                        'last_name' => $ticket_order->last_name,
+                        'email' => $ticket_order->email,
+                        'created_at' => $ticket_order->created_at,
+                        'updated_at' => $ticket_order->updated_at,
+                    ];
+                    $product['thankYouScreenData'][$index]['ticketorders'] = $ticketorders;
+                }
+            }
             $prefix = DB::getTablePrefix();
             $result_event = DB::table('orders')
                 ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
@@ -193,6 +215,25 @@ class ThankYouScreenMutation extends Controller
             }
         }
 
+        $result_ticket_orders = DB::table('ticket_orders')
+            ->where('ticket_orders.product_id', $product_id)
+            ->where('ticket_orders.order_id', $args['order_id'])
+            ->get();
+        if(count($result_ticket_orders) > 0) {
+            foreach ($result_ticket_orders as $ticket_order_index => $ticket_order) {
+                $ticketorders[$ticket_order_index] = [
+                    'id' => $ticket_order->id,
+                    'product_id' => $ticket_order->product_id,
+                    'order_id' => $ticket_order->order_id,
+                    'first_name' => $ticket_order->first_name,
+                    'last_name' => $ticket_order->last_name,
+                    'email' => $ticket_order->email,
+                    'created_at' => $ticket_order->created_at,
+                    'updated_at' => $ticket_order->updated_at,
+                ];
+                $product['ticketorders'] = $ticketorders;
+            }
+        }
         $prefix = DB::getTablePrefix();
         $result_event = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')

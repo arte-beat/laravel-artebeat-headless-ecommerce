@@ -13,12 +13,11 @@ input TicketOrderInput{
 }
 type TicketOrderResponse {
     id: ID!
-    productId: ID! @rename(attribute: "product_id")
-    orderId: ID! @rename(attribute: "order_id")
-    firstName: String @rename(attribute: "first_name")
-    lastName: String @rename(attribute: "last_name")
+    product_id: ID!
+    order_id: ID!
+    first_name: String
+    last_name: String
     email: String
-    createdAt: String @rename(attribute: "created_at")
-    updatedAt: String @rename(attribute: "updated_at")
-    success: String
+    created_at: String
+    updated_at: String
 }
