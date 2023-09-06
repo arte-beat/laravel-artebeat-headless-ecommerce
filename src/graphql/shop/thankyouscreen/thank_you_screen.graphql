@@ -1,6 +1,6 @@
 # Shop\Checkout\Addresses Related API
 extend type Query @guard(with: ["api"]){
-    thankYouScreen(order_id: ID!): [ThankYouScreenResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
+    thankYouScreen(order_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
 
     downloadTicket(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
 
@@ -14,14 +14,18 @@ extend type Query @guard(with: ["api"]){
 }
 
 extend type Query {
-    thankYouScreenQRCode(order_id: ID!): [ThankYouScreenResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
+    thankYouScreenQRCode(order_id: ID!, product_id: ID!): ThankYouScreenQRCodeResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQRCodeData")
 }
 
 type DownloadTicketResponse{
     url: String
 }
+
 type ThankYouScreenResponse {
-    id: ID!
+    orderStatus: String
+    orderId: String
+    orderPlacedOn: String
+    paymentMethod: String
     customerFirstName: String
     customerLastName: String
     customerEmail: String
@@ -35,11 +39,12 @@ type ThankYouScreenResponse {
     customerAddressState: String
     customerAddressCountry: String
     customerAddressPostCode: String
-    orderStatus: String
+    thankYouScreenData: [ThankYouScreenData]
+}
+
+type ThankYouScreenData{
+    id: ID!
     noOfTickets: Int
-    orderId: String
-    orderPlacedOn: String
-    paymentMethod: String
     artists: [Artist] @hasMany
     promoters: [Promoter] @hasMany
     booking: BookingProduct @hasOne(relation: "booking_product")
@@ -50,4 +55,36 @@ type ThankYouScreenResponse {
     createdAt: String @rename(attribute: "created_at")
     updatedAt: String @rename(attribute: "updated_at")
     success: String
+}
+
+type ThankYouScreenQRCodeResponse{
+    id: ID!
+    noOfTickets: Int
+    artists: [Artist] @hasMany
+    promoters: [Promoter] @hasMany
+    booking: BookingProduct @hasOne(relation: "booking_product")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    ticketOrders: [TicketOrderResponse!] @hasMany(relation: "ticket_orders")
+    merchants: [MerchantEventBookingResponse!] @hasMany
+    images: [Image!] @hasMany
+    createdAt: String @rename(attribute: "created_at")
+    updatedAt: String @rename(attribute: "updated_at")
+    success: String
+    orderStatus: String
+    orderId: String
+    orderPlacedOn: String
+    paymentMethod: String
+    customerFirstName: String
+    customerLastName: String
+    customerEmail: String
+    customerPhone: String
+    customerAddressFirstName: String
+    customerAddressLastName: String
+    customerAddressEmail: String
+    customerAddress1: String
+    customerAddress2: String
+    customerAddressCity: String
+    customerAddressState: String
+    customerAddressCountry: String
+    customerAddressPostCode: String
 }
