@@ -32,7 +32,11 @@ extend type Query @guard(with: ["api"]){
 
     getBookedTicketsByEventOrganizer(product_id: ID!): BookedTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketsByEventOrganizer")
 
+     getBookedTicketsByCustomer: CustomerTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketListByCustomer")
+
     getBookedMerchantListByEvent(product_id: ID!): BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedMerchantListByEvent")
+
+    getBookedMerchantsByCustomers: BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedMerchantListByEvent")
 
     downloadEventTickets(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@downloadEventTickets")
 
@@ -121,6 +125,7 @@ type MyEventsResponse
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
     total_price : Float
+    booking: BookingProduct @hasOne(relation: "booking_product")
 }
 
 type BookedTicketResponse
@@ -137,6 +142,30 @@ type BookedTicketResponse
     email: String
     status: String
     price : Float
+    booking: BookingProduct @hasOne(relation: "booking_product")
+}
+
+type CustomerTicketResponse
+{
+    id : Int
+    quantity: Int
+    ticket_id: Int
+    order_id: Int
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+    ticketType: String
+    firstname: String
+    lastname: String
+    email: String
+    status: String
+    price : Float
+    productName: String
+    images: [Image!] @hasMany
+    artists: [Artist!]!
+    promoters: [Promoter!]!
+    booking: BookingProduct @hasOne(relation: "booking_product")
+
 }
 
 type BookedMerchantResponse

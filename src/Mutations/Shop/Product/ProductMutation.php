@@ -1053,6 +1053,7 @@ class ProductMutation extends Controller
     {
         $product = $this->productRepository->findOrFail($args['product_id']);
         $merchants = [];
+        $prefix = DB::getTablePrefix();
         $merchants=  \Webkul\GraphQLAPI\Models\Catalog\Product::query()->where('parent_id',1)->pluck('id');
         $merchants->push($args['product_id']);
         $result_price = DB::table('orders')
@@ -1070,7 +1071,7 @@ class ProductMutation extends Controller
         $result_product = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-           ->SelectRaw('SUM(cart_items.quantity) as total_sold')
+           ->SelectRaw('SUM('.$prefix.'cart_items.quantity) as total_sold')
             ->where('products.type', 'booking')
             ->where('orders.status', 'completed')
             ->where('cart_items.product_id', $args['product_id'] )
@@ -1079,7 +1080,7 @@ class ProductMutation extends Controller
         $result_merchant = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-           ->SelectRaw('SUM(cart_items.quantity) as total_sold')
+           ->SelectRaw('SUM('.$prefix.'cart_items.quantity) as total_sold')
             ->where('products.type', 'simple')
             ->whereNULL('products.product_type')
             ->where('orders.status', 'completed')
@@ -1124,10 +1125,18 @@ class ProductMutation extends Controller
             ->whereIn('orders.status', ['completed','pending'])
             ->where('addresses.default_address', 1)
             ->where('products.type', 'simple')
-            ->whereNULL('products.product_type')
-            ->where('products.parent_id', $args['product_id'])
-            ->groupBy('cart_items.ticket_id')
-            ->orderBy('orders.id' ,'desc');
+            ->whereNULL('products.product_type');
+            if(!empty($args['product_id']))
+            {
+                $query->where('products.parent_id', $args['product_id'])->groupBy('cart_items.ticket_id');
+            }
+            else{
+                $owner = bagisto_graphql()->guard($this->guard)->user();
+                $query->where('orders.customer_email', $owner->email);
+            }
+
+        $query->orderBy('orders.id' ,'desc');
+
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
@@ -1184,5 +1193,23 @@ class ProductMutation extends Controller
     }
 
 
+    public function getBookedTicketListByCustomer($rootValue, array $args, GraphQLContext $context)
+    {
+        $owner = bagisto_graphql()->guard($this->guard)->user();
 
+        $query=  \Webkul\GraphQLAPI\Models\Catalog\Product::query()
+            ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
+            ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
+            ->addSelect('products.id','products.sku as productName','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name as firstname','addresses.last_name  as lastname','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','orders.status','cart_items.base_price as basePrice','cart_items.quantity as purchasedQuantity')
+            ->whereIn('orders.status', ['completed','pending'])
+            ->where('addresses.default_address', 1)
+            ->where('products.type', 'booking')
+            ->where('orders.customer_email', $owner->email)
+//            ->groupBy('cart_items.ticket_id')
+            ->orderBy('orders.id' ,'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
 }
