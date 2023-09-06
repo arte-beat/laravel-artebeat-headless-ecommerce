@@ -126,6 +126,7 @@ type MyEventsResponse
     success: String
     total_price : Float
     booking: BookingProduct @hasOne(relation: "booking_product")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
 }
 
 type BookedTicketResponse
