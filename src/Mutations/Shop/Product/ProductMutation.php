@@ -1120,7 +1120,7 @@ class ProductMutation extends Controller
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.id','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name','addresses.last_name','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','orders.status')
+            ->addSelect('products.id','products.sku as productName','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name','addresses.last_name','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','orders.status','cart_items.base_price as basePrice','cart_items.quantity as purchasedQuantity')
             ->whereIn('orders.status', ['completed','pending'])
             ->where('addresses.default_address', 1)
             ->where('products.type', 'simple')
@@ -1132,4 +1132,57 @@ class ProductMutation extends Controller
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
     }
+
+    public function downloadMerchTickets($rootValue, array $args, GraphQLContext $context)
+    {
+        $response = [];
+        $merchantList =  \Webkul\GraphQLAPI\Models\Catalog\Product::query()
+            ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
+            ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
+            ->addSelect('products.id','products.sku as productName','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name','addresses.last_name','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','cart_items.base_price as basePrice','cart_items.quantity as purchasedQuantity','orders.status')
+            ->whereIn('orders.status', ['completed','pending'])
+            ->where('addresses.default_address', 1)
+            ->where('products.type', 'simple')
+            ->whereNULL('products.product_type')
+            ->where('products.parent_id', $args['product_id'])
+            ->groupBy('cart_items.ticket_id')
+            ->orderBy('orders.id' ,'desc')->get();
+
+            if(!empty($merchantList))
+            {
+                $responseData = $this->productRepository->downloadBookedEventMerchants($merchantList);
+                $response['url'] = $responseData['url'];
+
+            }
+            else{
+                throw new Exception("As of now no Merchants available For said Events .");
+            }
+        return $response;
+    }
+    public function downloadEventTickets($rootValue, array $args, GraphQLContext $context)
+    {
+        $response = [];
+        $eventList =  DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('booking_product_event_ticket_translations', 'cart_items.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
+            ->addSelect('orders.customer_first_name as firstname','orders.customer_last_name as lastname','orders.customer_email as email','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.created_at','orders.id AS order_id','booking_product_event_ticket_translations.name as ticketType','cart_items.total as price','orders.status')
+            ->whereIn('orders.status', ['completed','pending'])
+            ->where('cart_items.product_id', $args['product_id'])
+            ->orderBy('orders.id' ,'desc')->get();
+
+            if(!empty($eventList))
+            {
+                $responseData = $this->productRepository->downloadBookedEventTickets($eventList);
+                $response['url'] = $responseData['url'];
+
+            }
+            else{
+                throw new Exception("No Tickets records for this event .");
+            }
+        return $response;
+    }
+
+
+
 }

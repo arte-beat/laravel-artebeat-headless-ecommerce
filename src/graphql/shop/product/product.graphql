@@ -33,6 +33,10 @@ extend type Query @guard(with: ["api"]){
     getBookedTicketsByEventOrganizer(product_id: ID!): BookedTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketsByEventOrganizer")
 
     getBookedMerchantListByEvent(product_id: ID!): BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedMerchantListByEvent")
+
+    downloadEventTickets(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@downloadEventTickets")
+
+    downloadMerchTickets(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@downloadMerchTickets")
 }
 extend type Query @guard(with: ["api", "admin-api"]){
     getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
@@ -147,6 +151,7 @@ type BookedMerchantResponse
     firstname: String @rename(attribute: "first_name")
     lastname: String @rename(attribute: "last_name")
     email: String
+    productName: String
     basePrice: Float
     purchasedQuantity: Int
     price : Float
