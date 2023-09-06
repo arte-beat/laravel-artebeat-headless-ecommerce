@@ -13,6 +13,10 @@ extend type Query @guard(with: ["api"]){
     getBookedMerchants(order_id: ID!): BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getBookedMerchants")
 }
 
+extend type Query {
+    thankYouScreenQRCode(order_id: ID!): [ThankYouScreenResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
+}
+
 type DownloadTicketResponse{
     url: String
 }
