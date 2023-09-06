@@ -36,12 +36,13 @@ class TicketOrderMutation extends Controller
     }
 
     /**
-     * Store the specified resource in storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param $rootValue
+     * @param array $args
+     * @param GraphQLContext $context
+     * @return array
+     * @throws Exception
      */
-    public function store($rootValue, array $args, GraphQLContext $context)
+    public function store($rootValue, array $args, GraphQLContext $context): array
     {
         if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
@@ -54,6 +55,7 @@ class TicketOrderMutation extends Controller
                 'last_name'     => 'string|required',
                 'email'         => 'email',
             ]);
+            $data['order_id'] = $args['order_id'];
             $product = $this->productRepository->findOrFail($data['product_id']);
             if ($validator->fails()) {
                 throw new Exception($validator->messages());
