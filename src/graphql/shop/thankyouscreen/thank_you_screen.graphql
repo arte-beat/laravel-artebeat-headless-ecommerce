@@ -19,6 +19,7 @@ extend type Query {
 
 type DownloadTicketResponse{
     url: String
+    message: String
 }
 
 type ThankYouScreenResponse {

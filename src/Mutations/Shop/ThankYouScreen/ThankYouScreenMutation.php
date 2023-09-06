@@ -14,6 +14,7 @@ use Webkul\Product\Repositories\TicketOrderRepository;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Customer\Repositories\CustomerAddressRepository;
 use Webkul\Customer\Repositories\CustomerRepository;
+use Webkul\Sales\Repositories\OrderRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use App\Events\SendEventTicket;
 
@@ -31,10 +32,13 @@ class ThankYouScreenMutation extends Controller
      * @param \Webkul\Customer\Repositories\CustomerAddressRepository  $customerAddressRepository
      * @param  \Webkul\Product\Repositories\TicketOrderRepository  $ticketOrderRepository
      * @param \Webkul\Customer\Repositories\CustomerRepository $customerRepository
+     * @param \Webkul\Sales\Repositories\OrderRepository $orderRepository
+     *
      * @return void
      */
     public function __construct(
         protected ProductRepository $productRepository,
+        protected OrderRepository $orderRepository,
         protected CustomerAddressRepository $customerAddressRepository,
         protected TicketOrderRepository $ticketOrderRepository,
         protected CustomerRepository $customerRepository
@@ -238,7 +242,7 @@ class ThankYouScreenMutation extends Controller
         $result_event = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
+            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
             ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
             ->where('products.type', 'booking')
             ->where('cart_items.product_id', $product_id)
@@ -259,71 +263,61 @@ class ThankYouScreenMutation extends Controller
         $product_id = $args['product_id'];
         $product = $this->productRepository->findOrFail($product_id);
 
-        $result = DB::table('orders')
-            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
-            ->where('cart_items.product_id', $product_id)
-            ->whereIn('orders.status', ['completed', 'pending'])
-            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-            ->first();
-
-        if (isset($result)) {
-            $orderPlacedOn = null;
-            if (isset($result->created_at))
-                $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
-
-            $orderId = null;
-            if (isset($result->order_id))
-                $orderId = "#" . $result->order_id;
-
-            if (isset($result->customer_email)){
-                $customer = $this->customerRepository->where("email", "=", $result->customer_email)->first();
-                if (!empty($customer)) {
-                    $product['customerFirstName'] = $customer->first_name ?? null;
-                    $product['customerLastName'] = $customer->last_name ?? null;
-                    $product['customerEmail'] = $customer->email ?? null;
-                    $product['customerPhone'] = $customer->phone ?? null;
-                    $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
-                    if (!empty($customerAddress)) {
-                        $product['customerAddressFirstName'] = $customerAddress['first_name'];
-                        $product['customerAddressLastName'] = $customerAddress['last_name'];
-                        $product['customerAddressEmail'] = $customerAddress['email'];
-                        $product['customerAddress1'] = $customerAddress['address1'];
-                        $product['customerAddress2'] = $customerAddress['address2'];
-                        if ($customer->phone == null) {
-                            $product['customerPhone'] = $customerAddress['phone'] ?? null;
-                        }
-                        $product['customerAddressCity'] = $customerAddress['city'];
-                        $product['customerAddressState'] = $customerAddress['state'];
-                        $product['customerAddressCountry'] = $customerAddress['country'];
-                        $product['customerAddressPostCode'] = $customerAddress['postcode'];
-                    }
-                }
-
-                $product['orderStatus'] = $result->orderStatus ?? null;
-                $product['orderId'] = $orderId;
-                $product['order_id'] = $result->order_id;
-                $product['orderPlacedOn'] = $orderPlacedOn;
-                $product['paymentMethod'] = 'Credit Card';
-            }
-        }
+        $order_id = $args['order_id'];
+        $order = $this->orderRepository->findOrFail($order_id);
 
         $prefix = DB::getTablePrefix();
         $result_event = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
+            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
             ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
             ->where('products.type', 'booking')
             ->where('cart_items.product_id', $product_id)
+            ->where('orders.id', $order_id)
             ->whereIn('orders.status', ['completed', 'pending'])
             ->groupBy('cart_items.product_id', 'cart_items.cart_id')
             ->first();
 
         if($result_event){
             $product['noOfTickets'] = $result_event->quantity ?? 0;
+
+            $orderPlacedOn = null;
+            if (isset($result_event->created_at))
+                $orderPlacedOn = date("F d, Y, H:i", strtotime($result_event->created_at));
+
+            $orderId = null;
+            if (isset($result_event->order_id))
+                $orderId = "#" . $result_event->order_id;
+
+
+            $product['orderStatus'] = $result_event->orderStatus ?? null;
+            $product['orderId'] = $orderId;
+            $product['order_id'] = $result_event->order_id;
+            $product['orderPlacedOn'] = $orderPlacedOn;
+            $product['paymentMethod'] = 'Credit Card';
         }
+
+        $result_ticket_orders = DB::table('ticket_orders')
+            ->where('ticket_orders.product_id', $product_id)
+            ->where('ticket_orders.order_id', $args['order_id'])
+            ->get();
+        if(count($result_ticket_orders) > 0) {
+            foreach ($result_ticket_orders as $ticket_order_index => $ticket_order) {
+                $ticketorders[$ticket_order_index] = [
+                    'id' => $ticket_order->id,
+                    'product_id' => $ticket_order->product_id,
+                    'order_id' => $ticket_order->order_id,
+                    'first_name' => $ticket_order->first_name,
+                    'last_name' => $ticket_order->last_name,
+                    'email' => $ticket_order->email,
+                    'created_at' => $ticket_order->created_at,
+                    'updated_at' => $ticket_order->updated_at,
+                ];
+                $product['ticketorders'] = $ticketorders;
+            }
+        }
+
         $responseData = $this->productRepository->downloadTicket($product);
         $response['url'] = $responseData['url'];
         return $response;
@@ -364,7 +358,7 @@ class ThankYouScreenMutation extends Controller
             $result = DB::table('orders')
                 ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
                 ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
+                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
                 ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
                 ->where('products.type', 'booking')
                 ->where('cart_items.product_id', $product_id)
@@ -390,88 +384,84 @@ class ThankYouScreenMutation extends Controller
             }
         }
 
-        $responseData = $this->productRepository->downloadTicket($product);
+        $responseData = $this->productRepository->downloadInvoice($product);
         $response['url'] = $responseData['url'];
         return $response;
     }
+
     public function emailEventTicket($rootValue, array $args, GraphQLContext $context)
     {
         $product_id = $args['product_id'];
         $product = $this->productRepository->findOrFail($product_id);
 
-        $result = DB::table('orders')
-            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
-            ->where('cart_items.product_id', $product_id)
-            ->whereIn('orders.status', ['completed', 'pending'])
-            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-            ->first();
-
-        if (isset($result)) {
-            $orderPlacedOn = null;
-            if (isset($result->created_at))
-                $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
-
-            $orderId = null;
-            if (isset($result->order_id))
-                $orderId = "#" . $result->order_id;
-
-            if (isset($result->customer_email)){
-                $customer = $this->customerRepository->where("email", "=", $result->customer_email)->first();
-                if (!empty($customer)) {
-                    $product['customerFirstName'] = $customer->first_name ?? null;
-                    $product['customerLastName'] = $customer->last_name ?? null;
-                    $product['customerEmail'] = $customer->email ?? null;
-                    $product['customerPhone'] = $customer->phone ?? null;
-                    $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
-                    if (!empty($customerAddress)) {
-                        $product['customerAddressFirstName'] = $customerAddress['first_name'];
-                        $product['customerAddressLastName'] = $customerAddress['last_name'];
-                        $product['customerAddressEmail'] = $customerAddress['email'];
-                        $product['customerAddress1'] = $customerAddress['address1'];
-                        $product['customerAddress2'] = $customerAddress['address2'];
-                        if ($customer->phone == null) {
-                            $product['customerPhone'] = $customerAddress['phone'] ?? null;
-                        }
-                        $product['customerAddressCity'] = $customerAddress['city'];
-                        $product['customerAddressState'] = $customerAddress['state'];
-                        $product['customerAddressCountry'] = $customerAddress['country'];
-                        $product['customerAddressPostCode'] = $customerAddress['postcode'];
-                    }
-                }
-
-                $product['orderStatus'] = $result->orderStatus ?? null;
-                $product['orderId'] = $orderId;
-                $product['order_id'] = $result->order_id;
-                $product['orderPlacedOn'] = $orderPlacedOn;
-                $product['paymentMethod'] = 'Credit Card';
-            }
-        }
+        $order_id = $args['order_id'];
+        $order = $this->orderRepository->findOrFail($order_id);
 
         $prefix = DB::getTablePrefix();
         $result_event = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
+            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
             ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
             ->where('products.type', 'booking')
             ->where('cart_items.product_id', $product_id)
+            ->where('orders.id', $order_id)
             ->whereIn('orders.status', ['completed', 'pending'])
             ->groupBy('cart_items.product_id', 'cart_items.cart_id')
             ->first();
 
         if($result_event){
             $product['noOfTickets'] = $result_event->quantity ?? 0;
+
+            $orderPlacedOn = null;
+            if (isset($result_event->created_at))
+                $orderPlacedOn = date("F d, Y, H:i", strtotime($result_event->created_at));
+
+            $orderId = null;
+            if (isset($result_event->order_id))
+                $orderId = "#" . $result_event->order_id;
+
+
+            $product['orderStatus'] = $result_event->orderStatus ?? null;
+            $product['orderId'] = $orderId;
+            $product['order_id'] = $result_event->order_id;
+            $product['orderPlacedOn'] = $orderPlacedOn;
+            $product['paymentMethod'] = 'Credit Card';
+
+            if (isset($result_event->customer_email)) {
+                $customer = $this->customerRepository->where("email", "=", $result_event->customer_email)->first();
+            }
+        }
+
+        $result_ticket_orders = DB::table('ticket_orders')
+            ->where('ticket_orders.product_id', $product_id)
+            ->where('ticket_orders.order_id', $args['order_id'])
+            ->get();
+        if(count($result_ticket_orders) > 0) {
+            foreach ($result_ticket_orders as $ticket_order_index => $ticket_order) {
+                $ticketorders[$ticket_order_index] = [
+                    'id' => $ticket_order->id,
+                    'product_id' => $ticket_order->product_id,
+                    'order_id' => $ticket_order->order_id,
+                    'first_name' => $ticket_order->first_name,
+                    'last_name' => $ticket_order->last_name,
+                    'email' => $ticket_order->email,
+                    'created_at' => $ticket_order->created_at,
+                    'updated_at' => $ticket_order->updated_at,
+                ];
+                $product['ticketorders'] = $ticketorders;
+            }
         }
 
         $responseData = $this->productRepository->downloadTicket($product);
-        $response['url'] = $responseData['url'];
+        $response['message'] = "Email sent successfully.";
         $files = [$responseData['url']];
         $path = $responseData['path'];
-        SendEventTicket::dispatch($customer, $path);
+        if(!empty($customer))
+            SendEventTicket::dispatch($customer, $path);
         return $response;
     }
+
     public function emailInvoice($rootValue, array $args, GraphQLContext $context)
     {
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
@@ -508,7 +498,7 @@ class ThankYouScreenMutation extends Controller
             $result = DB::table('orders')
                 ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
                 ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
+                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
                 ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
                 ->where('products.type', 'booking')
                 ->where('cart_items.product_id', $product_id)
@@ -534,8 +524,8 @@ class ThankYouScreenMutation extends Controller
             }
         }
 
-        $responseData = $this->productRepository->downloadTicket($product);
-        $response['url'] = $responseData['url'];
+        $responseData = $this->productRepository->downloadInvoice($product);
+        $response['message'] = "Email sent successfully.";
         $files = [$responseData['url']];
         $path = $responseData['path'];
         SendEventTicket::dispatch($customer, $path);
