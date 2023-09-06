@@ -1117,7 +1117,7 @@ class ProductMutation extends Controller
 
     public function getBookedMerchantListByEvent($rootValue, array $args, GraphQLContext $context)
     {
-        $query=  \Webkul\GraphQLAPI\Models\Catalog\Product::query()
+        $query =  \Webkul\GraphQLAPI\Models\Catalog\Product::query()
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
@@ -1128,14 +1128,14 @@ class ProductMutation extends Controller
             ->whereNULL('products.product_type');
             if(!empty($args['product_id']))
             {
-                $query->where('products.parent_id', $args['product_id'])->groupBy('cart_items.ticket_id','cart_items.cart_id');
+                $query->where('products.parent_id', $args['product_id']);
             }
             else{
                 $owner = bagisto_graphql()->guard($this->guard)->user();
                 $query->where('orders.customer_email', $owner->email);
             }
 
-        $query->orderBy('orders.id' ,'desc');
+        $query->groupBy('cart_items.ticket_id','cart_items.cart_id')->orderBy('orders.id' ,'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
