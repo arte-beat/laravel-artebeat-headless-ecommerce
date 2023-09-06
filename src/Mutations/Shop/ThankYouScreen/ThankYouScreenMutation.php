@@ -215,66 +215,74 @@ class ThankYouScreenMutation extends Controller
 
     public function downloadTicket($rootValue, array $args, GraphQLContext $context)
     {
-        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $query->whereHas('bookedProduct', function ($getBookedMerhants) use ($args) {
-            $getBookedMerhants->where('orders.id', '=', $args['order_id']);
-        });
-        $result = $query->pluck('id');
-        foreach ($result as $index => $product_id) {
-            $product[$index] = $this->productRepository->findOrFail($product_id);
-            $customer = bagisto_graphql()->guard($this->guard)->user();
-            if(!empty($customer)) {
-                $product[$index]['customerFirstName'] = $customer->first_name ?? null;
-                $product[$index]['customerLastName'] = $customer->last_name ?? null;
-                $product[$index]['customerEmail'] = $customer->email ?? null;
-                $product[$index]['customerPhone'] = $customer->phone ?? null;
-                $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
-                if(!empty($customerAddress)){
-                    $product[$index]['customerAddressFirstName'] = $customerAddress['first_name'];
-                    $product[$index]['customerAddressLastName'] = $customerAddress['last_name'];
-                    $product[$index]['customerAddressEmail'] = $customerAddress['email'];
-                    $product[$index]['customerAddress1'] = $customerAddress['address1'];
-                    $product[$index]['customerAddress2'] = $customerAddress['address2'];
-                    if($customer->phone == null) {
-                        $product[$index]['customerPhone'] = $customerAddress['phone'] ?? null;
+        $product_id = $args['product_id'];
+        $product = $this->productRepository->findOrFail($product_id);
+
+        $result = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
+            ->where('cart_items.product_id', $product_id)
+            ->whereIn('orders.status', ['completed', 'pending'])
+            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
+            ->first();
+
+        if (isset($result)) {
+            $orderPlacedOn = null;
+            if (isset($result->created_at))
+                $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
+
+            $orderId = null;
+            if (isset($result->order_id))
+                $orderId = "#" . $result->order_id;
+
+            if (isset($result->customer_email)){
+                $customer = $this->customerRepository->where("email", "=", $result->customer_email)->first();
+                if (!empty($customer)) {
+                    $product['customerFirstName'] = $customer->first_name ?? null;
+                    $product['customerLastName'] = $customer->last_name ?? null;
+                    $product['customerEmail'] = $customer->email ?? null;
+                    $product['customerPhone'] = $customer->phone ?? null;
+                    $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
+                    if (!empty($customerAddress)) {
+                        $product['customerAddressFirstName'] = $customerAddress['first_name'];
+                        $product['customerAddressLastName'] = $customerAddress['last_name'];
+                        $product['customerAddressEmail'] = $customerAddress['email'];
+                        $product['customerAddress1'] = $customerAddress['address1'];
+                        $product['customerAddress2'] = $customerAddress['address2'];
+                        if ($customer->phone == null) {
+                            $product['customerPhone'] = $customerAddress['phone'] ?? null;
+                        }
+                        $product['customerAddressCity'] = $customerAddress['city'];
+                        $product['customerAddressState'] = $customerAddress['state'];
+                        $product['customerAddressCountry'] = $customerAddress['country'];
+                        $product['customerAddressPostCode'] = $customerAddress['postcode'];
                     }
-                    $product[$index]['customerAddressCity'] = $customerAddress['city'];
-                    $product[$index]['customerAddressState'] = $customerAddress['state'];
-                    $product[$index]['customerAddressCountry'] = $customerAddress['country'];
-                    $product[$index]['customerAddressPostCode'] = $customerAddress['postcode'];
                 }
-            }
 
-            $prefix = DB::getTablePrefix();
-            $result = DB::table('orders')
-                ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-                ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
-                ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
-                ->where('products.type', 'booking')
-                ->where('cart_items.product_id', $product_id)
-                ->whereIn('orders.status', ['completed', 'pending'])
-                ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-                ->first();
-
-            if(isset($result)) {
-                $orderPlacedOn = null;
-                if(isset($result->created_at))
-                    $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
-
-                $orderId = null;
-                if(isset($result->order_id))
-                    $orderId = "#".$result->order_id;
-
-                $product[$index]['noOfTickets'] = $result->quantity ?? 0;
-                $product[$index]['orderStatus'] = $result->orderStatus ?? null;
-                $product[$index]['orderId'] = $orderId;
-                $product[$index]['order_id'] = $result->order_id;
-                $product[$index]['orderPlacedOn'] = $orderPlacedOn;
-                $product[$index]['paymentMethod'] = 'Credit Card';
+                $product['orderStatus'] = $result->orderStatus ?? null;
+                $product['orderId'] = $orderId;
+                $product['order_id'] = $result->order_id;
+                $product['orderPlacedOn'] = $orderPlacedOn;
+                $product['paymentMethod'] = 'Credit Card';
             }
         }
 
+        $prefix = DB::getTablePrefix();
+        $result_event = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
+            ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
+            ->where('products.type', 'booking')
+            ->where('cart_items.product_id', $product_id)
+            ->whereIn('orders.status', ['completed', 'pending'])
+            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
+            ->first();
+
+        if($result_event){
+            $product['noOfTickets'] = $result_event->quantity ?? 0;
+        }
         $responseData = $this->productRepository->downloadTicket($product);
         $response['url'] = $responseData['url'];
         return $response;
@@ -347,64 +355,73 @@ class ThankYouScreenMutation extends Controller
     }
     public function emailEventTicket($rootValue, array $args, GraphQLContext $context)
     {
-        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $query->whereHas('bookedProduct', function ($getBookedMerhants) use ($args) {
-            $getBookedMerhants->where('orders.id', '=', $args['order_id']);
-        });
-        $result = $query->pluck('id');
-        foreach ($result as $index => $product_id) {
-            $product[$index] = $this->productRepository->findOrFail($product_id);
-            $customer = bagisto_graphql()->guard($this->guard)->user();
-            if(!empty($customer)) {
-                $product[$index]['customerFirstName'] = $customer->first_name ?? null;
-                $product[$index]['customerLastName'] = $customer->last_name ?? null;
-                $product[$index]['customerEmail'] = $customer->email ?? null;
-                $product[$index]['customerPhone'] = $customer->phone ?? null;
-                $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
-                if(!empty($customerAddress)){
-                    $product[$index]['customerAddressFirstName'] = $customerAddress['first_name'];
-                    $product[$index]['customerAddressLastName'] = $customerAddress['last_name'];
-                    $product[$index]['customerAddressEmail'] = $customerAddress['email'];
-                    $product[$index]['customerAddress1'] = $customerAddress['address1'];
-                    $product[$index]['customerAddress2'] = $customerAddress['address2'];
-                    if($customer->phone == null) {
-                        $product[$index]['customerPhone'] = $customerAddress['phone'] ?? null;
+        $product_id = $args['product_id'];
+        $product = $this->productRepository->findOrFail($product_id);
+
+        $result = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
+            ->where('cart_items.product_id', $product_id)
+            ->whereIn('orders.status', ['completed', 'pending'])
+            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
+            ->first();
+
+        if (isset($result)) {
+            $orderPlacedOn = null;
+            if (isset($result->created_at))
+                $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
+
+            $orderId = null;
+            if (isset($result->order_id))
+                $orderId = "#" . $result->order_id;
+
+            if (isset($result->customer_email)){
+                $customer = $this->customerRepository->where("email", "=", $result->customer_email)->first();
+                if (!empty($customer)) {
+                    $product['customerFirstName'] = $customer->first_name ?? null;
+                    $product['customerLastName'] = $customer->last_name ?? null;
+                    $product['customerEmail'] = $customer->email ?? null;
+                    $product['customerPhone'] = $customer->phone ?? null;
+                    $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
+                    if (!empty($customerAddress)) {
+                        $product['customerAddressFirstName'] = $customerAddress['first_name'];
+                        $product['customerAddressLastName'] = $customerAddress['last_name'];
+                        $product['customerAddressEmail'] = $customerAddress['email'];
+                        $product['customerAddress1'] = $customerAddress['address1'];
+                        $product['customerAddress2'] = $customerAddress['address2'];
+                        if ($customer->phone == null) {
+                            $product['customerPhone'] = $customerAddress['phone'] ?? null;
+                        }
+                        $product['customerAddressCity'] = $customerAddress['city'];
+                        $product['customerAddressState'] = $customerAddress['state'];
+                        $product['customerAddressCountry'] = $customerAddress['country'];
+                        $product['customerAddressPostCode'] = $customerAddress['postcode'];
                     }
-                    $product[$index]['customerAddressCity'] = $customerAddress['city'];
-                    $product[$index]['customerAddressState'] = $customerAddress['state'];
-                    $product[$index]['customerAddressCountry'] = $customerAddress['country'];
-                    $product[$index]['customerAddressPostCode'] = $customerAddress['postcode'];
                 }
+
+                $product['orderStatus'] = $result->orderStatus ?? null;
+                $product['orderId'] = $orderId;
+                $product['order_id'] = $result->order_id;
+                $product['orderPlacedOn'] = $orderPlacedOn;
+                $product['paymentMethod'] = 'Credit Card';
             }
+        }
 
-            $prefix = DB::getTablePrefix();
-            $result = DB::table('orders')
-                ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-                ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
-                ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
-                ->where('products.type', 'booking')
-                ->where('cart_items.product_id', $product_id)
-                ->whereIn('orders.status', ['completed', 'pending'])
-                ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-                ->first();
+        $prefix = DB::getTablePrefix();
+        $result_event = DB::table('orders')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus')
+            ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
+            ->where('products.type', 'booking')
+            ->where('cart_items.product_id', $product_id)
+            ->whereIn('orders.status', ['completed', 'pending'])
+            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
+            ->first();
 
-            if(isset($result)) {
-                $orderPlacedOn = null;
-                if(isset($result->created_at))
-                    $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
-
-                $orderId = null;
-                if(isset($result->order_id))
-                    $orderId = "#".$result->order_id;
-
-                $product[$index]['noOfTickets'] = $result->quantity ?? 0;
-                $product[$index]['orderStatus'] = $result->orderStatus ?? null;
-                $product[$index]['orderId'] = $orderId;
-                $product[$index]['order_id'] = $result->order_id;
-                $product[$index]['orderPlacedOn'] = $orderPlacedOn;
-                $product[$index]['paymentMethod'] = 'Credit Card';
-            }
+        if($result_event){
+            $product['noOfTickets'] = $result_event->quantity ?? 0;
         }
 
         $responseData = $this->productRepository->downloadTicket($product);
