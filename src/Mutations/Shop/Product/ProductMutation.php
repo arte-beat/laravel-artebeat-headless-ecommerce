@@ -1128,7 +1128,7 @@ class ProductMutation extends Controller
             ->whereNULL('products.product_type');
             if(!empty($args['product_id']))
             {
-                $query->where('products.parent_id', $args['product_id'])->groupBy('cart_items.ticket_id');
+                $query->where('products.parent_id', $args['product_id'])->groupBy('cart_items.ticket_id','cart_items.cart_id');
             }
             else{
                 $owner = bagisto_graphql()->guard($this->guard)->user();
@@ -1155,7 +1155,7 @@ class ProductMutation extends Controller
             ->where('products.type', 'simple')
             ->whereNULL('products.product_type')
             ->where('products.parent_id', $args['product_id'])
-            ->groupBy('cart_items.ticket_id')
+            ->groupBy('cart_items.ticket_id','cart_items.cart_id')
             ->orderBy('orders.id' ,'desc')->get();
 
             if(!empty($merchantList))
@@ -1196,17 +1196,18 @@ class ProductMutation extends Controller
     public function getBookedTicketListByCustomer($rootValue, array $args, GraphQLContext $context)
     {
         $owner = bagisto_graphql()->guard($this->guard)->user();
-
+        $prefix = DB::getTablePrefix();
         $query=  \Webkul\GraphQLAPI\Models\Catalog\Product::query()
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.id','products.sku as productName','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name as firstname','addresses.last_name  as lastname','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','orders.status','cart_items.base_price as basePrice','cart_items.quantity as purchasedQuantity')
+            ->addSelect('products.id','products.sku as productName','orders.created_at','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name as firstname','addresses.last_name  as lastname','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','orders.status','cart_items.base_price as basePrice')
+            ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
             ->whereIn('orders.status', ['completed','pending'])
             ->where('addresses.default_address', 1)
             ->where('products.type', 'booking')
             ->where('orders.customer_email', $owner->email)
-//            ->groupBy('cart_items.ticket_id')
+            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
             ->orderBy('orders.id' ,'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
