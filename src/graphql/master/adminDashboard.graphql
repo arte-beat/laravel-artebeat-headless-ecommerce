@@ -1,0 +1,23 @@
+extend type Mutation @guard(with: ["admin-api"]) {
+    getStatistics: AdminDashboardStatistics @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\AdminDashboardMutation@getStatistics")
+
+    getLatestTenEventBookingRequests: [EventBookingResponse!] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\AdminDashboardMutation@getLatestTenEventBookingRequests")
+
+    getLatestTenCustomers: [Customer!] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\AdminDashboardMutation@gerLatestTenCustomers")
+
+    getLatestTenEvents: [EventBookingResponse!] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\AdminDashboardMutation@getLatestTenEvents")
+}
+
+type AdminDashboardStatistics {
+    total_customers: Int
+    total_event_organisers: Int
+    total_artists: Int
+    total_event_bookings: Int
+    total_merchandise_orders: Int
+    total_events: Int
+    total_revenue: Int
+    total_event_revenue: Int
+    total_merchandise_revenue: Int
+    total_rating_and_reviews: Int
+    total_booking_enquiries: Int
+}
