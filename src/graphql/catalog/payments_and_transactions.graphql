@@ -13,6 +13,7 @@ input BookingPaymentsAndTransactionsInput {
 
 type BookingPaymentsAndTransactionsResponse {
     id: ID!
+    order_id: String
     customer_name: String
     customer_email: String
     grand_total: Float

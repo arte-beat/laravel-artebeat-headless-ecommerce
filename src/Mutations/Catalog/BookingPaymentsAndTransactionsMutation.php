@@ -55,6 +55,7 @@ class BookingPaymentsAndTransactionsMutation extends Controller
         $result = $query->paginate($count,['*'],'page',$page);
         foreach ($result as $index => $item) {
             $result[$index]['mode_of_payment'] = 'Credit Card';
+            $result[$index]['order_id'] = '#'.$item['id'];
         }
         return $result;
     }
@@ -65,7 +66,8 @@ class BookingPaymentsAndTransactionsMutation extends Controller
 
         $query = \Webkul\Sales\Models\Order::query();
         $query->addSelect("*");
-        $query->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name");
+        $query->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
+            ->where('orders.id', $args['id']);
 //        $query->leftJoin('cart_items', 'orders.cart_id', '=', 'cart_items.cart_id')
 //            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
 //            ->addSelect('orders.*','products.sku as event_name')
@@ -73,6 +75,7 @@ class BookingPaymentsAndTransactionsMutation extends Controller
 //            ->groupBy('orders.cart_id')
 //            ->orderBy('orders.id', 'desc');
         $result = $query->first();
+        $result['order_id'] = '#'.$result['id'];
         $result['mode_of_payment'] = 'Credit Card';
         return $result;
     }
