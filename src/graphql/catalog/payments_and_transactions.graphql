@@ -1,16 +1,19 @@
 #Catalog\Product Related API
 
 extend type Query @guard{
-    getAllBookingPaymentsAndTransactionsResponse: [BookingPaymentsAndTransactionsResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getAllBookingPaymentsAndTransactionsResponse")
+    getAllBookingPaymentsAndTransactionsResponse(input: BookingPaymentsAndTransactionsInput): [BookingPaymentsAndTransactionsResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getAllBookingPaymentsAndTransactionsResponse")
 
     getParticularBookingPaymentsAndTransactionsResponse(id: ID!): BookingPaymentsAndTransactionsResponse! @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getParticularBookingPaymentsAndTransactionsResponse")
 }
 
+input BookingPaymentsAndTransactionsInput {
+    customer_name: String
+    email: String
+}
+
 type BookingPaymentsAndTransactionsResponse {
     id: ID!
-    event_name: String
-    customer_first_name: String
-    customer_last_name: String
+    customer_name: String
     customer_email: String
     grand_total: Float
     mode_of_payment: String
