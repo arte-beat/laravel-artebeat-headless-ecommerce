@@ -54,7 +54,16 @@ class BookingPaymentsAndTransactionsMutation extends Controller
 
     public function getParticularBookingPaymentsAndTransactionsResponse($rootValue, array $args, GraphQLContext $context)
     {
-        $result = $this->orderRepository->findOrFail($args['id']);
+        $order = $this->orderRepository->findOrFail($args['id']);
+
+        $query = \Webkul\Sales\Models\Order::query();
+        $query->leftJoin('cart_items', 'orders.cart_id', '=', 'cart_items.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->addSelect('orders.*','products.sku as event_name')
+            ->where('orders.id', $args['id'])
+            ->groupBy('orders.cart_id')
+            ->orderBy('orders.id', 'desc');
+        $result = $query->first();
         $result['mode_of_payment'] = 'Credit Card';
         return $result;
     }
