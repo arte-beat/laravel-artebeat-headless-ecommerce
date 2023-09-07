@@ -38,7 +38,11 @@ class BookingPaymentsAndTransactionsMutation extends Controller
     public function getAllBookingPaymentsAndTransactionsResponse($rootValue, array $args, GraphQLContext $context)
     {
         $query = \Webkul\Sales\Models\Order::query();
-        $query->orderBy('id', 'desc');
+        $query->leftJoin('cart_items', 'orders.cart_id', '=', 'cart_items.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->addSelect('orders.*','products.sku as event_name')
+            ->groupBy('orders.cart_id')
+            ->orderBy('orders.id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         $result = $query->paginate($count,['*'],'page',$page);

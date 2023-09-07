@@ -1204,9 +1204,9 @@ class ProductMutation extends Controller
             ->addSelect('products.id','products.sku as productName','orders.created_at','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name as firstname','addresses.last_name  as lastname','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','orders.status','cart_items.base_price as basePrice')
             ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
             ->whereIn('orders.status', ['completed','pending'])
-            ->where('addresses.default_address', 1)
+//            ->where('addresses.default_address', 1)
             ->where('products.type', 'booking')
-            ->where('orders.customer_email', $owner->email)
+//            ->where('orders.customer_email', $owner->email)
             ->groupBy('cart_items.product_id', 'cart_items.cart_id')
             ->orderBy('orders.id' ,'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
