@@ -550,4 +550,23 @@ class ThankYouScreenMutation extends Controller
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count, ['*'], 'page', $page);
     }
+
+    public function getBookedEvents($rootValue, array $args, GraphQLContext $context)
+    {
+        DB::enableQueryLog();
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query()
+            ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
+            ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity')
+            ->whereIn('orders.status', ['completed', 'pending'])
+            ->where('products.type', 'booking')
+            ->whereNULL('products.product_type');
+            $query->where('orders.id', $args['order_id']);
+        $query->groupBy('cart_items.ticket_id');
+        $query->orderBy('orders.id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count, ['*'], 'page', $page);
+    }
 }

@@ -160,11 +160,14 @@ type CustomerTicketResponse
     lastname: String
     email: String
     status: String
+    basePrice: Float
+    purchasedQuantity: Int
     price : Float
     productName: String
     images: [Image!] @hasMany
     artists: [Artist!]!
     promoters: [Promoter!]!
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     booking: BookingProduct @hasOne(relation: "booking_product")
 
 }
@@ -186,6 +189,7 @@ type BookedMerchantResponse
     purchasedQuantity: Int
     price : Float
     images: [Image!] @hasMany
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     quantities: [Quantity!] @hasMany
     address_type: String
     address1: String
