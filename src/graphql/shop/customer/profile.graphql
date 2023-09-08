@@ -5,6 +5,7 @@ extend type Query @guard(with: ["api"]) {
 
     getCardDetails:CardDetailsOutput @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getCardDetails")
 
+    getAllPaymentsHistory:BookingPaymentsAndTransactionsResponse!  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getAllPaymentsHistory")
 
 }
 
@@ -27,9 +28,9 @@ extend type Mutation @guard(with: ["api"]) {
     deleteCardDetails(id: ID!): CardDetailsOutput  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@deleteCardDetails")
 
 
-    saveBankDetails( input: CardDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@saveBankDetails")
+    saveBankDetails( input: BankDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@saveBankDetails")
 
-    updateBankDetails(   id: ID!,  input: UpdateCardDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@updateBankDetails")
+    updateBankDetails(   id: ID!,  input: BankDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@updateBankDetails")
     deleteBankDetails(id: ID!): CardDetailsOutput  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@deleteBankDetails")
 }
 
@@ -96,6 +97,27 @@ input DeleteProfileInput {
     password: String!
 }
 
+input BankDetailsInput {
+    id : String!
+    stripeToken: String!
+    object: String,
+    account_holder_name: String,
+    account_holder_type: String,
+    account_type: String,
+    bank_name: String,
+    country: String,
+    currency: String,
+    customer: String,
+    fingerprint: String,
+    status: String,
+    last4: Int,
+    routing_number: Int
+    metadata: [BankMetaDataInput]
+}
+input BankMetaDataInput {
+    order_id: Int
+}
+
 type ProfileInfoResult {
     status: Boolean
     message: String
@@ -124,6 +146,11 @@ type CardDetailsOutput {
     last4:Int
     card_response: String
     success: String
+    account_holder_type : String
+    account_type: String
+    bank_name: String
+    currency: String
+    fingerprint: String
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
 
