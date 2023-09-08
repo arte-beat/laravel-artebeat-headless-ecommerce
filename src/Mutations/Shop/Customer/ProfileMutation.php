@@ -5,6 +5,7 @@ namespace Webkul\GraphQLAPI\Mutations\Shop\Customer;
 use Exception;
 use Hash;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Event;
@@ -342,7 +343,7 @@ class ProfileMutation extends Controller
         $params ['card_id']= $args['input']['card'][0]['id'];
         $params ['brand']= $args['input']['card'][0]['brand'];
         $params ['funding']= $args['input']['card'][0]['funding'];
-        $params ['type']= $args['input']['type'];
+        $params ['type']= $args['input']['card'][0]['object'];
         $params ['country']= $args['input']['card'][0]['country'];
         $params ['exp_month']= $args['input']['card'][0]['exp_month'];
         $params ['exp_year']= $args['input']['card'][0]['exp_year'];
@@ -475,20 +476,22 @@ class ProfileMutation extends Controller
            $stripe_cust_id = $createstripeCustomer->id;
            $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
        }
+
         $params ['customer_id']= $customer->id;
-        $params ['card_id']= $args['input']['card'][0]['id'];
-        $params ['brand']= $args['input']['card'][0]['brand'];
-        $params ['funding']= $args['input']['card'][0]['funding'];
-        $params ['type']= $args['input']['type'];
-        $params ['country']= $args['input']['card'][0]['country'];
-        $params ['exp_month']= $args['input']['card'][0]['exp_month'];
-        $params ['exp_year']= $args['input']['card'][0]['exp_year'];
-        $params ['last4']= $args['input']['card'][0]['last4'];
-        $params ['name']= $args['input']['card'][0]['name'];
+        $params ['card_id']= $args['input']['id'];
+        $params ['type']= $args['input']['object'];
+        $params ['country']= $args['input']['country'];
+        $params ['last4']= $args['input']['last4'];
+        $params ['name']= $args['input']['account_holder_name'];
+        $params ['fingerprint']= $args['input']['fingerprint'];
+        $params ['account_holder_type']= $args['input']['account_holder_type'];
+        $params ['account_type']= $args['input']['account_type'];
+        $params ['bank_name']= $args['input']['bank_name'];
+        $params ['currency']= $args['input']['currency'];
         $params ['card_response']= json_encode($args['input']);
         $validator = Validator::make( $args['input'], [
             'stripeToken'   => 'required',
-            'card'        => 'required',
+            'id'        => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -540,10 +543,10 @@ class ProfileMutation extends Controller
            $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
        }
 
-        $params ['name']= $args['input']['name'];
+        $params ['name']= $args['input']['account_holder_name'];
         $id = $args['id'];
         $validator = Validator::make( $args['input'], [
-            'name'   => 'required'
+            'account_holder_name'   => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -569,7 +572,7 @@ class ProfileMutation extends Controller
 
         try {
             $this->customerPaymentMethodsRepository->delete($id);
-            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Card Details'])];
+            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Bank Details'])];
         } catch(\Exception $e) {
             throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Artist']));
         }
@@ -594,5 +597,39 @@ class ProfileMutation extends Controller
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function getAllPaymentsHistory($rootValue, array $args, GraphQLContext $context)
+    {
+
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (! bagisto_graphql()->guard($this->guard)->check() ) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        if(!empty($customer))
+        {
+            DB::enableQueryLog();
+            $query = \Webkul\Sales\Models\Order::query();
+            $query->addSelect("*");
+            $query->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name");
+            if(!empty($customer->email)){
+                $query->where('orders.customer_email', $customer->email);
+            }
+            $query->orderBy('orders.id', 'desc');
+           // dd(DB::getQueryLog());
+            $count = isset($args['first']) ? $args['first'] : 10;
+            $page = isset($args['page']) ? $args['page'] : 1;
+            $result = $query->paginate($count,['*'],'page',$page);
+            foreach ($result as $index => $item)
+            {
+                $result[$index]['mode_of_payment'] = 'Credit Card';
+                $result[$index]['order_id'] = '#'.$item['id'];
+            }
+        }
+        return $result;
     }
 }
