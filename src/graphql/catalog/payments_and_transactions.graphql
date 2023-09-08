@@ -6,14 +6,30 @@ extend type Query @guard{
     getParticularBookingPaymentsAndTransactionsResponse(id: ID!): BookingPaymentsAndTransactionsResponse! @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getParticularBookingPaymentsAndTransactionsResponse")
 }
 
+extend type Mutation @guard(with: ["api"]) {
+    updateOrderStatus(order_id: ID!, status: String!): ChangeOrderStatusResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@updateOrderStatus")
+}
+
+input UpdateOrderStatusInput {
+    order_id: ID!
+    status: String!
+}
+
 input BookingPaymentsAndTransactionsInput {
     customer_name: String
     email: String
+    status: String
+}
+
+type ChangeOrderStatusResponse {
+    status: String
+    success: String
 }
 
 type BookingPaymentsAndTransactionsResponse {
     id: ID!
     order_id: String
+    status: String
     customer_name: String
     customer_email: String
     grand_total: Float

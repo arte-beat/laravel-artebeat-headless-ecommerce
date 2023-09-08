@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
+use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\Product\Models\Product;
 use Webkul\Product\Http\Controllers\Controller;
 use Webkul\Sales\Repositories\OrderRepository;
@@ -48,6 +49,9 @@ class BookingPaymentsAndTransactionsMutation extends Controller
         if(!empty($args['input']['email'])){
             $query->where('orders.customer_email', 'like', '%' .  $args['input']['email'] . '%');
         }
+        if(!empty($args['input']['status'])){
+            $query->where('orders.status', 'like', '%' .  $args['input']['status'] . '%');
+        }
         $query->orderBy('orders.id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
@@ -78,5 +82,21 @@ class BookingPaymentsAndTransactionsMutation extends Controller
         $result['order_id'] = '#'.$result['id'];
         $result['mode_of_payment'] = 'Credit Card';
         return $result;
+    }
+
+    public function updateOrderStatus($rootValue, array $args, GraphQLContext $context)
+    {
+        $order_id   = $args['order_id'];
+        $status     = $args['status'];
+
+        $updatedData['status'] = $status;
+        if ($order = $this->orderRepository->update($updatedData, $order_id)) {
+            return [
+                'status' => $status,
+                'success' => "Order status updated successfully."
+            ];
+        } else {
+            throw new CustomException('Error while updating order status.','Error while updating order status.');
+        }
     }
 }
