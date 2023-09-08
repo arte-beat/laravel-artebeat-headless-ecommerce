@@ -2,6 +2,10 @@
 extend type Query @guard(with: ["api"]) {
     # Please
     getProfile: ProfileInfoResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@get")
+
+    getCardDetails:CardDetailsOutput @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getCardDetails")
+
+
 }
 
 extend type Mutation @guard(with: ["api"]) {
@@ -16,6 +20,17 @@ extend type Mutation @guard(with: ["api"]) {
     deleteProfile(
         input: DeleteProfileInput!
     ): ProfileDeleteResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@delete")
+
+    saveCardDetails( input: CardDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@saveCardDetails")
+
+    updateCardDetails(   id: ID!,  input: UpdateCardDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@updateCardDetails")
+    deleteCardDetails(id: ID!): CardDetailsOutput  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@deleteCardDetails")
+
+
+    saveBankDetails( input: CardDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@saveBankDetails")
+
+    updateBankDetails(   id: ID!,  input: UpdateCardDetailsInput!): CardDetailsOutput @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@updateBankDetails")
+    deleteBankDetails(id: ID!): CardDetailsOutput  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@deleteBankDetails")
 }
 
 input UpdateProfileInput {
@@ -31,6 +46,46 @@ input UpdateProfileInput {
     uploadType: UploadType @rename(attribute: "upload_type")
     imageUrl: String @rename(attribute: "image_url")
     image: Upload
+}
+
+input CardDetailsInput {
+    stripeToken: String!
+    object: String,
+    card : [CardResponseInput]!
+    client_ip: String,
+    created: Int,
+    livemode: Boolean,
+    type: String,
+    used: Boolean
+}
+
+input UpdateCardDetailsInput {
+    name: String!
+}
+input CardResponseInput
+{
+    id: String !,
+    object: String ,
+    address_city: String ,
+    address_country: String ,
+    address_line1: String ,
+    address_line1_check: String,
+    address_line2: String,
+    address_state: String,
+    address_zip: String,
+    address_zip_check: String,
+    brand: String!,
+    name: String!,
+    country: String!,
+    cvc_check: String,
+    dynamic_last4: String,
+    exp_month: Int!,
+    exp_year: Int!,
+    funding: String!,
+    last4: Int!,
+    name: String,
+    tokenization_method: String,
+    wallet: String
 }
 
 input ChangeCustomerTypeInput {
@@ -55,6 +110,23 @@ type ChangeCustomerTypeResponse {
 type ProfileDeleteResponse {
     status: Boolean
     success: String
+}
+type CardDetailsOutput {
+    id : Int
+    customer_id : Int
+    card_id : String
+    name : String
+    brand: String
+    funding: String
+    type: String
+    country: String
+    exp_month : Int
+    last4:Int
+    card_response: String
+    success: String
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+
 }
 
 enum UploadType {
