@@ -18,6 +18,8 @@ use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\GraphQLAPI\Mail\SocialLoginPasswordResetEmail;
 use Laravel\Socialite\Facades\Socialite;
 
+use Webkul\SocialLogin\Models\CustomerSocialAccount;
+
 class RegistrationMutation extends Controller
 {
     /**
@@ -198,7 +200,7 @@ class RegistrationMutation extends Controller
 
         $validator = Validator::make($data, [
             'access_token' => 'string|required',
-            'signup_type' => 'string|required|in:facebook,google,truecaller,twitter,linkedin,github',
+            'signup_type' => 'string|required|in:facebook,google,twitter,linkedin,github',
             'remember' => 'boolean',
         ]);
         
@@ -219,75 +221,90 @@ class RegistrationMutation extends Controller
         $token = $data['access_token'];
         $signUpType = $data['signup_type'];
 
-        // Truecaller signup
-        if ($signUpType == 'truecaller') {
-            if (empty($data['phone'])) {
-                throw new CustomException(trans('bagisto_graphql::app.validation.required', ['field' => 'phone number']),
-                    'Invalid request parameters.');
-            }
-            $customer = $this->customerRepository->findOneByField('phone', $data['phone']);
-                
-            if ($customer && $customer->email) {
-                throw new CustomException(trans('bagisto_graphql::app.shop.response.warning-num-already-used', ['phone' => $data['phone']]),'Invalid request parameters.');
-            }
-        } else{
-            $socialUser = Socialite::driver($signUpType)->userFromToken($token);
-            if($socialUser && $socialUser->email){
+        $socialUser = Socialite::driver($signUpType)->userFromToken($token);
+
+        if ($socialUser) {
+
+            $socialLoginDetails = CustomerSocialAccount::where('provider_name', $signUpType)
+                ->where('provider_id', $socialUser->id)
+                ->first();
+            
+            if($socialLoginDetails && $socialLoginDetails->customer_id) {
+                    //Customer already exists
+                    $customer = $this->customerRepository->findOneByField('id', $socialLoginDetails->customer_id);
+                    return $this->loginCustomer($customer, $data);
+
+            } else if ($socialUser->email) {
+
                 $customer = $this->customerRepository->findOneByField('email', $socialUser->email);
+
+                // If customer already exists Login the customer
+                if ($customer) {
+                    if ($customer->status == 0 || $customer->is_verified == 0) {
+                        throw new CustomException(trans('shop::app.customer.login-form.not-activated'),'Account Not Activated.');
+                    }
+
+                    CustomerSocialAccount::create([
+                        'provider_name' => $signUpType,
+                        'provider_id' => $socialUser->id,
+                        'customer_id' => $customer->id,
+                    ]);
+
+                    return $this->loginCustomer($customer, $data);
+                }
             } else {
-                throw new Exception('Invalid request parameters.');
-            }
-        }
+                //create customer
+                $name = explode(" ",$socialUser->name);
+                
+                $data   = array_merge($data, [
+                    'first_name'        => $name[0],
+                    'last_name'         => isset($name[1]) ? $name[1] : '',
+                    'email'             => null,
+                    'api_token'         => Str::random(80),
+                    'is_verified'       => core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
+                    'customer_group_id' => $this->customerGroupRepository->findOneWhere(['code' => 'general'])->id,
+                    'token'             => $token,
+                ]);
 
-        // If customer already exists Login the customer
-        if ($customer) {
-            if ($customer->status == 0 || $customer->is_verified == 0) {
-                throw new CustomException(trans('shop::app.customer.login-form.not-activated'),'Account Not Activated.');
-            }
-            return $this->loginCustomer($customer, $data);
-        }
+                Event::dispatch('customer.registration.before');
 
-        $name = explode(" ",$socialUser->name);
+                $customer = $this->customerRepository->create($data);
+
+                if (!$customer) {
+                    return [
+                        'status'    => false,
+                        'success'   => trans('bagisto_graphql::app.shop.response.error-registration')
+                    ]; 
+                }
+
+                CustomerSocialAccount::create([
+                    'provider_name' => $signUpType,
+                    'provider_id' => $socialUser->id,
+                    'customer_id' => $customer->id,
+                ]);
+
+                try {
+                    $configCustomerKey = 'emails.general.notifications.emails.general.notifications.registration';
+                    if (core()->getConfigData($configCustomerKey)) {
+                        $data['is_social_login'] = true;
+                        Mail::queue(new RegistrationEmail($data, 'customer'));
+                    }
+
+                    $configAdminKey = 'emails.general.notifications.emails.general.notifications.customer-registration-confirmation-mail-to-admin';
+                    if (core()->getConfigData($configAdminKey)) {
+                        Mail::queue(new RegistrationEmail($data, 'admin'));
+                    }
+                } catch (Exception $e) {}
+
+                $customer = $this->customerRepository->findOneByField('email', $socialUser->email);
+
+                return $this->loginCustomer($customer, $data);
+            }
+        } else {
+            //No Social User Found
+            return new Exception("Invalid token");
+        }
         
-        $data   = array_merge($data, [
-            'first_name'        => $name[0],
-            'last_name'         => isset($name[1]) ? $name[1] : '',
-            'email'             => $socialUser->email,
-            'api_token'         => Str::random(80),
-            'is_verified'       => core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
-            'customer_group_id' => $this->customerGroupRepository->findOneWhere(['code' => 'general'])->id,
-            'token'             => $token,
-        ]);
-
-        Event::dispatch('customer.registration.before');
-
-        $customer = $this->customerRepository->create($data);
-
-        if (!$customer) {
-            return [
-                'status'    => false,
-                'success'   => trans('bagisto_graphql::app.shop.response.error-registration')
-            ]; 
-        }
-
-        // Event::dispatch('customer.registration.after', $customer);
-
-        try {
-            $configCustomerKey = 'emails.general.notifications.emails.general.notifications.registration';
-            if (core()->getConfigData($configCustomerKey)) {
-                $data['is_social_login'] = true;
-                Mail::queue(new RegistrationEmail($data, 'customer'));
-            }
-
-            $configAdminKey = 'emails.general.notifications.emails.general.notifications.customer-registration-confirmation-mail-to-admin';
-            if (core()->getConfigData($configAdminKey)) {
-                Mail::queue(new RegistrationEmail($data, 'admin'));
-            }
-        } catch (Exception $e) {}
-
-        $customer = $this->customerRepository->findOneByField('email', $socialUser->email);
-
-        return $this->loginCustomer($customer, $data);
     }
 
     /**

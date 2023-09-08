@@ -24,7 +24,6 @@ input CreateSocialSignUpInput {
 }
 
 enum SocialSignUpType {
-    TRUECALLER @enum(value: "truecaller")
     FACEBOOK @enum(value: "facebook")
     TWITTER @enum(value: "twitter")
     GOOGLE @enum(value: "google")

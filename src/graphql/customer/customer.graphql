@@ -60,7 +60,7 @@ type Customer {
     customerType: Int @rename(attribute: "customer_type")
     gender: String
     dateOfBirth: String @rename(attribute: "date_of_birth")
-    email: String!
+    email: String
     phone: String
     notes: String
     image: String
