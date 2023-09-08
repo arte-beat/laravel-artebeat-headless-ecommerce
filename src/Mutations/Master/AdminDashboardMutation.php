@@ -3,14 +3,8 @@
 namespace Webkul\GraphQLAPI\Mutations\Master;
 
 use Exception;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Webkul\Admin\Http\Controllers\Controller;
-use Webkul\GraphQLAPI\Validators\Customer\CustomException;
-use Webkul\Product\Repositories\ArtistRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
-use Webkul\Product\Models\Artist;
 
 class AdminDashboardMutation extends Controller
 {
@@ -26,18 +20,6 @@ class AdminDashboardMutation extends Controller
         auth()->setDefaultDriver($this->guard);
         $this->_config = request('_config');
     }
-
-// - View Total Customers
-// - View Total Event Organisers (merchants) or Person
-// - View the total artist
-// - View Total Event Bookings
-// - View Total Merchandise Orders
-// - View Total Events
-// - View Total Revenue
-// - View Total Event Revenue
-// - View Total Merchandise Revenue
-// - View Total Rating and Reviews
-// - View Total Booking Enquiries
 
     /**
      * Store a newly created resource in storage.
@@ -108,6 +90,15 @@ class AdminDashboardMutation extends Controller
     {
         try {
             $data = \Webkul\Product\Models\Product::orderBy('id', 'desc')->take(10)->get();
+            return $data;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    public function getLatestTenPaymentAndTransactions($rootValue, array $args, GraphQLContext $context){
+        try {
+            $data = \Webkul\Sales\Models\Order::orderBy('id', 'desc')->take(10)->get();
             return $data;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
