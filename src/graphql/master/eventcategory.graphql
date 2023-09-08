@@ -19,17 +19,20 @@ extend type Mutation @guard {
 }
 
 input EventCategoryInput {
+    type: Int!
     name: String!
     commission: Float
 }
 
 input FilterEventCategoryInput {
+    type: Int
     id: Int
     name: String
 }
 
 type EventCategory {
     id: ID!
+    type: Int
     name: String! @rename(attribute: "name")
     commission: Float
 #    description: String! @rename(attribute: "description")

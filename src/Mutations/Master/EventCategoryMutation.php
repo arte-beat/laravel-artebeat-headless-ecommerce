@@ -44,6 +44,7 @@ class EventCategoryMutation extends Controller
         $data = $args['input'];
 
         $validator = Validator::make($data, [
+            'type'  => 'required',
             'name'  => 'string|required|unique:event_category,name',
         ]);
         
@@ -75,6 +76,7 @@ class EventCategoryMutation extends Controller
         $id = $args['id'];
 
         $validator = Validator::make($data, [
+            'type'  => 'required',
             'name'  => 'string|required|unique:event_category,name,' . $id,
         ]);
 
