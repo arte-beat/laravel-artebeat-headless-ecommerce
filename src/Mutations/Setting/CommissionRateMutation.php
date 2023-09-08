@@ -45,6 +45,7 @@ class CommissionRateMutation extends Controller
             'event_id' => 'required_without:category_id|exists:products,id',
             'category_id' => 'required_without:event_id|exists:event_category,id',
             'rate' => 'required|numeric|min:0|max:100',
+            'type' => 'required',
             'status' => 'in:0,1',
         ]);
 
@@ -56,11 +57,31 @@ class CommissionRateMutation extends Controller
             if(isset($data['category_id']) && isset($data['event_id'])){
                 throw new Exception('Invalid Type. Please select either Category or Event'); 
             }
-            if(isset($data['category_id'])){
-                $data['type'] = 'category_commission';
-            } else {
-                $data['type'] = 'event_commission';
+//            if(isset($data['category_id'])){
+//                $data['type'] = 'category_commission';
+//            } else {
+//                $data['type'] = 'event_commission';
+//            }
+
+            $type = 'global_commission';
+            if(isset($data['type'])){
+                if($data['type'] == 'global'){
+                    $type = 'global_commission';
+                }
+                if($data['type'] == 'event'){
+                    $type = 'event_commission';
+                }
+                if($data['type'] == 'category'){
+                    $type = 'category_commission';
+                }
+                if($data['type'] == 'merchant'){
+                    $type = 'merchant_commission';
+                }
+                if($data['type'] == 'showcase'){
+                    $type = 'showcase_commission';
+                }
             }
+            $data['type'] = $type;
             $commissionRate = $this->commissionRateRepository->store($data);
             if($commissionRate) {
                 $commissionRate->success = "Successfully Added New Commission Rate";

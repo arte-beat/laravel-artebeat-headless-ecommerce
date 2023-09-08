@@ -38,6 +38,7 @@ input CommissionRateFilterInput {
 
 input commissionRateInput {
   rate: Float @rules(apply: ["required"])
+  type: String @rules(apply: ["required"])
   event_id: ID
   category_id: ID
   description: String
