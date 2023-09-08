@@ -11,7 +11,10 @@ use Illuminate\Support\Facades\Event;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Customer\Http\Controllers\Controller;
 use Webkul\Customer\Repositories\CustomerRepository;
+use Webkul\Customer\Repositories\CustomerPaymentMethodsRepository;
+use \Webkul\Customer\Models\CustomerPaymentMethods;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
+use Stripe;
 
 class ProfileMutation extends Controller
 {
@@ -27,7 +30,7 @@ class ProfileMutation extends Controller
      *
      * @var \Webkul\Customer\Repositories\CustomerRepository
      */
-    protected $customerRepository;
+    protected $customerRepository,$customerPaymentMethodsRepository;
 
     /**
      * allowedImageMimeTypes array
@@ -46,10 +49,12 @@ class ProfileMutation extends Controller
      * Create a new controller instance.
      *
      * @param  \Webkul\Customer\Repositories\CustomerRepository  $customerRepository
+     * @param  \Webkul\Customer\Repositories\CustomerPaymentMethodsRepository  $customerPaymentMethodsRepository
      * @return void
      */
     public function __construct(
-        CustomerRepository $customerRepository
+        CustomerRepository $customerRepository,
+        CustomerPaymentMethodsRepository $customerPaymentMethodsRepository
     )
     {
         $this->guard = 'api';
@@ -59,6 +64,7 @@ class ProfileMutation extends Controller
         $this->middleware('auth:' . $this->guard);
         
         $this->customerRepository = $customerRepository;
+        $this->customerPaymentMethodsRepository = $customerPaymentMethodsRepository;
     }
 
     /**
@@ -93,6 +99,7 @@ class ProfileMutation extends Controller
             ];
         }
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -293,5 +300,299 @@ class ProfileMutation extends Controller
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
+    }
+
+    public function saveCardDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (! bagisto_graphql()->guard($this->guard)->check() ) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $stripe_cust_id = $customer->stripe_customer_id;
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+       if(empty($customer->stripe_customer_id)) {
+           $createstripeCustomer= Stripe\Customer::create(array(
+               "email" => $customer->email,
+               "name" =>$customer->first_name.' '.$customer->last_name,
+               "source" => $args['stripeToken']
+           ));
+       }
+
+       $stripeCustomer =Stripe\Customer::retrieve($stripe_cust_id);
+
+       if(count($stripeCustomer) === 0)
+       {
+           $createstripeCustomer = Stripe\Customer::create(array(
+            "email" => $customer->email,
+            "name" =>$customer->first_name.' '.$customer->last_name,
+            "source" => $args['stripeToken']
+        ));
+       }
+       if(!empty($createstripeCustomer)){
+           $stripe_cust_id = $createstripeCustomer->id;
+           $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
+       }
+        $params ['customer_id']= $customer->id;
+        $params ['card_id']= $args['input']['card'][0]['id'];
+        $params ['brand']= $args['input']['card'][0]['brand'];
+        $params ['funding']= $args['input']['card'][0]['funding'];
+        $params ['type']= $args['input']['type'];
+        $params ['country']= $args['input']['card'][0]['country'];
+        $params ['exp_month']= $args['input']['card'][0]['exp_month'];
+        $params ['exp_year']= $args['input']['card'][0]['exp_year'];
+        $params ['last4']= $args['input']['card'][0]['last4'];
+        $params ['name']= $args['input']['card'][0]['name'];
+        $params ['card_response']= json_encode($args['input']);
+        $validator = Validator::make( $args['input'], [
+            'stripeToken'   => 'required',
+            'card'        => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+        try {
+            $storePaymentMethod = $this->customerPaymentMethodsRepository->create($params);
+            return $storePaymentMethod;
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+
+    }
+
+    public function updateCardDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (! bagisto_graphql()->guard($this->guard)->check() ) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $stripe_cust_id = $customer->stripe_customer_id;
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+       if(empty($customer->stripe_customer_id)) {
+           $createstripeCustomer= Stripe\Customer::create(array(
+               "email" => $customer->email,
+               "name" =>$customer->first_name.' '.$customer->last_name,
+               "source" => $args['stripeToken']
+           ));
+       }
+
+       $stripeCustomer =Stripe\Customer::retrieve($stripe_cust_id);
+
+       if(count($stripeCustomer) === 0)
+       {
+           $createstripeCustomer = Stripe\Customer::create(array(
+            "email" => $customer->email,
+            "name" =>$customer->first_name.' '.$customer->last_name,
+            "source" => $args['stripeToken']
+        ));
+       }
+       if(!empty($createstripeCustomer)){
+           $stripe_cust_id = $createstripeCustomer->id;
+           $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
+       }
+
+        $params ['name']= $args['input']['name'];
+        $id = $args['id'];
+        $validator = Validator::make( $args['input'], [
+            'name'   => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+        try {
+            $storePaymentMethod = $this->customerPaymentMethodsRepository->update($params,$id);
+            return $storePaymentMethod;
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+
+    }
+
+    public function deleteCardDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+        $artist = $this->customerPaymentMethodsRepository->findOrFail($id);
+
+        try {
+            $this->customerPaymentMethodsRepository->delete($id);
+            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Card Details'])];
+        } catch(\Exception $e) {
+            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Artist']));
+        }
+
+    }
+
+    public function saveBankDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (! bagisto_graphql()->guard($this->guard)->check() ) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $stripe_cust_id = $customer->stripe_customer_id;
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+       if(empty($customer->stripe_customer_id)) {
+           $createstripeCustomer= Stripe\Customer::create(array(
+               "email" => $customer->email,
+               "name" =>$customer->first_name.' '.$customer->last_name,
+               "source" => $args['stripeToken']
+           ));
+       }
+
+       $stripeCustomer =Stripe\Customer::retrieve($stripe_cust_id);
+
+       if(count($stripeCustomer) === 0)
+       {
+           $createstripeCustomer = Stripe\Customer::create(array(
+            "email" => $customer->email,
+            "name" =>$customer->first_name.' '.$customer->last_name,
+            "source" => $args['stripeToken']
+        ));
+       }
+       if(!empty($createstripeCustomer)){
+           $stripe_cust_id = $createstripeCustomer->id;
+           $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
+       }
+        $params ['customer_id']= $customer->id;
+        $params ['card_id']= $args['input']['card'][0]['id'];
+        $params ['brand']= $args['input']['card'][0]['brand'];
+        $params ['funding']= $args['input']['card'][0]['funding'];
+        $params ['type']= $args['input']['type'];
+        $params ['country']= $args['input']['card'][0]['country'];
+        $params ['exp_month']= $args['input']['card'][0]['exp_month'];
+        $params ['exp_year']= $args['input']['card'][0]['exp_year'];
+        $params ['last4']= $args['input']['card'][0]['last4'];
+        $params ['name']= $args['input']['card'][0]['name'];
+        $params ['card_response']= json_encode($args['input']);
+        $validator = Validator::make( $args['input'], [
+            'stripeToken'   => 'required',
+            'card'        => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+        try {
+            $storePaymentMethod = $this->customerPaymentMethodsRepository->create($params);
+            return $storePaymentMethod;
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+
+    }
+
+    public function updateBankDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (! bagisto_graphql()->guard($this->guard)->check() ) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $stripe_cust_id = $customer->stripe_customer_id;
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+       if(empty($customer->stripe_customer_id)) {
+           $createstripeCustomer= Stripe\Customer::create(array(
+               "email" => $customer->email,
+               "name" =>$customer->first_name.' '.$customer->last_name,
+               "source" => $args['stripeToken']
+           ));
+       }
+
+       $stripeCustomer =Stripe\Customer::retrieve($stripe_cust_id);
+
+       if(count($stripeCustomer) === 0)
+       {
+           $createstripeCustomer = Stripe\Customer::create(array(
+            "email" => $customer->email,
+            "name" =>$customer->first_name.' '.$customer->last_name,
+            "source" => $args['stripeToken']
+        ));
+       }
+       if(!empty($createstripeCustomer)){
+           $stripe_cust_id = $createstripeCustomer->id;
+           $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
+       }
+
+        $params ['name']= $args['input']['name'];
+        $id = $args['id'];
+        $validator = Validator::make( $args['input'], [
+            'name'   => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+        try {
+            $storePaymentMethod = $this->customerPaymentMethodsRepository->update($params,$id);
+            return $storePaymentMethod;
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+
+    }
+
+    public function deleteBankDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+        $artist = $this->customerPaymentMethodsRepository->findOrFail($id);
+
+        try {
+            $this->customerPaymentMethodsRepository->delete($id);
+            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Card Details'])];
+        } catch(\Exception $e) {
+            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Artist']));
+        }
+
+    }
+
+    public function getCardDetails($rootValue, array $args , GraphQLContext $context)
+    {
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new CustomException(
+                trans('bagisto_graphql::app.admin.response.invalid-header'),
+                'Invalid request header parameter.'
+            );
+        }
+        $query = \Webkul\Customer\Models\CustomerPaymentMethods::query();
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        if(!empty($customer))
+        {
+            $query->where('customer_id', $customer->id);
+        }
+        $query->orderBy('id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
     }
 }
