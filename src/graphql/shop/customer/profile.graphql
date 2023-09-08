@@ -5,6 +5,8 @@ extend type Query @guard(with: ["api"]) {
 
     getCardDetails:CardDetailsOutput @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getCardDetails")
 
+    getBankDetails:CardDetailsOutput @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getBankDetails")
+
     getAllPaymentsHistory:BookingPaymentsAndTransactionsResponse!  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getAllPaymentsHistory")
 
 }

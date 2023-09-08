@@ -593,6 +593,28 @@ class ProfileMutation extends Controller
         {
             $query->where('customer_id', $customer->id);
         }
+        $query->where('type', 'card');
+        $query->orderBy('id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function getBankDetails($rootValue, array $args , GraphQLContext $context)
+    {
+        if (! bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new CustomException(
+                trans('bagisto_graphql::app.admin.response.invalid-header'),
+                'Invalid request header parameter.'
+            );
+        }
+        $query = \Webkul\Customer\Models\CustomerPaymentMethods::query();
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        if(!empty($customer))
+        {
+            $query->where('customer_id', $customer->id);
+        }
+        $query->where('type', 'bank_account');
         $query->orderBy('id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
