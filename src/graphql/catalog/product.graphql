@@ -109,6 +109,7 @@ input MerchantEventBookingInput {
     name: String!
     description: String!
     price: Float
+    commission: Float
     quantity: [QuantityInput]
     removeImages: [RemoveImagesInput]
 }
@@ -123,6 +124,7 @@ input RemoveImagesInput {
 
 input ShowCaseCollectionInput {
     product_id: Int
+    commission: Float
     showcase_id: Int
     channel: String
     locale: String
@@ -338,6 +340,7 @@ type UploadEventImagesResponse {
 
 type MerchantEventBookingResponse {
     id: ID!
+    commission: Float
     parentId: ID @rename(attribute: "parent_id")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     images: [Image!] @hasMany
@@ -349,6 +352,7 @@ type MerchantEventBookingResponse {
 
 type ShowCaseCollectionResponse {
     product_id: ID! @rename(attribute: "id")
+    commission: Float
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     images: [Image!] @hasMany
     quantities: [Quantity!] @hasMany
