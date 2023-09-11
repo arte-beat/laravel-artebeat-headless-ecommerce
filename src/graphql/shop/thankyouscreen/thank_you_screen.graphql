@@ -1,5 +1,5 @@
 # Shop\Checkout\Addresses Related API
-extend type Query @guard(with: ["api"]){
+extend type Query @guard(with: ["api", "admin-api"]){
     thankYouScreen(order_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
 
     downloadTicket(order_id: ID!, product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
