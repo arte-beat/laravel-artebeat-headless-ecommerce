@@ -100,21 +100,14 @@ input DeleteProfileInput {
 }
 
 input BankDetailsInput {
-    id : String!
-    stripeToken: String!
-    object: String,
+    id : Int
     account_holder_name: String,
     account_holder_type: String,
     account_type: String,
-    bank_name: String,
+    account_number: String,
     country: String,
     currency: String,
-    customer: String,
-    fingerprint: String,
-    status: String,
-    last4: Int,
-    routing_number: Int
-    metadata: [BankMetaDataInput]
+    routing_number: String
 }
 input BankMetaDataInput {
     order_id: Int

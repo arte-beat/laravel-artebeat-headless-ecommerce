@@ -16,6 +16,8 @@ use Webkul\Sales\Repositories\OrderRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\GraphQLAPI\Repositories\NotificationRepository;
+use Webkul\Customer\Repositories\CustomerPaymentMethodsRepository;
+use \Webkul\Customer\Models\CustomerPaymentMethods;
 use Stripe;
 
 class CheckoutMutation extends Controller
@@ -30,23 +32,25 @@ class CheckoutMutation extends Controller
     /**
      * Create a new controller instance.
      *
-     * @param  \Webkul\Customer\Repositories\CustomerRepository  $customerRepository
-     * @param  \Webkul\Customer\Repositories\CustomerAddressRepository  $customerAddressRepository
-     * @param  \Webkul\Sales\Repositories\OrderRepository  $orderRepository
-     * @param  \Webkul\GraphQLAPI\Repositories\NotificationRepository  $notificationRepository
+     * @param \Webkul\Customer\Repositories\CustomerRepository $customerRepository
+     * @param \Webkul\Customer\Repositories\CustomerAddressRepository $customerAddressRepository
+     * @param \Webkul\Sales\Repositories\OrderRepository $orderRepository
+     * @param \Webkul\GraphQLAPI\Repositories\NotificationRepository $notificationRepository
+     * @param \Webkul\Customer\Repositories\CustomerPaymentMethodsRepository $customerPaymentMethodsRepository
      * @return void
      */
     public function __construct(
-        protected CustomerRepository $customerRepository,
+        protected CustomerRepository        $customerRepository,
         protected CustomerAddressRepository $customerAddressRepository,
-        protected OrderRepository $orderRepository,
-        protected NotificationRepository $notificationRepository
+        protected OrderRepository           $orderRepository,
+        protected NotificationRepository    $notificationRepository,
+        protected CustomerPaymentMethodsRepository $customerPaymentMethodsRepository
     )
     {
         $this->guard = 'api';
 
         auth()->setDefaultDriver($this->guard);
-        
+
         $this->middleware('auth:' . $this->guard);
     }
 
@@ -55,28 +59,28 @@ class CheckoutMutation extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function addresses($rootValue, array $args , GraphQLContext $context)
+    public function addresses($rootValue, array $args, GraphQLContext $context)
     {
         $token = request()->bearerToken();
-        
+
         try {
             $validateUser = bagisto_graphql()->apiAuth($token, $this->guard);
-            
+
             $customer = [];
             $customerAddresses = [];
             $formatted_addresses = [];
 
-            if (! $token || ($token && isset($validateUser['success']) && $validateUser['success']) ) {
+            if (!$token || ($token && isset($validateUser['success']) && $validateUser['success'])) {
 
-                if ( bagisto_graphql()->guard($this->guard)->check() ) {
+                if (bagisto_graphql()->guard($this->guard)->check()) {
                     $customer = bagisto_graphql()->guard($this->guard)->user();
                     $customerAddresses = $customer->addresses()->get();
-                    
+
                     foreach ($customerAddresses as $key => $address) {
-                        
+
                         $formatted_addresses[$key] = [
-                            'id'        => $address->id,
-                            'address'   => "{$customer->first_name} {$customer->last_name}
+                            'id' => $address->id,
+                            'address' => "{$customer->first_name} {$customer->last_name}
                             {$address->address1}, {$address->city}, {$address->state}, {$address->country}, 
                             {$address->postcode}
                             T: {$address->phone}",
@@ -86,13 +90,13 @@ class CheckoutMutation extends Controller
             }
 
             return [
-                'success'           => $customer ? trans('bagisto_graphql::app.shop.customer.success-address-list') : trans('bagisto_graphql::app.shop.customer.no-address-list'),
-                'is_guest'          => (isset($customer->id)) ? 0 : 1,
-                'customer'          => $customer,
-                'addresses'         => $formatted_addresses,
-                'address_list'      => $customerAddresses,
-                'cart'              => Cart::getCart(),
-                'default_country'   => config('app.default_country') ? config('app.default_country') : 'IN'
+                'success' => $customer ? trans('bagisto_graphql::app.shop.customer.success-address-list') : trans('bagisto_graphql::app.shop.customer.no-address-list'),
+                'is_guest' => (isset($customer->id)) ? 0 : 1,
+                'customer' => $customer,
+                'addresses' => $formatted_addresses,
+                'address_list' => $customerAddresses,
+                'cart' => Cart::getCart(),
+                'default_country' => config('app.default_country') ? config('app.default_country') : 'IN'
             ];
         } catch (Exception $e) {
             throw new CustomException(
@@ -109,63 +113,63 @@ class CheckoutMutation extends Controller
      */
     public function saveCartAddresses($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new CustomException(
                 trans('bagisto_graphql::app.admin.response.error-invalid-parameter'),
                 'Invalid request parameters.'
             );
         }
-        
+
         $params = $args['input'];
         $rules = ['type' => 'required'];
 
-        if (! empty($params['billing_address_id'])) {
+        if (!empty($params['billing_address_id'])) {
             $rules = array_merge($rules, [
-                'billing_address_id'    => 'numeric|required'
+                'billing_address_id' => 'numeric|required'
             ]);
         } else {
             $rules = array_merge($rules, [
                 "billing.first_name" => ['required', new AlphaNumericSpace],
-                "billing.last_name"  => ['required', new AlphaNumericSpace],
-                "billing.email"      => ['required'],
-                "billing.address1"   => ['required'],
-                "billing.city"       => ['required'],
-                "billing.country"    => [new AlphaNumericSpace],
-                "billing.state"      => [new AlphaNumericSpace],
-                "billing.postcode"   => ['numeric'],
-                "billing.phone"      => ['required', new PhoneNumber],
+                "billing.last_name" => ['required', new AlphaNumericSpace],
+                "billing.email" => ['required'],
+                "billing.address1" => ['required'],
+                "billing.city" => ['required'],
+                "billing.country" => [new AlphaNumericSpace],
+                "billing.state" => [new AlphaNumericSpace],
+                "billing.postcode" => ['numeric'],
+                "billing.phone" => ['required', new PhoneNumber],
             ]);
         }
 
         if (empty($params['billing']['use_for_shipping'])) {
-            if (! empty($params['shipping_address_id'])) {
+            if (!empty($params['shipping_address_id'])) {
                 $rules = array_merge($rules, [
-                    'shipping_address_id'   => 'numeric|required'
+                    'shipping_address_id' => 'numeric|required'
                 ]);
             } else {
                 $rules = array_merge($rules, [
                     "shipping.first_name" => ['required', new AlphaNumericSpace],
-                    "shipping.last_name"  => ['required', new AlphaNumericSpace],
-                    "shipping.email"      => ['required'],
-                    "shipping.address1"   => ['required'],
-                    "shipping.city"       => ['required'],
-                    "shipping.country"    => [new AlphaNumericSpace],
-                    "shipping.state"      => [new AlphaNumericSpace],
-                    "shipping.postcode"   => ['numeric'],
-                    "shipping.phone"      => ['required', new PhoneNumber],
+                    "shipping.last_name" => ['required', new AlphaNumericSpace],
+                    "shipping.email" => ['required'],
+                    "shipping.address1" => ['required'],
+                    "shipping.city" => ['required'],
+                    "shipping.country" => [new AlphaNumericSpace],
+                    "shipping.state" => [new AlphaNumericSpace],
+                    "shipping.postcode" => ['numeric'],
+                    "shipping.phone" => ['required', new PhoneNumber],
                 ]);
             }
         }
 
         $validator = Validator::make($params, $rules);
-        
+
         if ($validator->fails()) {
             $errorMessage = [];
-            
+
             foreach ($validator->messages()->toArray() as $field => $message) {
-                $errorMessage[] = is_array($message) ? $field .': '. $message[0] : $field .': '. $message;
+                $errorMessage[] = is_array($message) ? $field . ': ' . $message[0] : $field . ': ' . $message;
             }
-            
+
             throw new CustomException(
                 implode(", ", $errorMessage),
                 'Invalid Create Shipping/Billing Address Details.'
@@ -174,7 +178,7 @@ class CheckoutMutation extends Controller
 
         $cart = Cart::getCart();
 
-        if ( ! $cart ) {
+        if (!$cart) {
             throw new CustomException(
                 trans('bagisto_graphql::app.shop.response.warning-empty-cart'),
                 'Your cart is empty.'
@@ -184,34 +188,34 @@ class CheckoutMutation extends Controller
         $billingAddressId = $params['billing_address_id'];
         $shippingAddressId = $params['shipping_address_id'];
 
-        if (! $billingAddressId && (! isset($params['billing']) || (isset($params['billing']) && !$params['billing']))) {
+        if (!$billingAddressId && (!isset($params['billing']) || (isset($params['billing']) && !$params['billing']))) {
             throw new CustomException(
                 trans('bagisto_graphql::app.shop.response.billing-address-missing'),
                 'Billing address missing.'
             );
         }
-    
-        if (! $shippingAddressId && (! isset($params['billing']['use_for_shipping']) || (isset($params['billing']['use_for_shipping']) && !$params['billing']['use_for_shipping'])) ) {
-            if (! isset($params['shipping']) || (isset($params['shipping']) && !$params['shipping']) ) {
+
+        if (!$shippingAddressId && (!isset($params['billing']['use_for_shipping']) || (isset($params['billing']['use_for_shipping']) && !$params['billing']['use_for_shipping']))) {
+            if (!isset($params['shipping']) || (isset($params['shipping']) && !$params['shipping'])) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.shipping-address-missing'),
                     'Shipping address missing.'
                 );
             }
         }
-        
+
         $token = 0;
-        if ( isset(getallheaders()['authorization'])) {
+        if (isset(getallheaders()['authorization'])) {
             $headerValue = explode("Bearer ", getallheaders()['authorization']);
-            if ( isset($headerValue[1]) && $headerValue[1]) {
+            if (isset($headerValue[1]) && $headerValue[1]) {
                 $token = $headerValue[1];
             }
         }
 
         $validateUser = bagisto_graphql()->apiAuth($token, $this->guard);
 
-        if ($token && isset($validateUser['success']) && ! $validateUser['success']) {
-            if ( $billingAddressId || $shippingAddressId) {
+        if ($token && isset($validateUser['success']) && !$validateUser['success']) {
+            if ($billingAddressId || $shippingAddressId) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.invalid-guest-access'),
                     'invalid-guest-access.'
@@ -225,16 +229,16 @@ class CheckoutMutation extends Controller
         }
 
         if (
-            ! $token 
+            !$token
             || (
-                $token 
-                && isset($validateUser['success']) 
+                $token
+                && isset($validateUser['success'])
                 && $validateUser['success']
             )
         ) {
             if (
-                ! bagisto_graphql()->guard($this->guard)->check() 
-                && ! Cart::getCart()->hasGuestCheckoutItems()
+                !bagisto_graphql()->guard($this->guard)->check()
+                && !Cart::getCart()->hasGuestCheckoutItems()
             ) {
                 throw new CustomException(
                     'Cart have some item(s), which are not allowed for guest checkout.',
@@ -244,36 +248,36 @@ class CheckoutMutation extends Controller
 
             try {
                 $data = [
-                    'billing'   => [
-                        'address1'          => '',
-                        'first_name'        => $cart->customer_first_name,
-                        'last_name'         => $cart->customer_last_name,
-                        'email'             => $cart->customer_email,
-                        'address_id'        => $billingAddressId,
+                    'billing' => [
+                        'address1' => '',
+                        'first_name' => $cart->customer_first_name,
+                        'last_name' => $cart->customer_last_name,
+                        'email' => $cart->customer_email,
+                        'address_id' => $billingAddressId,
                     ],
-                    'shipping'   => [
-                        'address1'          => '',
-                        'first_name'        => $cart->customer_first_name,
-                        'last_name'         => $cart->customer_last_name,
-                        'email'             => $cart->customer_email,
-                        'address_id'        => $shippingAddressId,
+                    'shipping' => [
+                        'address1' => '',
+                        'first_name' => $cart->customer_first_name,
+                        'last_name' => $cart->customer_last_name,
+                        'email' => $cart->customer_email,
+                        'address_id' => $shippingAddressId,
                     ]
                 ];
 
-                $address_flag = false; 
+                $address_flag = false;
 
-                if ( $billingAddressId ) {
+                if ($billingAddressId) {
                     $billingAddress = $this->customerAddressRepository->findOneWhere([
-                        'id'            => $billingAddressId,
-                        'address_type'  => 'customer'
+                        'id' => $billingAddressId,
+                        'address_type' => 'customer'
                     ]);
 
-                    if ( isset($billingAddress->id)) {
+                    if (isset($billingAddress->id)) {
                         $data['billing']['first_name'] = $billingAddress->first_name;
                         $data['billing']['last_name'] = $billingAddress->last_name;
                         $data['billing']['address1'] = $billingAddress->address1;
 
-                        if ( isset($params['billing']['use_for_shipping']) && $params['billing']['use_for_shipping'] == true ) {
+                        if (isset($params['billing']['use_for_shipping']) && $params['billing']['use_for_shipping'] == true) {
                             unset($data['shipping']['address_id']);
                             $data['billing']['use_for_shipping'] = true;
                         } else {
@@ -286,16 +290,16 @@ class CheckoutMutation extends Controller
                         );
                     }
                 } else {
-                    $address_flag = true; 
+                    $address_flag = true;
                 }
 
-                if ( $shippingAddressId ) {
+                if ($shippingAddressId) {
                     $shippingAddress = $this->customerAddressRepository->findOneWhere([
-                        'id'            => $shippingAddressId,
-                        'address_type'  => 'customer'
+                        'id' => $shippingAddressId,
+                        'address_type' => 'customer'
                     ]);
 
-                    if ( isset($shippingAddress->id)) {
+                    if (isset($shippingAddress->id)) {
                         $data['shipping']['address1'] = $shippingAddress->address1;
                     } else {
                         throw new CustomException(
@@ -304,46 +308,46 @@ class CheckoutMutation extends Controller
                         );
                     }
                 } else {
-                    $address_flag = true; 
+                    $address_flag = true;
                 }
 
-                if ( $address_flag == true ) {
-                    if (! $billingAddressId && isset($params['billing']['address1'])) {
+                if ($address_flag == true) {
+                    if (!$billingAddressId && isset($params['billing']['address1'])) {
                         $data['billing'] = $params['billing'];
 
-                        if ( isset($params['billing']['use_for_shipping']) && $params['billing']['use_for_shipping'] == true ) {
+                        if (isset($params['billing']['use_for_shipping']) && $params['billing']['use_for_shipping'] == true) {
                             unset($data['shipping']['address_id']);
                         }
                     }
 
-                    if (! $shippingAddressId && isset($params['shipping']['address1'])) {
+                    if (!$shippingAddressId && isset($params['shipping']['address1'])) {
 
-                        if (! isset($params['billing']['use_for_shipping']) || (isset($params['billing']['use_for_shipping']) && !$params['billing']['use_for_shipping']) ) {
+                        if (!isset($params['billing']['use_for_shipping']) || (isset($params['billing']['use_for_shipping']) && !$params['billing']['use_for_shipping'])) {
                             $data['shipping'] = $params['shipping'];
                         }
                     }
 
-                    if ( isset($cart['is_guest']) && $cart['is_guest'] == 1) {
+                    if (isset($cart['is_guest']) && $cart['is_guest'] == 1) {
                         $data['billing']['customer_id'] = $data['shipping']['customer_id'] = null;
                     }
                 }
 
 //                if (Cart::hasError() || ! Cart::saveCustomerAddress($data)) {
-                if (! Cart::saveCustomerAddress($data)) {
+                if (!Cart::saveCustomerAddress($data)) {
                     throw new CustomException(
                         trans('bagisto_graphql::app.shop.response.wrong-error'),
                         'Cart have some item(s), which are not allowed for guest checkout.'
                     );
                 } else {
                     $coreCurrency = config('app.currency');
-                    if ( isset($params['currency']) && $params['currency'] ) {
+                    if (isset($params['currency']) && $params['currency']) {
                         $coreCurrency = $params['currency'];
                     }
-        
+
                     Cart::collectTotals();
-        
+
                     if ($cart->haveStockableItems() && $params['type'] == 'shipping') {
-                        if (! $rates = Shipping::collectRates()) {
+                        if (!$rates = Shipping::collectRates()) {
                             throw new CustomException(
                                 trans('bagisto_graphql::app.shop.response.wrong-error'),
                                 'Error in fatching shipping rate.'
@@ -354,34 +358,34 @@ class CheckoutMutation extends Controller
                                 $methods = [];
                                 foreach ($shippingMethod['rates'] as $rate) {
                                     $methods = [
-                                        'code'              => $rate->method,
-                                        'label'             => $rate->method_title,
-                                        'price'             => core()->convertPrice($rate->price, $coreCurrency),
-                                        'formatted_price'   => core()->formatPrice(core()->convertPrice($rate->price, $coreCurrency), $coreCurrency),
-                                        'base_price'        => core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()),
-                                        'formatted_base_price'=> core()->formatPrice(core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()), core()->getBaseCurrencyCode())
+                                        'code' => $rate->method,
+                                        'label' => $rate->method_title,
+                                        'price' => core()->convertPrice($rate->price, $coreCurrency),
+                                        'formatted_price' => core()->formatPrice(core()->convertPrice($rate->price, $coreCurrency), $coreCurrency),
+                                        'base_price' => core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()),
+                                        'formatted_base_price' => core()->formatPrice(core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()), core()->getBaseCurrencyCode())
                                     ];
                                 }
                                 $shipping_methods[] = [
-                                    'title'     => $shippingMethod['carrier_title'],
-                                    'methods'   => $methods,
+                                    'title' => $shippingMethod['carrier_title'],
+                                    'methods' => $methods,
                                 ];
                             }
-                            
+
                             return [
-                                'success'           => trans('bagisto_graphql::app.shop.response.save-cart-address'),
-                                'cart'              => Cart::getCart(),
-                                'shipping_methods'  => $shipping_methods,
-                                'jump_to_section'   => 'shipping',
+                                'success' => trans('bagisto_graphql::app.shop.response.save-cart-address'),
+                                'cart' => Cart::getCart(),
+                                'shipping_methods' => $shipping_methods,
+                                'jump_to_section' => 'shipping',
                             ];
                         }
                     } else {
 
                         return [
-                            'success'           => trans('bagisto_graphql::app.shop.response.save-cart-address'),
-                            'cart'              => Cart::getCart(),
-                            'payment_methods'   => Payment::getPaymentMethods(),
-                            'jump_to_section'   => 'payment',
+                            'success' => trans('bagisto_graphql::app.shop.response.save-cart-address'),
+                            'cart' => Cart::getCart(),
+                            'payment_methods' => Payment::getPaymentMethods(),
+                            'jump_to_section' => 'payment',
                         ];
                     }
                 }
@@ -403,26 +407,26 @@ class CheckoutMutation extends Controller
     {
         $cart = Cart::getCart();
 
-        if ( ! $cart ) {
+        if (!$cart) {
             throw new CustomException(
                 trans('bagisto_graphql::app.shop.response.warning-empty-cart'),
                 'Your cart is empty.'
             );
         }
-        
+
         try {
             $token = request()->bearerToken();
 
             $validateUser = bagisto_graphql()->apiAuth($token, $this->guard);
-            
-            if (! $token || ($token && isset($validateUser['success']) && $validateUser['success']) ) {
-                if (! bagisto_graphql()->guard($this->guard)->check() && ! Cart::getCart()->hasGuestCheckoutItems()) {
+
+            if (!$token || ($token && isset($validateUser['success']) && $validateUser['success'])) {
+                if (!bagisto_graphql()->guard($this->guard)->check() && !Cart::getCart()->hasGuestCheckoutItems()) {
                     throw new CustomException(
                         trans('bagisto_graphql::app.shop.response.wrong-error'),
                         'Cart have some item(s), which are not allowed for guest checkout.'
                     );
                 }
-                
+
                 if (!isset($cart->shipping_address->id)) {
                     throw new CustomException(
                         'Error: No shipping/billing address found for the current cart.',
@@ -430,14 +434,14 @@ class CheckoutMutation extends Controller
                     );
                 } else {
                     $coreCurrency = config('app.currency');
-                    if ( isset($params['currency']) && $params['currency'] ) {
+                    if (isset($params['currency']) && $params['currency']) {
                         $coreCurrency = $params['currency'];
                     }
-        
+
                     Cart::collectTotals();
-        
+
                     if ($cart->haveStockableItems()) {
-                        if (! $rates = Shipping::collectRates()) {
+                        if (!$rates = Shipping::collectRates()) {
                             throw new CustomException(
                                 trans('bagisto_graphql::app.shop.response.wrong-error'),
                                 'Error in fatching shipping rate.'
@@ -448,33 +452,33 @@ class CheckoutMutation extends Controller
                                 $methods = [];
                                 foreach ($shippingMethod['rates'] as $rate) {
                                     $methods = [
-                                        'code'              => $rate->method,
-                                        'label'             => $rate->method_title,
-                                        'price'             => core()->convertPrice($rate->price, $coreCurrency),
-                                        'formatted_price'   => core()->formatPrice(core()->convertPrice($rate->price, $coreCurrency), $coreCurrency),
-                                        'base_price'        => core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()),
-                                        'formatted_base_price'=> core()->formatPrice(core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()), core()->getBaseCurrencyCode())
+                                        'code' => $rate->method,
+                                        'label' => $rate->method_title,
+                                        'price' => core()->convertPrice($rate->price, $coreCurrency),
+                                        'formatted_price' => core()->formatPrice(core()->convertPrice($rate->price, $coreCurrency), $coreCurrency),
+                                        'base_price' => core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()),
+                                        'formatted_base_price' => core()->formatPrice(core()->convertPrice($rate->base_price, core()->getBaseCurrencyCode()), core()->getBaseCurrencyCode())
                                     ];
                                 }
                                 $shipping_methods[] = [
-                                    'title'     => $shippingMethod['carrier_title'],
-                                    'methods'   => $methods,
+                                    'title' => $shippingMethod['carrier_title'],
+                                    'methods' => $methods,
                                 ];
                             }
-                            
+
                             return [
-                                'success'           => 'Success: Shipping Methods fetched successfully',
-                                'cart'              => Cart::getCart(),
-                                'shipping_methods'  => $shipping_methods,
-                                'jump_to_section'   => 'shipping',
+                                'success' => 'Success: Shipping Methods fetched successfully',
+                                'cart' => Cart::getCart(),
+                                'shipping_methods' => $shipping_methods,
+                                'jump_to_section' => 'shipping',
                             ];
                         }
                     } else {
                         return [
-                            'success'           => trans('bagisto_graphql::app.shop.response.save-cart-address'),
-                            'cart'              => Cart::getCart(),
-                            'payment_methods'   => Payment::getPaymentMethods(),
-                            'jump_to_section'   => 'payment',
+                            'success' => trans('bagisto_graphql::app.shop.response.save-cart-address'),
+                            'cart' => Cart::getCart(),
+                            'payment_methods' => Payment::getPaymentMethods(),
+                            'jump_to_section' => 'payment',
                         ];
                     }
                 }
@@ -495,12 +499,12 @@ class CheckoutMutation extends Controller
     /**
      * get the available payment methods and save the shipping for the current cart.
      *
-     * @param  array  $args
+     * @param array $args
      * @return \Illuminate\Http\Response
      */
     public function paymentMethods($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new CustomException(
                 trans('bagisto_graphql::app.admin.response.error-invalid-parameter'),
                 'Invalid request parameters.'
@@ -508,23 +512,23 @@ class CheckoutMutation extends Controller
         }
 
         $data = $args['input'];
-        
+
         $validator = Validator::make($data, [
-            'shipping_method'   => 'string|required',
+            'shipping_method' => 'string|required',
         ]);
-        
+
         if ($validator->fails()) {
             $errorMessage = [];
             foreach ($validator->messages()->toArray() as $field => $message) {
                 $errorMessage[] = is_array($message) ? $message[0] : $message;
             }
-            
+
             throw new CustomException(
                 implode(" ,", $errorMessage),
                 'Invalid choosing shipping method.'
             );
         }
-        
+
         try {
 //            if (Cart::hasError() || !Cart::saveShippingMethod($data['shipping_method'])) {
             if (!Cart::saveShippingMethod($data['shipping_method'])) {
@@ -533,14 +537,14 @@ class CheckoutMutation extends Controller
                     'Error in saving shipping method.'
                 );
             }
-    
+
             Cart::collectTotals();
-            
+
             return [
-                'success'           => trans('bagisto_graphql::app.shop.response.selected-shipment'),
-                'cart'              => Cart::getCart(),
-                'payment_methods'   => Payment::getPaymentMethods(),
-                'jump_to_section'   => 'payment',
+                'success' => trans('bagisto_graphql::app.shop.response.selected-shipment'),
+                'cart' => Cart::getCart(),
+                'payment_methods' => Payment::getPaymentMethods(),
+                'jump_to_section' => 'payment',
             ];
         } catch (Exception $e) {
             throw new CustomException(
@@ -553,12 +557,12 @@ class CheckoutMutation extends Controller
     /**
      * Save Payment Method
      *
-     * @param  array  $args
+     * @param array $args
      * @return \Illuminate\Http\Response
      */
     public function savePayment($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new CustomException(
                 trans('bagisto_graphql::app.admin.response.error-invalid-parameter'),
                 'Invalid request parameters.'
@@ -566,26 +570,26 @@ class CheckoutMutation extends Controller
         }
 
         $data = $args['input'];
-        
+
         $validator = Validator::make($data, [
-            'payment'   => 'array|required',
+            'payment' => 'array|required',
         ]);
-        
+
         if ($validator->fails()) {
             $errorMessage = [];
             foreach ($validator->messages()->toArray() as $field => $message) {
                 $errorMessage[] = is_array($message) ? $message[0] : $message;
             }
-            
+
             throw new CustomException(
                 implode(" ,", $errorMessage),
                 'Invalid choosing shipping method.'
             );
         }
-        
+
         try {
 //            if (Cart::hasError() || ! Cart::savePaymentMethod($data['payment'])) {
-            if (! Cart::savePaymentMethod($data['payment'])) {
+            if (!Cart::savePaymentMethod($data['payment'])) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.error-payment-save'),
                     'Error in saving payment method.'
@@ -595,9 +599,9 @@ class CheckoutMutation extends Controller
             Cart::collectTotals();
 
             return [
-                'success'           => trans('bagisto_graphql::app.shop.response.selected-payment'),
-                'cart'              => Cart::getCart(),
-                'jump_to_section'   => 'review'
+                'success' => trans('bagisto_graphql::app.shop.response.selected-payment'),
+                'cart' => Cart::getCart(),
+                'jump_to_section' => 'review'
             ];
         } catch (Exception $e) {
             throw new CustomException(
@@ -610,25 +614,25 @@ class CheckoutMutation extends Controller
     /**
      * Apply Coupon to cart
      *
-     * @param  array  $args
+     * @param array $args
      * @return \Illuminate\Http\Response
      */
     public function applyCoupon($rootValue, array $args, GraphQLContext $context)
     {
-        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
         $data = $args['input'];
-        
+
         $validator = Validator::make($data, [
-            'code'   => 'string|required',
+            'code' => 'string|required',
         ]);
-        
+
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
-        
+
         try {
             if (strlen($data['code'])) {
                 Cart::setCouponCode($data['code'])->collectTotals();
@@ -636,17 +640,17 @@ class CheckoutMutation extends Controller
                 if (Cart::getCart()->coupon_code == $data['code']) {
 
                     return [
-                        'success'       => true,
-                        'message'       => trans('shop::app.checkout.total.success-coupon'),
-                        'cart'          => Cart::getCart(),
+                        'success' => true,
+                        'message' => trans('shop::app.checkout.total.success-coupon'),
+                        'cart' => Cart::getCart(),
                     ];
                 }
             }
 
             return [
-                'success'       => false,
-                'message'       => trans('shop::app.checkout.total.invalid-coupon'),
-                'cart'          => Cart::getCart(),
+                'success' => false,
+                'message' => trans('shop::app.checkout.total.invalid-coupon'),
+                'cart' => Cart::getCart(),
             ];
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -656,7 +660,7 @@ class CheckoutMutation extends Controller
     /**
      * Remove Coupon from cart
      *
-     * @param  array  $args
+     * @param array $args
      * @return \Illuminate\Http\Response
      */
     public function removeCoupon($rootValue, array $args, GraphQLContext $context)
@@ -664,18 +668,18 @@ class CheckoutMutation extends Controller
         try {
             if (Cart::getCart()->coupon_code) {
                 Cart::removeCouponCode()->collectTotals();
-                
+
                 return [
-                    'success'       => true,
-                    'message'       => trans('bagisto_graphql::app.shop.response.coupon-removed'),
-                    'cart'          => Cart::getCart(),
+                    'success' => true,
+                    'message' => trans('bagisto_graphql::app.shop.response.coupon-removed'),
+                    'cart' => Cart::getCart(),
                 ];
             }
 
             return [
-                'success'       => false,
-                'message'       => trans('bagisto_graphql::app.shop.response.coupon-remove-failed'),
-                'cart'          => Cart::getCart(),
+                'success' => false,
+                'message' => trans('bagisto_graphql::app.shop.response.coupon-remove-failed'),
+                'cart' => Cart::getCart(),
             ];
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -685,7 +689,7 @@ class CheckoutMutation extends Controller
     /**
      * Create order
      *
-     * @param  array  $args
+     * @param array $args
      * @return \Illuminate\Http\Response
      */
     public function saveOrder($rootValue, array $args, GraphQLContext $context)
@@ -707,7 +711,7 @@ class CheckoutMutation extends Controller
             }
 
             $data['payment']['method'] = 'cashondelivery';
-            if (! Cart::savePaymentMethod($data['payment'])) {
+            if (!Cart::savePaymentMethod($data['payment'])) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.error-payment-save'),
                     'Error in saving payment method.'
@@ -722,9 +726,13 @@ class CheckoutMutation extends Controller
 
             $paymentSuccess = false;
             $customerDetails = bagisto_graphql()->guard($this->guard)->user();
-            if(!empty($customerDetails) && !empty($customerDetails->email)) {
+            if (!empty($customerDetails) && !empty($customerDetails->email)) {
                 $stripe_cust_id = $customerDetails->stripe_customer_id;
-                if(empty($customerDetails->stripe_customer_id)) {
+                if (!empty($stripe_cust_id)) {
+                    $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
+                }
+
+                if (count($stripeCustomer) === 0) {
                     $stripeCustomer = Stripe\Customer::create(array(
                         "email" => $customerDetails->email,
                         "name" => $args['input']['name'],
@@ -734,7 +742,7 @@ class CheckoutMutation extends Controller
                     $this->customerRepository->where('id', $customerDetails->id)->update(['stripe_customer_id' => $stripe_cust_id]);
                 }
 
-                if(isset($args['input']['shippingId'])){
+                if (isset($args['input']['shippingId'])) {
                     $shippingId = $args['input']['shippingId'];
                     $shippingAddress = $this->customerAddressRepository->where('id', $shippingId)->first();
 
@@ -755,7 +763,7 @@ class CheckoutMutation extends Controller
                             ],
                         ]
                     ]);
-                }else {
+                } else {
                     $stripeCharge = Stripe\Charge::create([
                         "amount" => 100 * $cart->grand_total,
                         "currency" => $cart->base_currency_code,
@@ -764,9 +772,61 @@ class CheckoutMutation extends Controller
                     ]);
                 }
 
-                if($stripeCharge){
+                if ($stripeCharge) {
+                    $card = [];
+                    $cardExistCheck = [];
                     $paymentSuccess = true;
+
+                    $exitsCardId = $args['input']['card_id'];
+
+                    if(!empty($exitsCardId))
+                    {
+                        $cardExistCheck = $this->customerPaymentMethodsRepository->where("card_id","=",$exitsCardId)->where("customer_id","=", $customerDetails->id)->first();
+                    }
+                    if (!empty($cardExistCheck)) {
+                        $storePaymentMethod['id'] = $cardExistCheck['id'];
+                    }
+                    else{
+                        $card["card_id"] = $stripeCharge["source"]["id"];
+                        $card["object"] = $stripeCharge["source"]["object"];
+                        $card["address_city"] = $stripeCharge["source"]["address_city"];
+                        $card["address_country"] = $stripeCharge["source"]["address_country"];
+                        $card["address_line1"] = $stripeCharge["source"]["address_line1"];
+                        $card["address_line1_check"] = $stripeCharge["source"]["address_line1_check"];
+                        $card["address_line2"] = $stripeCharge["source"]["address_line2"];
+                        $card["address_state"] = $stripeCharge["source"]["address_state"];
+                        $card["address_zip"] = $stripeCharge["source"]["address_zip"];
+                        $card["address_zip_check"] = $stripeCharge["source"]["address_zip_check"];
+                        $card["brand"] = $stripeCharge["source"]["brand"];
+                        $card["country"] = $stripeCharge["source"]["country"];
+                        $card["cvc_check"] = $stripeCharge["source"]["cvc_check"];
+                        $card["dynamic_last4"] = $stripeCharge["source"]["dynamic_last4"];
+                        $card["exp_month"] = $stripeCharge["source"]["exp_month"];
+                        $card["exp_year"] = $stripeCharge["source"]["exp_year"];
+                        $card["fingerprint"] = $stripeCharge["source"]["fingerprint"];
+                        $card["funding"] = $stripeCharge["source"]["funding"];
+                        $card["last4"] = $stripeCharge["source"]["last4"];
+                        $card["metadata"] = $stripeCharge["source"]["metadata"];
+                        $card["name"] = $stripeCharge["source"]["name"];
+                        $card["tokenization_method"] = $stripeCharge["source"]["tokenization_method"];
+                        $card["wallet"] = $stripeCharge["source"]["wallet"];
+                        $params ['customer_id']= $customerDetails->id;
+                        $params ['card_id']=$card['card_id'];
+                        $params ['brand']=$card['brand'];
+                        $params ['funding']=$card['funding'];
+                        $params ['type']= $card['object'];
+                        $params ['country']= $card['country'];
+                        $params ['exp_month']= $card['exp_month'];
+                        $params ['exp_year']= $card['exp_year'];
+                        $params ['last4']= $card['last4'];
+                        $params ['name']= $card['name'];
+                        $params ['fingerprint']= $card['fingerprint'];
+                        $params ['card_response']= json_encode($card);
+                        $storePaymentMethod = $this->customerPaymentMethodsRepository->create($params);
+                    }
+
                 }
+
             }
 
             // Old bagisto functionality
@@ -778,18 +838,25 @@ class CheckoutMutation extends Controller
                 ];
             }*/
 
-            if($paymentSuccess === true) {
+            if ($paymentSuccess === true) {
                 $order = $this->orderRepository->create(Cart::prepareDataForOrder());
                 $this->prepareNotificationContent($order);
                 Cart::updateQuantity();
                 Cart::deActivateCart();
+
+                if(!empty($order) )
+                {
+                    $updateOrderData['payment_method_id'] = $storePaymentMethod['id'];
+                    $updateOrderData['transaction_id'] =  $stripeCharge['balance_transaction'];
+                    $updateOrder = $this->orderRepository->update($updateOrderData, $order->id);
+                }
 
                 return [
                     'success' => true,
                     'redirect_url' => null,
                     'order' => $order
                 ];
-            }else{
+            } else {
                 throw new CustomException(
                     $e->getMessage(),
                     'Error found in payment processing.'
@@ -812,19 +879,19 @@ class CheckoutMutation extends Controller
     {
         $cart = Cart::getCart();
 
-        if ($cart->haveStockableItems() && ! $cart->shipping_address) {
+        if ($cart->haveStockableItems() && !$cart->shipping_address) {
             throw new \Exception(trans('Please check shipping address.'));
         }
 
-        if (! $cart->billing_address) {
+        if (!$cart->billing_address) {
             throw new \Exception(trans('Please check billing address.'));
         }
 
-        if ($cart->haveStockableItems() && ! $cart->selected_shipping_rate) {
+        if ($cart->haveStockableItems() && !$cart->selected_shipping_rate) {
             throw new \Exception(trans('Please specify shipping method.'));
         }
 
-        if (! $cart->payment) {
+        if (!$cart->payment) {
             throw new \Exception(trans('Please specify payment method.'));
         }
     }
@@ -832,24 +899,24 @@ class CheckoutMutation extends Controller
     /**
      * Prepare data for order push notification.
      *
-     * @param  \Webkul\Sales\Contracts\Order  $order
+     * @param \Webkul\Sales\Contracts\Order $order
      * @return Response
      */
     public function prepareNotificationContent($order)
     {
         $data = [
-            'title'       => 'New Order Placed',
-            'body'        => 'Order ('.$order->id.') placed by '. $order->customerFullName .' successfully.',
-            'message'     => 'Order ('.$order->id.') placed by '. $order->customerFullName .' successfully.',
-            'sound'       => 'default',
+            'title' => 'New Order Placed',
+            'body' => 'Order (' . $order->id . ') placed by ' . $order->customerFullName . ' successfully.',
+            'message' => 'Order (' . $order->id . ') placed by ' . $order->customerFullName . ' successfully.',
+            'sound' => 'default',
             'orderStatus' => $order->parcel_status,
-            'orderId'     => $order->id,
-            'type'        => 'order'
+            'orderId' => $order->id,
+            'type' => 'order'
         ];
-        
-        $notification   = [
-            'title'             => $data['title'],
-            'content'           => $data['body'],
+
+        $notification = [
+            'title' => $data['title'],
+            'content' => $data['body'],
         ];
 
         $this->notificationRepository->sendNotification($data, $notification);
