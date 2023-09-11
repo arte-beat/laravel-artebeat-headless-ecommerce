@@ -34,7 +34,7 @@ type EventCategory {
     id: ID!
     type: Int
     name: String! @rename(attribute: "name")
-    commission: Float
+    commission: Floatcommited
 #    description: String! @rename(attribute: "description")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
