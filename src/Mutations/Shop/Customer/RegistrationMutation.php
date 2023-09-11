@@ -224,22 +224,23 @@ class RegistrationMutation extends Controller
         $socialUser = Socialite::driver($signUpType)->userFromToken($token);
 
         if ($socialUser) {
-
             $socialLoginDetails = CustomerSocialAccount::where('provider_name', $signUpType)
                 ->where('provider_id', $socialUser->id)
                 ->first();
             
             if($socialLoginDetails && $socialLoginDetails->customer_id) {
-                    //Customer already exists
-                    $customer = $this->customerRepository->findOneByField('id', $socialLoginDetails->customer_id);
-                    return $this->loginCustomer($customer, $data);
+                //Customer already exists
+                $customer = $this->customerRepository->findOneByField('id', $socialLoginDetails->customer_id);
 
-            } else if ($socialUser->email) {
+                return $this->loginCustomer($customer, $data);
 
-                $customer = $this->customerRepository->findOneByField('email', $socialUser->email);
-
-                // If customer already exists Login the customer
-                if ($customer) {
+            } else {
+                // No Customer found
+                if($socialUser->email){
+                    $customer = $this->customerRepository->findOneByField('email', $socialUser->email);
+                }
+                // If customer email already exists Login the customer
+                if (isset($customer) && $customer) {
                     if ($customer->status == 0 || $customer->is_verified == 0) {
                         throw new CustomException(trans('shop::app.customer.login-form.not-activated'),'Account Not Activated.');
                     }
@@ -252,14 +253,14 @@ class RegistrationMutation extends Controller
 
                     return $this->loginCustomer($customer, $data);
                 }
-            } else {
+
                 //create customer
                 $name = explode(" ",$socialUser->name);
                 
                 $data   = array_merge($data, [
                     'first_name'        => $name[0],
                     'last_name'         => isset($name[1]) ? $name[1] : '',
-                    'email'             => null,
+                    'email'             => isset($socialUser->email) ? $socialUser->email : null,
                     'api_token'         => Str::random(80),
                     'is_verified'       => core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
                     'customer_group_id' => $this->customerGroupRepository->findOneWhere(['code' => 'general'])->id,
@@ -304,7 +305,6 @@ class RegistrationMutation extends Controller
             //No Social User Found
             return new Exception("Invalid token");
         }
-        
     }
 
     /**
@@ -348,7 +348,7 @@ class RegistrationMutation extends Controller
         /**
          * Event passed to prepare cart after login.
          */
-        Event::dispatch('customer.after.login', $customer->email);
+        // Event::dispatch('customer.after.login', $customer->email);
 
         return [
             'status'        => true,
