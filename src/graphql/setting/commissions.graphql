@@ -45,11 +45,25 @@ input commissionRateInput {
   status: Int
 }
 
+#type CommissionRate {
+#  id: ID @rules(apply: ["required"])
+#  type: String @rules(apply: ["required"])
+#  rate: Float @rules(apply: ["required"])
+#  status: Int @rules(apply: ["required"])
+#  description: String
+#  # find one eventBooking and return Product by event_id
+#  event : EventBookingResponse @rename(attribute: "event")
+#  category : EventCategory @rename(attribute: "category")
+#  createdAt: DateTime @rename(attribute: "created_at")
+#  updatedAt: DateTime @rename(attribute: "updated_at")
+#  success: String
+#}
+
 type CommissionRate {
-  id: ID @rules(apply: ["required"])
-  type: String @rules(apply: ["required"])
-  rate: Float @rules(apply: ["required"])
-  status: Int @rules(apply: ["required"])
+  id: ID
+  type: String
+  rate: Float
+  status: Int
   description: String
   # find one eventBooking and return Product by event_id
   event : EventBookingResponse @rename(attribute: "event")
