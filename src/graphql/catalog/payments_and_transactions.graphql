@@ -1,12 +1,12 @@
 #Catalog\Product Related API
 
-extend type Query @guard{
+extend type Query @guard(with: ["admin-api"]){
     getAllBookingPaymentsAndTransactionsResponse(input: BookingPaymentsAndTransactionsInput): [BookingPaymentsAndTransactionsResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getAllBookingPaymentsAndTransactionsResponse")
 
     getParticularBookingPaymentsAndTransactionsResponse(id: ID!): BookingPaymentsAndTransactionsResponse! @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getParticularBookingPaymentsAndTransactionsResponse")
 }
 
-extend type Mutation @guard(with: ["api"]) {
+extend type Mutation @guard(with: ["admin-api"]) {
     updateOrderStatus(order_id: ID!, status: String!): ChangeOrderStatusResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@updateOrderStatus")
 }
 
