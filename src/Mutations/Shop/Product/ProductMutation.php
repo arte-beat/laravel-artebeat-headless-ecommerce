@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Webkul\Product\Helpers\ProductType;
 use Webkul\Product\Models\Product;
 use Webkul\Product\Models\ProductImage;
+use Webkul\Product\Models\ProductFlat;
 use Webkul\Core\Contracts\Validations\Slug;
 use Webkul\Product\Http\Controllers\Controller;
 use Webkul\Product\Repositories\ProductFlatRepository;
@@ -583,6 +584,7 @@ class ProductMutation extends Controller
                 try {
                     Event::dispatch('catalog.product.update.before', $id);
                     $updateProduct[$index] = $this->productRepository->update($data, $id);
+                    ProductFlat::where('id', $id)->update(['merch_type' => $data['merch_type']]);
                     Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                     if ($multipleFiles != null) {
@@ -653,6 +655,7 @@ class ProductMutation extends Controller
                     try {
                         Event::dispatch('catalog.product.update.before', $id);
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
+                        ProductFlat::where('id', $id)->update(['merch_type' => $data['merch_type']]);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                         if ($multipleFiles != null) {
@@ -684,6 +687,7 @@ class ProductMutation extends Controller
                         }
                         Event::dispatch('catalog.product.update.before', $id);
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
+                        ProductFlat::where('id', $id)->update(['merch_type' => $data['merch_type']]);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                         if(!empty($data['removeImages'])) {

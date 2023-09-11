@@ -107,6 +107,7 @@ input MerchantEventBookingInput {
     locale: String
     product_id: Int!
     name: String!
+    merch_type: Int!
     description: String!
     price: Float
     commission: Float
@@ -446,6 +447,7 @@ type ProductFlat {
     sku: String!
     productNumber: String @rename(attribute: "product_number")
     name: String
+    merch_type: Int
     description: String
     shortDescription: String @rename(attribute: "short_description")
     urlKey: String @rename(attribute: "url_key")
