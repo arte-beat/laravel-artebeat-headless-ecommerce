@@ -82,11 +82,54 @@ class ProductMutation extends Controller
         if (!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
         }
+        if(isset($args['input']['event_status'])) {
+            $query->where('event_status', '=', $args['input']['event_status']);
+        }
         $query->orderBy('id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count, ['*'], 'page', $page);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function changeStatusOfEvent($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+        $event = $this->productRepository->findOrFail($id);
+        try {
+            if ($event != Null) {
+                $owner = bagisto_graphql()->guard($this->guard)->user();
+                $params['event_status_modified_on'] = date('Y-m-d H:i:s');
+                $params['event_status'] = $args['event_status'];
+                if(!empty($owner))
+                    $params['event_status_changed_by'] = $owner->id;
+
+                $event = $this->productRepository->update($params, $id);
+                return [
+                    'status' => true,
+                    'message' => "Status changed successfully."
+                ];
+            } else {
+
+                return [
+                    'status' => false,
+                    'message' => "Change status of event is failed. Please try again."
+                ];
+            }
+        } catch (Exception $e) {
+
+            throw new Exception($e->getMessage());
+        }
     }
 
 

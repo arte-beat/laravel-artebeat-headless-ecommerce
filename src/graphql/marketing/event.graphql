@@ -18,8 +18,6 @@ extend type Mutation @guard {
     ): Event  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Marketing\\EventMutation@update")
     
     deleteEvent (id: ID!): DeleteEventResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Marketing\\EventMutation@delete")
-
-    changeStatusOfEvent (id: ID!, event_status: Int!): DeleteEventResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Marketing\\EventMutation@changeStatusOfEvent")
 }
 
 input FilterEventInput {

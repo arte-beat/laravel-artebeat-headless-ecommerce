@@ -69,8 +69,7 @@ extend type Mutation @guard {
 
     updateShowcaseCollection(files: [[Upload]], input: [ShowCaseCollectionInput]!, deleteInput: [DeleteInput]): [ShowCaseCollectionResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowcaseCollection")
 
-
-
+    changeStatusOfEvent (id: ID!, event_status: Int!): DeleteEventResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@changeStatusOfEvent")
 }
 
 input CreateProductInput {
@@ -239,6 +238,7 @@ input FilterCollectionsInput {
 }
 
 input FilterEventsInput {
+    event_status: Int
     name: String
     owner_type: String
     owner_id: Int
