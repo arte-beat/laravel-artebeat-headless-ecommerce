@@ -55,7 +55,7 @@ class CommissionRateMutation extends Controller
 
         try {
             if(in_array($data['type'], ["global", "merchant", "showcase"])) {
-                $commissions = $this->commissionRateRepository->where(["type" => "global_commission"])->first();
+                $commissions = $this->commissionRateRepository->where(["type" => $data['type']])->first();
                 if(!empty($commissions)){
                     throw new Exception(ucfirst($data['type'])." commission is already existed.");
                 }
@@ -69,25 +69,25 @@ class CommissionRateMutation extends Controller
 //                $data['type'] = 'event_commission';
 //            }
 
-            $type = 'global_commission';
-            if(isset($data['type'])){
-                if($data['type'] == 'global'){
-                    $type = 'global_commission';
-                }
-                if($data['type'] == 'event'){
-                    $type = 'event_commission';
-                }
-                if($data['type'] == 'category'){
-                    $type = 'category_commission';
-                }
-                if($data['type'] == 'merchant'){
-                    $type = 'merchant_commission';
-                }
-                if($data['type'] == 'showcase'){
-                    $type = 'showcase_commission';
-                }
-            }
-            $data['type'] = $type;
+//            $type = 'global_commission';
+//            if(isset($data['type'])){
+//                if($data['type'] == 'global'){
+//                    $type = 'global_commission';
+//                }
+//                if($data['type'] == 'event'){
+//                    $type = 'event_commission';
+//                }
+//                if($data['type'] == 'category'){
+//                    $type = 'category_commission';
+//                }
+//                if($data['type'] == 'merchant'){
+//                    $type = 'merchant_commission';
+//                }
+//                if($data['type'] == 'showcase'){
+//                    $type = 'showcase_commission';
+//                }
+//            }
+//            $data['type'] = $type;
             $commissionRate = $this->commissionRateRepository->store($data);
             if($commissionRate) {
                 $commissionRate->success = "Successfully Added New Commission Rate";
