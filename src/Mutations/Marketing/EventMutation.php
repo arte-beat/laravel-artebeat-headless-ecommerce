@@ -2,10 +2,12 @@
 
 namespace Webkul\GraphQLAPI\Mutations\Marketing;
 
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Marketing\Repositories\EventRepository;
+use Webkul\Product\Repositories\ProductRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
 class EventMutation extends Controller
@@ -21,9 +23,12 @@ class EventMutation extends Controller
      * Create a new controller instance.
      *
      * @param \Webkul\Marketing\Repositories\EventRepository $eventRepository
+     * @param \Webkul\Product\Repositories\ProductRepository $productRepository
+     *
      * @return void
      */
     public function __construct(
+        protected ProductRepository $productRepository,
         protected EventRepository $eventRepository
     ) {
         $this->guard = 'admin-api';
@@ -138,6 +143,46 @@ class EventMutation extends Controller
                 return [
                     'status' => false,
                     'message' => trans('admin::app.response.delete-failed', ['name' => 'Event'])
+                ];
+            }
+        } catch (Exception $e) {
+
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function changeStatusOfEvent($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $id = $args['id'];
+        $event = $this->productRepository->findOrFail($id);
+        try {
+            if ($event != Null) {
+                $owner = bagisto_graphql()->guard($this->guard)->user();
+                $params['event_status_modified_on'] = date('Y-m-d H:i:s');
+                $params['event_status'] = $args['event_status'];
+                if(!empty($owner))
+                    $params['event_status_changed_by'] = $owner->id;
+
+                $event = $this->productRepository->update($params, $id);
+                return [
+                    'status' => true,
+                    'message' => "Status changed successfully."
+                ];
+            } else {
+
+                return [
+                    'status' => false,
+                    'message' => "Change status of event is failed. Please try again."
                 ];
             }
         } catch (Exception $e) {
