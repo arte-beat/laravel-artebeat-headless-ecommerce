@@ -42,8 +42,8 @@ class CommissionRateMutation extends Controller
         $data = $args['input'];
         
         $validator = \Validator::make($data, [
-            'event_id' => 'required_without:category_id|exists:products,id',
-            'category_id' => 'required_without:event_id|exists:event_category,id',
+//            'event_id' => 'required_without:category_id|exists:products,id',
+//            'category_id' => 'required_without:event_id|exists:event_category,id',
             'rate' => 'required|numeric|min:0|max:100',
             'type' => 'required',
             'status' => 'in:0,1',
@@ -54,6 +54,12 @@ class CommissionRateMutation extends Controller
         }
 
         try {
+            if(in_array($data['type'], ["global", "merchant", "showcase"])) {
+                $commissions = $this->commissionRateRepository->where(["type" => "global_commission"])->first();
+                if(!empty($commissions)){
+                    throw new Exception(ucfirst($data['type'])." commission is already existed.");
+                }
+            }
             if(isset($data['category_id']) && isset($data['event_id'])){
                 throw new Exception('Invalid Type. Please select either Category or Event'); 
             }
