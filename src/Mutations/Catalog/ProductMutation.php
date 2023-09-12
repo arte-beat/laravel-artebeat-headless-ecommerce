@@ -109,12 +109,14 @@ class ProductMutation extends Controller
         try {
             if ($event != Null) {
                 $owner = bagisto_graphql()->guard($this->guard)->user();
-                $params['event_status_modified_on'] = date('Y-m-d H:i:s');
-                $params['event_status'] = $args['event_status'];
+                $changeStatusOfEventparams['event_status_modified_on'] = date('Y-m-d H:i:s');
+                $changeStatusOfEventparams['event_status'] = $args['event_status'];
+                $owner_id = null;
                 if(!empty($owner))
-                    $params['event_status_changed_by'] = $owner->id;
+                    $owner_id = $owner->id;
 
-                $event = $this->productRepository->update($params, $id);
+                Product::where('id', $id)->update(['event_status_modified_on' => date('Y-m-d H:i:s'), "event_status" => $args['event_status'], "event_status_changed_by" => $owner_id]);
+
                 return [
                     'status' => true,
                     'message' => "Status changed successfully."
