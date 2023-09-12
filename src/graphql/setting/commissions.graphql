@@ -8,9 +8,7 @@ extend type Query @guard(with: ["api", "admin-api"]) {
 
 extend type Mutation @guard(with: ["api", "admin-api"]) {
   createCommissionRate(input: commissionRateInput!): CommissionRate
-    @field(
-      resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\CommissionRateMutation@store"
-    )
+    @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\CommissionRateMutation@store")
 
   editCommissionRate(id: ID!, input: commissionRateInput!): CommissionRate
     @field(
