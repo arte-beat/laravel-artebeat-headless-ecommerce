@@ -1,9 +1,6 @@
 extend type Query @guard(with: ["admin-api"]) {
     getCustomerReport: CustomerReport @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getCustomerReport")
-
-
-    getEventReport: EventReport @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getEventReport")
-
+    getEventReport : BookingReport @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getEventReport")
     bookingReports : BookingReport @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getBookingReport")
 }
 
