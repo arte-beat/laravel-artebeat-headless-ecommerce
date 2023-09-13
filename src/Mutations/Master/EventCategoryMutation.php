@@ -121,6 +121,9 @@ class EventCategoryMutation extends Controller
         if(isset($args['input']['name']) && !empty($args['input']['name'])) {
             $query->where('name', 'like', '%' . urldecode($args['input']['name']) . '%');
         }
+        if(isset($args['input']['type']) && !empty($args['input']['type'])) {
+            $query->where('type', '=', $args['input']['type']);
+        }
         $query->orderBy('id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
