@@ -5,6 +5,7 @@ namespace Webkul\GraphQLAPI\Mutations\Setting;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use Webkul\Core\Http\Controllers\Controller;
+use Webkul\Admin\Models\CommissionRate;
 use Webkul\Core\Repositories\CommissionRateRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 
@@ -169,16 +170,22 @@ class CommissionRateMutation extends Controller
      * @return Boolean
      */
     public function delete($rootValue, array $args, GraphQLContext $context) {
-        $validator = Validator::make($args,['id' => 'required|not_in:1,2,3']);
+        $validator = Validator::make($args,['id' => 'required']);
 
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
-        $commissionRate = $this->commissionRateRepository->delete($args['id']);
-        if($commissionRate['success'] == 'true'){
-            return ['success' => 'Successfully Deleted Commission Rate'];
-        } else {
-            return ['success' => 'Unable to delete Commission Rate'];
+//        $commissionRate = $this->commissionRateRepository->delete($args['id']);
+        $commissionRate = $this->commissionRateRepository->findOrFail($args['id']);
+        if(!in_array($commissionRate['type'], ["global", "merchant", "showcase"])) {
+            $commissionRateDelete = CommissionRate::where('id', $args['id'])->delete();
+            if ($commissionRateDelete) {
+                return ['success' => 'Commission rate deleted successfully.'];
+            } else {
+                return ['success' => 'Unable to delete commission rate.'];
+            }
+        }else{
+            return ['success' => 'You can not delete '.$commissionRate['type'].' commission rate.'];
         }
     }
 }
