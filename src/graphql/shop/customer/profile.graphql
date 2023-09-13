@@ -152,9 +152,13 @@ type CardDetailsOutput {
 
 type EventOrganizerProfileDetailsOutput {
     id : Int
+    firstName: String! @rename(attribute: "first_name")
+    lastName: String! @rename(attribute: "last_name")
+    name: String
+    image: String
+    imageUrl: String @rename(attribute: "image_url")
     paymentMethods : [CardDetailsOutput] @hasOne(relation: "payment_methods")
     defaultAddress: CustomerAddress @hasOne(relation: "default_address")
-    customerImageUrl: String @rename(attribute: "image_url")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
 
