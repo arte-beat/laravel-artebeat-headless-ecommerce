@@ -3,6 +3,7 @@
 namespace Webkul\GraphQLAPI\Mutations\Master;
 
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Webkul\Admin\Http\Controllers\Controller;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
@@ -122,28 +123,39 @@ class ReportsMutation extends Controller
         }
     }
 
+
+
     public function getBookingReport($rootValue, array $args, GraphQLContext $context)
     {
-        $id = $args['id'];
-        $event = \Webkul\Product\Models\Product::where('id', $id)->first();
 
-        $data = new \stdClass();
-        
-        if(!$event) {
-            throw new Exception('Event not found');
+        $prefix = DB::getTablePrefix();
+        $query = \Webkul\Sales\Models\Order::query();
+        $query->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->leftJoin('customers', 'products.owner_id', '=', 'customers.id')
+            ->Select('products.type','products.owner_id','customers.first_name','customers.last_name','products.owner_type','products.parent_id','products.id','products.sku as eventName')
+            ->SelectRaw('SUM('.$prefix.'cart_items.quantity) as event_total_sold , SUM('.$prefix.'cart_items.base_total) as event_total_sale')
+            ->whereIn('orders.status', ['completed','pending'])
+            ->where('products.type', 'booking')
+            ->groupBy('cart_items.product_id')->orderBy('orders.id','desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        $all_result = $query->paginate($count,['*'],'page',$page);
+
+        foreach ($all_result as $index => $item)
+        {
+            $merch_query = \Webkul\Sales\Models\Order::query();
+            $res = $merch_query->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+                ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+                ->SelectRaw('SUM('.$prefix.'cart_items.quantity) as total_sold , SUM('.$prefix.'cart_items.base_total) as total_sale')
+                ->whereIn('orders.status', ['completed','pending'])
+                ->where('products.type', 'simple')
+                ->where('products.parent_id', $item['id'])
+                ->groupBy('products.parent_id')->first();
+            $all_result[$index]['merchant_total_sold'] = $res['total_sold'] ;
+            $all_result[$index]['merchant_total_sale'] = $res['total_sale'] ;
         }
-        try {
-            // !bookingInformation: BookingProduct
-            // !customerInformation: Customer
-            // !paymentAmount : Float
-            // !transactionId: String
-            // !paymentStatus: String
-            // !paymentMethod: String
-            // !paymentDate: String @rename(attribute: "created_at")
-           
-            return $data;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
-        }
+        return $all_result;
     }
+
 }
