@@ -725,6 +725,7 @@ class CheckoutMutation extends Controller
             Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
             $paymentSuccess = false;
+            $stripeCustomer = array();
             $customerDetails = bagisto_graphql()->guard($this->guard)->user();
             if (!empty($customerDetails) && !empty($customerDetails->email)) {
                 $stripe_cust_id = $customerDetails->stripe_customer_id;
@@ -776,7 +777,8 @@ class CheckoutMutation extends Controller
                     $card = [];
                     $cardExistCheck = [];
                     $paymentSuccess = true;
-
+                    $exitsCardId = '';
+                    if (isset($args['input']['shippingId']))
                     $exitsCardId = $args['input']['card_id'];
 
                     if(!empty($exitsCardId))
