@@ -1,19 +1,24 @@
 extend type Query @guard(with: ["admin-api"]) {
-    getCustomerReport(id:ID): CustomerReport @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getCustomerReport")
+    getCustomerReport: CustomerReport @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getCustomerReport")
 
-    getEventReport(id:ID): EventReport @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getEventReport")
+
+    getEventReport: EventReport @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getEventReport")
 
     bookingReports : BookingReport @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\ReportsMutation@getBookingReport")
 }
 
 type CustomerReport {
+    id:Int
     name: String
-    type: String
+    usertype: String
     email: String
-    attendedEvent: Int
-    purchasedTickets: Int
-    orderedMerchandise: Int
+    first_name :String
+    last_name :String
+    event_total_sold :Int
+    merchant_total_sold :Int
     totalRevenue: Float
+    event_total_sale: Float
+    merchant_total_sale: Float
 }
 type EventReport {
     name: String
@@ -28,7 +33,7 @@ type BookingReport {
     event_total_sold :Int
     merchant_total_sold :Int
     merchant_total_sale :Float
-    event_total_sold :Float
+    event_total_sale :Float
     eventName :String
     first_name :String
     last_name :String
