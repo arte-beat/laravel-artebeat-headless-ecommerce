@@ -96,9 +96,11 @@ class ReportsMutation extends Controller
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('products.type', 'booking')
             ->groupBy('cart_items.product_id')->orderBy('orders.id', 'desc');
+
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         $all_result = $query->paginate($count, ['*'], 'page', $page);
+
         if (!empty($all_result)) {
             foreach ($all_result as $index => $item) {
                 $merch_query = \Webkul\Sales\Models\Order::query();
@@ -109,9 +111,16 @@ class ReportsMutation extends Controller
                     ->where('products.type', 'simple')
                     ->where('products.parent_id', $item['id'])
                     ->groupBy('products.parent_id')->first();
-                $all_result[$index]['merchant_total_sold'] = $res['total_sold'];
-                $all_result[$index]['merchant_total_sale'] = $res['total_sale'];
+                if(!empty($res))
+                {
+
+                    $all_result[$index]['merchant_total_sold'] = $res['total_sold'];
+                    $all_result[$index]['merchant_total_sale'] = $res['total_sale'];
+
+                }
+
             }
+
         }
         return $all_result;
     }
