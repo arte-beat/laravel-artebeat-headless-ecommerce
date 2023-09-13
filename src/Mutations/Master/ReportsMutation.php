@@ -65,44 +65,24 @@ class ReportsMutation extends Controller
 
     public function getEventReport($rootValue, array $args, GraphQLContext $context)
     {
-        $id = $args['id'];
-        $event = \Webkul\Product\Models\Product::where('id', $id)->first();
+        $prefix = DB::getTablePrefix();
+        $query = \Webkul\Sales\Models\Order::query();
+        $query->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->leftJoin('customers', 'products.owner_id', '=', 'customers.id')
+            ->Select('products.type','products.owner_id','customers.first_name','customers.last_name','products.owner_type','products.parent_id','products.id','products.sku as eventName')
+            ->SelectRaw('SUM('.$prefix.'cart_items.quantity) as event_total_sold , SUM('.$prefix.'cart_items.base_total) as event_total_sale')
+            ->whereIn('orders.status', ['completed','pending'])
+            ->where('products.type', 'booking')
+            ->groupBy('cart_items.product_id')->orderBy('orders.id','desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        $all_result = $query->paginate($count,['*'],'page',$page);
 
-        $data = new \stdClass();
-        
-        if(!$event) {
-            throw new Exception('Event not found');
-        }
-        try {
-            // name: String
-            // !bookingQuantity: Int
-            // orderedMerchandise: Int
-            // totalRevenue: Float
 
-            $data->name = $event->sku;
-
-            // ! bookingQuantity: Int
-            $data->bookingQuantity = \Webkul\Product\Models\Product::where('type','booking')
-            ->where('product_type',null)->count();
-
-            $data->orderedMerchandise = \Webkul\Sales\Models\OrderItem::with('product','order')
-            ->whereHas('product', function ($query) use ($id){
-                $query->where('id', '=', $id)
-                ->where('product_type', '=', null)
-                ->where('type', '=', 'simple');
-            })->whereHas('order', function ($query) use ($id) {
-                $query->with('customer')->where('customer_id', '=', $id);
-            })
-            ->count();
-            
-            $data->totalRevenue =  \Webkul\Sales\Models\OrderItem::where('product_id', '=', $id)
-            ->sum('total_invoiced');
-
-            return $data;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
-        }
+        return $all_result;
     }
+
 
     public function getBookingReport($rootValue, array $args, GraphQLContext $context)
     {
