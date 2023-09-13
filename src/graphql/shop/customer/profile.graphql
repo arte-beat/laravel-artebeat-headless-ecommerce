@@ -3,9 +3,7 @@ extend type Query @guard(with: ["api"]) {
     # Please
     getProfile: ProfileInfoResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@get")
 
-    getCardDetails:CardDetailsOutput @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getCardDetails")
-
-    getBankDetails:CardDetailsOutput @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getBankDetails")
+    getOrganizerProfileDetails:EventOrganizerProfileDetailsOutput @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getOrganizerProfileDetails")
 
     getAllPaymentsHistory:BookingPaymentsAndTransactionsResponse!  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\ProfileMutation@getAllPaymentsHistory")
 
@@ -146,6 +144,21 @@ type CardDetailsOutput {
     bank_name: String
     currency: String
     fingerprint: String
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+
+}
+
+
+type EventOrganizerProfileDetailsOutput {
+    id : Int
+    firstName: String! @rename(attribute: "first_name")
+    lastName: String! @rename(attribute: "last_name")
+    name: String
+    image: String
+    imageUrl: String @rename(attribute: "image_url")
+    paymentMethods : [CardDetailsOutput] @hasOne(relation: "payment_methods")
+    defaultAddress: CustomerAddress @hasOne(relation: "default_address")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
 

@@ -14,6 +14,7 @@ use Webkul\Customer\Http\Controllers\Controller;
 use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Customer\Repositories\CustomerPaymentMethodsRepository;
 use \Webkul\Customer\Models\CustomerPaymentMethods;
+use \Webkul\Customer\Models\Customer;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Stripe;
 
@@ -589,7 +590,7 @@ class ProfileMutation extends Controller
         }
     }
 
-    public function getCardDetails($rootValue, array $args, GraphQLContext $context)
+    public function getOrganizerProfileDetails($rootValue, array $args, GraphQLContext $context)
     {
         if (!bagisto_graphql()->validateAPIUser($this->guard)) {
             throw new CustomException(
@@ -597,39 +598,23 @@ class ProfileMutation extends Controller
                 'Invalid request header parameter.'
             );
         }
-        $query = \Webkul\Customer\Models\CustomerPaymentMethods::query();
         $customer = bagisto_graphql()->guard($this->guard)->user();
+
+        $query = \Webkul\Customer\Models\Customer::query();
+        $owner = bagisto_graphql()->guard($this->guard)->user();
         if (!empty($customer)) {
-            $query->where('customer_id', $customer->id);
+            $query->where('id', $customer->id);
         }
-        $query->where('type', 'card');
-        $query->orderBy('id', 'desc');
+
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count, ['*'], 'page', $page);
+        $result = $query->paginate($count, ['*'], 'page', $page);
+
+        return $result;
+
     }
 
-    public function getBankDetails($rootValue, array $args, GraphQLContext $context)
-    {
-        if (!bagisto_graphql()->validateAPIUser($this->guard)) {
-            throw new CustomException(
-                trans('bagisto_graphql::app.admin.response.invalid-header'),
-                'Invalid request header parameter.'
-            );
-        }
-        $query = \Webkul\Customer\Models\CustomerPaymentMethods::query();
-        $customer = bagisto_graphql()->guard($this->guard)->user();
-        if (!empty($customer)) {
-            $query->where('customer_id', $customer->id);
-        }
-        $query->where('type', 'bank_account');
-        $query->orderBy('id', 'desc');
-        $count = isset($args['first']) ? $args['first'] : 10;
-        $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count, ['*'], 'page', $page);
-    }
-
-    public function getAllPaymentsHistory($rootValue, array $args, GraphQLContext $context)
+      public function getAllPaymentsHistory($rootValue, array $args, GraphQLContext $context)
     {
 
         if (!bagisto_graphql()->validateAPIUser($this->guard)) {
