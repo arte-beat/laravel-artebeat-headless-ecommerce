@@ -778,8 +778,10 @@ class CheckoutMutation extends Controller
                     $cardExistCheck = [];
                     $paymentSuccess = true;
                     $exitsCardId = '';
-                    if (isset($args['input']['shippingId']))
-                    $exitsCardId = $args['input']['card_id'];
+            
+                    if(isset($args['input']['card_id']))
+                        $exitsCardId = $args['input']['card_id'];
+
 
                     if(!empty($exitsCardId))
                     {
