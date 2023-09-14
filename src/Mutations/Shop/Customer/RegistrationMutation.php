@@ -116,7 +116,7 @@ class RegistrationMutation extends Controller
             'token'      => $verificationData['token'],
         ]);
 
-       // Event::dispatch('customer.registration.before');
+        Event::dispatch('customer.registration.before');
 
         $customer = $this->customerRepository->create($data);
 
