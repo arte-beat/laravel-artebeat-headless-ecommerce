@@ -251,8 +251,8 @@ input FilterEventsInput {
     distance_min:Int
     distance_max:Int
 
-    clinet_location_longitude:Float
-    clinet_location_latitude:Float
+    client_location_longitude:Float
+    client_location_latitude:Float
 
     event_category: String  # Exhibitions, Art Gallery, Immersive experience, Fashion Show
     search_text:String #search for event name, artist and promoter
