@@ -104,18 +104,23 @@ class RegistrationMutation extends Controller
         $data = array_merge($data, [
             'password'      => bcrypt($data['password']),
             'api_token'     => Str::random(80),
-//            'is_verified'   => (int) core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
-            'is_verified'   => 0,
+            'is_verified'   => (int) core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
+//            'is_email_verified'   => 0,
             'subscribed_to_news_letter' => ! empty($data['subscribed_to_news_letter']) ? 1 : 0,
             'customer_group_id'         => $this->customerGroupRepository->findOneByField('code', 'general')->id,
             'token'      => $verificationData['token'],
         ]);
 
-        Event::dispatch('customer.registration.before');
+//        Event::dispatch('customer.registration.before');
 
         $customer = $this->customerRepository->create($data);
 
-        Event::dispatch('customer.registration.after', $customer);
+//        Event::dispatch('customer.registration.after', $customer);
+
+        $encryptedKeyText = json_encode(["customerId" => $customer['id'], "email" => $customer['email']]);
+        $verifyLink = config('otp.front_end_customer_register_mail_verify').Crypt::encryptString($encryptedKeyText);
+        SendSignUpEvent::dispatch($customer, $data['email'],$verifyLink, 'customer');
+
 
         if (! $customer) {
             return [
@@ -358,6 +363,48 @@ class RegistrationMutation extends Controller
             'token_type'    => 'Bearer',
             'expires_in'    => bagisto_graphql()->guard($this->guard)->factory()->getTTL() * 60,
             'customer'      => $this->customerRepository->find($customer->id)
+        ];
+    }
+
+    public function verifyCustomerLogin($rootValue, array $args , GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        $validator = Validator::make($data, [
+            'encryptedKey' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            throw new Exception($validator->messages());
+        }
+
+        $decryptedKey = Crypt::decryptString($data['encryptedKey']);
+        $decryptedKeyArr = json_decode($decryptedKey);
+
+
+        $customer = $this->customerRepository->findOneByField('email', $decryptedKeyArr->email);
+
+        if($decryptedKeyArr->email != $customer['email']){
+            throw new Exception(config('exceptionmessages.invalid_email'));
+        }
+        if(!empty($customer))
+        {
+            if($customer['email'] == $decryptedKeyArr->email && $customer['id'] == $decryptedKeyArr->customerId) {
+                $customer::whereId($decryptedKeyArr->customerId)->update( ['is_verified' => 1]);
+            }else{
+                throw new Exception('We are unable to find account with given email & user id');
+            }
+        }
+
+        return [
+            'status'    => 'success',
+            'success'   => 'Login verified successfully.',
+            'customerId'   => $customer['id'],
+            'email'   => $customer['email'],
         ];
     }
 }
