@@ -56,6 +56,25 @@ class ProductMutation extends Controller
         $this->_config = request('_config');
     }
 
+    function calculateDistance($clientLatitude, $clientLongitude, $eventLatitude, $eventLongitude) {
+        $earthRadius = 6371; // Radius of the Earth in kilometers
+
+        $lat1 = deg2rad($clientLatitude);
+        $lon1 = deg2rad($clientLongitude);
+        $lat2 = deg2rad($eventLatitude);
+        $lon2 = deg2rad($eventLongitude);
+
+        $deltaLat = $lat2 - $lat1;
+        $deltaLon = $lon2 - $lon1;
+
+        $a = sin($deltaLat / 2) * sin($deltaLat / 2) + cos($lat1) * cos($lat2) * sin($deltaLon / 2) * sin($deltaLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        $distance = $earthRadius * $c;
+
+        return $distance;
+    }
+
 
     /**
      * Store a newly created resource in storage.
@@ -65,26 +84,76 @@ class ProductMutation extends Controller
     public function eventFilter($rootValue, array $args, GraphQLContext $context)
     {
         $query = \Webkul\Product\Models\Product::query();
+
+        $query->with('booking_product');
+
         $query->where('type', 'booking');
+
         if (isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
             $query->where('sku', 'like', '%' . urldecode($name) . '%');
         }
+
         if (!empty($args['input']['owner_type'])) {
             $query->where('owner_type', 'like', '%' . urldecode($args['input']['owner_type']) . '%');
         }
+
         if (!empty($args['input']['owner_id'])) {
             $query->where('owner_id', '=', $args['input']['owner_id']);
         }
+
         if (!empty($args['input']['is_feature_event'])) {
             $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
         }
+
         if (!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
         }
+
         if(isset($args['input']['event_status'])) {
             $query->where('event_status', '=', $args['input']['event_status']);
         }
+
+        if(isset($args['input']['search_text'])) {
+            // Match artist, promoter, location and event name 
+            $searchedName = strtolower(str_replace(" ", "-", $args['input']['search_text']));
+            $query->where('sku', 'like', '%'. urldecode($searchedName). '%')
+                ->orWhereHas('promoters', function ($promoterQuery) use ($args) {
+                    $promoterQuery->where('promoter_name', 'like', '%'.  $args['input']['search_text']. '%');
+                })
+                ->orWhereHas('artists', function ($artistQuery) use ($args) {
+                    $artistQuery->where('artist_name', 'like', '%'.  $args['input']['search_text']. '%');
+                });
+        }
+
+        $query->whereHas('booking_product', function ($bookingQuery) use ($args, $query) {
+
+            if(isset($args['input']['weekly_events'])) {
+                $bookingQuery->where('booking_products.available_every_week', '=', 1);
+            }
+
+            if(isset($args['input']['ticket_price_min']) && isset($args['input']['ticket_price_max'])) {
+                $bookingQuery->whereHas('event_tickets', function ($eventTicketQuery) use ($args) {
+                    $eventTicketQuery->where('price', '>=', $args['input']['ticket_price_min']);
+                    $eventTicketQuery->where('price', '<=', $args['input']['ticket_price_max']);
+                });
+            }
+        
+            if(isset($args['input']['distance_min']) && isset($args['input']['distance_max']) && isset($args['input']['client_location_longitude']) && isset($args['input']['client_location_latitude'])) {
+
+                $clientLongitude = $args['input']['client_location_longitude'];
+                $clientLatitude = $args['input']['client_location_latitude'];
+                $minDistance = $args['input']['distance_min'];
+                $maxDistance = $args['input']['distance_max'];
+                        
+                // * 6371000 for meters, 6371 for kilometer and 3956 for miles
+                $bookingQuery->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance_from_client", [$clientLatitude, $clientLongitude, $clientLatitude]);
+        
+                $bookingQuery->having('distance_from_client', '>', $minDistance);
+                $bookingQuery->having('distance_from_client', '<=', $maxDistance);
+            }
+        });  
+
         $query->orderBy('id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
