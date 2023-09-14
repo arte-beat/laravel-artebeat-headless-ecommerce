@@ -245,6 +245,7 @@ class ProductMutation extends Controller
 
         $today = date('Y-m-d h:i:s');
         $query->where('products.type', 'booking');
+        $query->where('products.event_status', '=', 1);
 
         if(isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
@@ -253,7 +254,7 @@ class ProductMutation extends Controller
         $query = $query->distinct()
             ->leftJoin('booking_products', 'products.id', '=', 'booking_products.product_id')
             ->addSelect('products.*')
-            ->where('booking_products.available_from', '<', $today);
+            ->where('booking_products.available_to', '<', $today);
         $query->orderBy('products.id', 'desc');
 
         if(isset($args['input']['name'])) {
@@ -287,6 +288,7 @@ class ProductMutation extends Controller
 
         $today = date('Y-m-d h:i:s');
         $query->where('products.type', 'booking');
+        $query->where('products.event_status', '=', 1);
 
         if(isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
@@ -324,6 +326,7 @@ class ProductMutation extends Controller
 
         $now = now();
         $query->where('products.type', 'booking');
+        $query->where('products.event_status', '=', 1);
 
         if(isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
@@ -364,6 +367,7 @@ class ProductMutation extends Controller
             ->addSelect('products.*')
             ->where('products.id', '!=', $args['input']['event_id'])
             ->where('products.type', '=', 'booking')
+            ->where('products.event_status', '=', 1)
             ->where('booking_products.event_type', '=', $args['input']['event_type'])
             ->where('booking_products.available_from', '>=', date('Y-m-d'))
             ->orderBy('products.id', 'DESC');
@@ -383,6 +387,7 @@ class ProductMutation extends Controller
             $lastDayOfWeek = date('Y-m-d',strtotime('next Sunday'));
             $today = date('Y-m-d');
             $query->where('products.type', 'booking');
+            $query->where('products.event_status', '=', 1);
             if(isset($args['input']['name'])) {
                 $name = strtolower(str_replace(" ", "-", $args['input']['name']));
                 $query->where('products.sku', 'like', '%' . urldecode($name) . '%');
