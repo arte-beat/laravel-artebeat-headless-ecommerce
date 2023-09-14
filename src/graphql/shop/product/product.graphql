@@ -104,6 +104,7 @@ input TopSellingProductInput {
 type BookedEventResponse
 {
     id: Int
+    event_status: Int
     parentId: ID @rename(attribute: "parent_id")
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     images: [Image!] @hasMany
@@ -116,6 +117,7 @@ type BookedEventResponse
 type MyEventsResponse
 {
     id: Int
+    event_status: Int
     noOfTickets: Int
     noOfMerchant: Int
     images: [Image!] @hasMany
