@@ -354,6 +354,7 @@ type MerchantEventBookingResponse {
 
 type ShowCaseCollectionResponse {
     product_id: ID! @rename(attribute: "id")
+    event_status: Int
     commission: Float
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     images: [Image!] @hasMany
@@ -391,6 +392,7 @@ type Quantity {
 
 type Product {
     id: ID!
+    event_status: Int!
     type: String!
     attributeFamilyId: Int! @rename(attribute: "attribute_family_id")
     name: String! @rename(attribute: "sku")
