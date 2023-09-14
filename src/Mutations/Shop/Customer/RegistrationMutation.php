@@ -120,7 +120,7 @@ class RegistrationMutation extends Controller
 
         $customer = $this->customerRepository->create($data);
 
-//       / Event::dispatch('customer.registration.after', $customer);
+       Event::dispatch('customer.registration.after', $customer);
 //        $encryptedKeyText = json_encode(["customerId" => $customer['id'], "email" => $customer['email']]);
 //        $verifyLink = config('otp.front_end_customer_register_mail_verify').Crypt::encryptString($encryptedKeyText);
 //        SendSignUpEvent::dispatch($customer, $data['email'],$verifyLink, 'customer');
