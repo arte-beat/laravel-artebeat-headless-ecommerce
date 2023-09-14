@@ -326,7 +326,7 @@ class ProductMutation extends Controller
                 try {
                     Event::dispatch('catalog.product.update.before', $id);
                     $updateProduct[$index] = $this->productRepository->update($data, $id);
-                    ProductFlat::where('id', $id)->update(['merch_type' => $data['merch_type']]);
+                    ProductFlat::where('product_id', $id)->update(['merch_type' => $data['merch_type']]);
                     Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                     if ($multipleFiles != null) {
@@ -396,7 +396,7 @@ class ProductMutation extends Controller
                     try {
                         Event::dispatch('catalog.product.update.before', $id);
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
-                        ProductFlat::where('id', $id)->update(['merch_type' => $data['merch_type']]);
+                        ProductFlat::where('product_id', $id)->update(['merch_type' => $data['merch_type']]);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                         if ($multipleFiles != null) {
@@ -428,7 +428,7 @@ class ProductMutation extends Controller
                         }
                         Event::dispatch('catalog.product.update.before', $id);
                         $updateProduct[$index] = $this->productRepository->update($data, $id);
-                        ProductFlat::where('id', $id)->update(['merch_type' => $data['merch_type']]);
+                        ProductFlat::where('product_id', $id)->update(['merch_type' => $data['merch_type']]);
                         Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                         if (!empty($data['removeImages'])) {
