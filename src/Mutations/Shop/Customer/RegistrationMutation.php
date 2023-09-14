@@ -104,7 +104,8 @@ class RegistrationMutation extends Controller
         $data = array_merge($data, [
             'password'      => bcrypt($data['password']),
             'api_token'     => Str::random(80),
-            'is_verified'   => (int) core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
+//            'is_verified'   => (int) core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
+            'is_verified'   => 0,
             'subscribed_to_news_letter' => ! empty($data['subscribed_to_news_letter']) ? 1 : 0,
             'customer_group_id'         => $this->customerGroupRepository->findOneByField('code', 'general')->id,
             'token'      => $verificationData['token'],
