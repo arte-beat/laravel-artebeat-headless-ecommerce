@@ -67,6 +67,7 @@ class ProductMutation extends Controller
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $query->with('booking_product', 'artists', 'promoters', 'categories');
         $query->where('type', 'booking');
+        $query->where('products.event_status', '=', 1);
 
         if(isset($args['input']['event_status'])) {
             $query->where('event_status', '=', $args['input']['event_status']);
@@ -402,6 +403,7 @@ class ProductMutation extends Controller
         }
         else{
             $query->where('type', 'booking');
+            $query->where('products.event_status', '=', 1);
             if(isset($args['input']['name'])) {
                 $name = strtolower(str_replace(" ", "-", $args['input']['name']));
                 $query->where('sku', 'like', '%' . urldecode($name) . '%');
