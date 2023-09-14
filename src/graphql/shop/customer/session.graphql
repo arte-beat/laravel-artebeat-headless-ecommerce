@@ -21,6 +21,10 @@ type CustomerLoginResult {
     expiresIn: Int @rename(attribute: "expires_in")
     customer: Customer
 }
+type VerifyCustomerLoginResult {
+    customerId : Int
+    email : String
+}
 
 type CustomerLogoutResponse {
     status: Boolean

@@ -7,6 +7,10 @@ extend type Mutation {
     customerSocialSignUp(
         input: CreateSocialSignUpInput! @spread
     ): CustomerLoginResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\RegistrationMutation@socialSignUp")
+
+    verifyCustomerLogin(
+        input: VerifyLoginInput!
+    ): VerifyCustomerLoginResult @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\RegistrationMutation@verifyCustomerLogin")
 }
 
 input CreateRegisterInput {
@@ -21,6 +25,10 @@ input CreateSocialSignUpInput {
     accessToken: String! @rename(attribute: "access_token")
     provider: SocialSignUpType! @rename(attribute: "signup_type")
     remember: Boolean
+}
+
+input VerifyLoginInput {
+    encryptedKey: String!
 }
 
 enum SocialSignUpType {
