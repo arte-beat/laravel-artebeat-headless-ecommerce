@@ -97,6 +97,14 @@ class SessionMutation extends Controller
                     'Need email varification.'
                 );
             }
+            if ($customer->email_verified == 0) {
+                bagisto_graphql()->guard($this->guard)->logout();
+
+                throw new CustomException(
+                    trans('shop::app.customer.login-form.verify-first'),
+                    'Need email varification.'
+                );
+            }
 
             /**
              * Event passed to prepare cart after login.
