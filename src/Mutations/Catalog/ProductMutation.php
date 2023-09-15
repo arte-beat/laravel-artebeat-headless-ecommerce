@@ -22,7 +22,9 @@ use Webkul\Product\Repositories\ShowcaseRepository;
 use Webkul\Product\Repositories\PromoterRepository;
 use Webkul\Product\Repositories\ProductAttributeValueRepository;
 use Webkul\Product\Models\ProductAttributeValue;
+use Webkul\Customer\Repositories\CustomerRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use App\Events\SendMailForEventCreate;
 
 class ProductMutation extends Controller
 {
@@ -40,6 +42,7 @@ class ProductMutation extends Controller
      * @param \Webkul\Product\Repositories\PromoterRepository $promoterRepository
      * @param \Webkul\Product\Repositories\ProductFlatRepository $productFlatRepository
      * @param \Webkul\Product\Repositories\ProductAttributeValueRepository $productAttributeValueRepository
+     * @param \Webkul\Customer\Repositories\CustomerRepository $customerRepository ;
      * @return void
      */
     public function __construct(
@@ -48,7 +51,8 @@ class ProductMutation extends Controller
         protected ShowcaseRepository              $showcaseRepository,
         protected PromoterRepository              $promoterRepository,
         protected ProductFlatRepository           $productFlatRepository,
-        protected ProductAttributeValueRepository $productAttributeValueRepository
+        protected ProductAttributeValueRepository $productAttributeValueRepository,
+        protected CustomerRepository    $customerRepository
     )
     {
         $this->guard = 'admin-api';
@@ -175,8 +179,11 @@ class ProductMutation extends Controller
 
         $id = $args['id'];
         $event = $this->productRepository->findOrFail($id);
+
+
         try {
             if ($event != Null) {
+                $customer = $this->customerRepository->findOrFail($event->owner_id);
                 $owner = bagisto_graphql()->guard($this->guard)->user();
                 $changeStatusOfEventparams['event_status_modified_on'] = date('Y-m-d H:i:s');
                 $changeStatusOfEventparams['event_status'] = $args['event_status'];
@@ -184,8 +191,8 @@ class ProductMutation extends Controller
                 if(!empty($owner))
                     $owner_id = $owner->id;
 
-                Product::where('id', $id)->update(['event_status_modified_on' => date('Y-m-d H:i:s'), "event_status" => $args['event_status'], "event_status_changed_by" => $owner_id]);
-
+                 Product::where('id', $id)->update(['event_status_modified_on' => date('Y-m-d H:i:s'), "event_status" => $args['event_status'], "event_status_changed_by" => $owner_id]);
+                SendMailForEventCreate::dispatch($customer, $customer['email'],$args['event_status']);
                 return [
                     'status' => true,
                     'message' => "Status changed successfully."
