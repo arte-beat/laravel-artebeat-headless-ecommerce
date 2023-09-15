@@ -100,10 +100,7 @@ class SessionMutation extends Controller
             if ($customer->email_verified == 0) {
                 bagisto_graphql()->guard($this->guard)->logout();
 
-                throw new CustomException(
-                    trans('shop::app.customer.login-form.verify-first'),
-                    'Need email varification.'
-                );
+                throw new CustomException("Profile should be Verified First");
             }
 
             /**
