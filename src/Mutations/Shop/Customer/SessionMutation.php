@@ -101,6 +101,10 @@ class SessionMutation extends Controller
                // bagisto_graphql()->guard($this->guard)->logout();
                 throw new Exception('Profile should be Verified First ');
             }
+            if ($customer->first_login == 0) {
+               // bagisto_graphql()->guard($this->guard)->logout();
+                $customer::whereId($customer->id)->update( ['first_login' => 1]);
+            }
 
             /**
              * Event passed to prepare cart after login.
