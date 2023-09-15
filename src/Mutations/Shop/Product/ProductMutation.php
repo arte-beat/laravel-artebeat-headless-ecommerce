@@ -25,6 +25,7 @@ use Webkul\Product\Models\Promoter;
 use Webkul\Product\Models\Showcase;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Customer\Repositories\CustomerRepository;
+use App\Events\SendMailForEventCreate;
 
 class ProductMutation extends Controller
 {
@@ -462,13 +463,13 @@ class ProductMutation extends Controller
             $owner = bagisto_graphql()->guard($this->guard)->user();
             $data['owner_id'] = $owner->id;
             $data['owner_type'] = 'customer';
-
             $updatedData['customer_type'] = 2; // Event Manager
             $customer = $this->customerRepository->update($updatedData,$owner->id);
 
-                Event::dispatch('catalog.product.create.before');
+            Event::dispatch('catalog.product.create.before');
             $product = $this->productRepository->create($data);
             Event::dispatch('catalog.product.create.after', $product);
+            SendMailForEventCreate::dispatch($owner, $customer['email'],3);
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
