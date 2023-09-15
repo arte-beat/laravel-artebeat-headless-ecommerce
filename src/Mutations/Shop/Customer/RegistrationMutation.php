@@ -20,6 +20,8 @@ use Laravel\Socialite\Facades\Socialite;
 
 use Webkul\SocialLogin\Models\CustomerSocialAccount;
 
+use App\Events\SendSignUpEvent;
+
 class RegistrationMutation extends Controller
 {
     /**
@@ -269,6 +271,7 @@ class RegistrationMutation extends Controller
                     'email'             => isset($socialUser->email) ? $socialUser->email : null,
                     'api_token'         => Str::random(80),
                     'is_verified'       => core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
+                    'email_verified'    =>  0 ,
                     'customer_group_id' => $this->customerGroupRepository->findOneWhere(['code' => 'general'])->id,
                     'token'             => $token,
                 ]);
@@ -394,7 +397,7 @@ class RegistrationMutation extends Controller
         if(!empty($customer))
         {
             if($customer['email'] == $decryptedKeyArr->email && $customer['id'] == $decryptedKeyArr->customerId) {
-                $customer::whereId($decryptedKeyArr->customerId)->update( ['is_verified' => 1]);
+                $customer::whereId($decryptedKeyArr->customerId)->update( ['email_verified' => 1]);
             }else{
                 throw new Exception('We are unable to find account with given email & user id');
             }
