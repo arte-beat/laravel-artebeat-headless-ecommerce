@@ -1221,7 +1221,7 @@ class ProductMutation extends Controller
             ->whereIn('orders.status', ['completed','pending'])
 //            ->where('addresses.default_address', 1)
             ->where('products.type', 'booking')
-//            ->where('orders.customer_email', $owner->email)
+            ->where('orders.customer_email', $owner->email)
             ->groupBy('cart_items.product_id', 'cart_items.cart_id')
             ->orderBy('orders.id' ,'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
