@@ -482,7 +482,6 @@ class ProductMutation extends Controller
                 $data['booking']['event_pwd'] = bcrypt(Str::random(10));
                 $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
             }
-
             try {
                 Event::dispatch('catalog.product.update.before', $id);
                 $updateProduct = $this->productRepository->update($data, $id);

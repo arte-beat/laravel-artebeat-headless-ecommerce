@@ -19,6 +19,7 @@ class BookingProduct extends BaseModel
         'event_pwd',
     ];
 
+
     protected $with = ['default_slot', 'appointment_slot', 'event_tickets', 'rental_slot', 'table_slot'];
 
     protected $casts = [
