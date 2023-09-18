@@ -122,13 +122,27 @@ class ProductMutation extends Controller
         if(isset($args['input']['search_text'])) {
             // Match artist, promoter, location and event name 
             $searchedName = strtolower(str_replace(" ", "-", $args['input']['search_text']));
-            $query->where('sku', 'like', '%'. urldecode($searchedName). '%')
-                ->orWhereHas('promoters', function ($promoterQuery) use ($args) {
+            $query->where('sku', 'like', '%'. urldecode($searchedName). '%');
+
+            $query->orWhereHas('promoters', function ($promoterQuery) use ($args) {
                     $promoterQuery->where('promoter_name', 'like', '%'.  $args['input']['search_text']. '%');
-                })
-                ->orWhereHas('artists', function ($artistQuery) use ($args) {
+                });
+
+            $query->orWhereHas('artists', function ($artistQuery) use ($args) {
                     $artistQuery->where('artist_name', 'like', '%'.  $args['input']['search_text']. '%');
                 });
+        }
+
+        if(isset($args['input']['event_category'])) {
+            $eventCategory = \Webkul\Product\Models\EventCategory::query()->where('name', 'like', '%' .  $args['input']['event_category'] . '%');
+
+            if($eventCategory->count() > 0){
+                foreach($eventCategory->get() as $category){
+                    $query->whereHas('booking_product', function ($bookingQuery) use ($category) {
+                        $bookingQuery->where('event_type', $category->id);
+                    });
+                }
+            } 
         }
 
         $query->whereHas('booking_product', function ($bookingQuery) use ($args, $query) {
