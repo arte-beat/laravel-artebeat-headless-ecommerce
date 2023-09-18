@@ -16,6 +16,7 @@ class BookingProduct extends BaseModel
         'available_from',
         'available_to',
         'product_id',
+        'event_pwd',
     ];
 
     protected $with = ['default_slot', 'appointment_slot', 'event_tickets', 'rental_slot', 'table_slot'];

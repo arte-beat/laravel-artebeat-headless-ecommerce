@@ -128,6 +128,7 @@ type BookingProduct {
     availableFrom: DateTime @rename(attribute: "available_from")
     availableTo: DateTime @rename(attribute: "available_to")
     productId: ID! @rename(attribute: "product_id")
+    eventPwd: String @rename(attribute: "event_pwd")
     defaultSlot: DefaultBookingProductSlots @belongsTo(relation: "default_slot")
     appointmentSlot: AppointmentBookingProductSlots @belongsTo(relation: "appointment_slot")
     eventTickets: [TicketBookingProductSlots!] @belongsToMany(relation: "event_tickets")
