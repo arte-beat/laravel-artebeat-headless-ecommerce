@@ -137,6 +137,8 @@ type BookingProduct {
     product: Product! @belongsTo(relation: "product")
 }
 
+
+
 # Default Booking Type
 type DefaultBookingProductSlots {
     id: ID!
