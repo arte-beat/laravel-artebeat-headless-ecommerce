@@ -91,6 +91,7 @@ input CardResponseInput
 
 input ChangeCustomerTypeInput {
     password: String!
+    cutomerType: Int!
 }
 
 input DeleteProfileInput {

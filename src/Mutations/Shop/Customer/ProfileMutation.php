@@ -243,7 +243,8 @@ class ProfileMutation extends Controller
 //        dd($customer);
         try {
             if (Hash::check($data['password'], $customer->password)) {
-                $updatedData['customer_type'] = 2; // Event Manager
+                $updatedData['customer_type'] = $args['input']['cutomerType']; // Event Manager =2 ,customer =1
+                $updatedData['first_login'] = 1;
                 if ($customer = $this->customerRepository->update($updatedData, $customer->id)) {
                     return [
                         'status' => true,
