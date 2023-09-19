@@ -727,7 +727,8 @@ class CheckoutMutation extends Controller
             $paymentSuccess = false;
             $stripeCustomer = array();
             $customerDetails = bagisto_graphql()->guard($this->guard)->user();
-            if (!empty($customerDetails) && !empty($customerDetails->email)) {
+
+            if (!empty($customerDetails) && !empty($customerDetails->id)) {
                 $stripe_cust_id = $customerDetails->stripe_customer_id;
                 if (!empty($stripe_cust_id)) {
                     $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
@@ -828,9 +829,7 @@ class CheckoutMutation extends Controller
                         $params ['card_response']= json_encode($card);
                         $storePaymentMethod = $this->customerPaymentMethodsRepository->create($params);
                     }
-
                 }
-
             }
 
             // Old bagisto functionality
@@ -861,8 +860,7 @@ class CheckoutMutation extends Controller
                     'order' => $order
                 ];
             } else {
-                throw new CustomException(
-                    $e->getMessage(),
+                throw new Exception(
                     'Error found in payment processing.'
                 );
             }
