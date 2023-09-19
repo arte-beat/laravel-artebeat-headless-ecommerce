@@ -17,6 +17,8 @@ type CartItem {
     baseTotalWeight:Float! @rename(attribute: "base_total_weight")
     price: Float!
     basePrice: Float! @rename(attribute: "base_price")
+    commission: Float @rename(attribute: "commission_amount")
+    totalWithCommission: Float @rename(attribute: "total_with_commission")
     total: Float!
     baseTotal: Float! @rename(attribute: "base_total")
     taxPercent:Float @rename(attribute: "tax_percent")
@@ -75,4 +77,6 @@ type FormattedCartItemPriceData {
     baseTaxAmount: String @rename(attribute: "base_tax_amount")
     discountAmount: String @rename(attribute: "discount_amount")
     baseDiscountAmount: String @rename(attribute: "base_discount_amount")
+    commission: String @rename(attribute: "commission_amount")
+    totalWithCommission: String @rename(attribute: "total_with_commission")
 }
