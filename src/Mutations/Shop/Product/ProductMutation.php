@@ -133,10 +133,16 @@ class ProductMutation extends Controller
         
         // ! *** WORKING ***
         // event_category: String  # Exhibitions, Art Gallery, Immersive experience, Fashion Show
+//        if(isset($args['input']['event_category'])) {
+//            $query->whereHas('categories', function ($categoryQuery) use ($args) {
+//                $categoryQuery->where('categories.name', 'like', '%' .  $args['input']['event_category'] . '%');
+//            });
+//        }
+
         if(isset($args['input']['event_category'])) {
-            $query->whereHas('categories', function ($categoryQuery) use ($args) {
-                $categoryQuery->where('name', 'like', '%' .  $args['input']['event_category'] . '%');
-            });   
+            $query->whereHas('booking_product', function ($categoryQuery) use ($args) {
+                $categoryQuery->where('event_type',$args['input']['event_category']);
+            });
         }
 
         // *** WORKING ***
