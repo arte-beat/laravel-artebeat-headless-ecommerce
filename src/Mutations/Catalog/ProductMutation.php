@@ -128,19 +128,12 @@ class ProductMutation extends Controller
                 });
         }
 
-        if(isset($args['input']['event_category'])) {
-            $eventCategory = \Webkul\Product\Models\EventCategory::query()->where('name', 'like', '%' .  $args['input']['event_category'] . '%');
-
-            if($eventCategory->count() > 0){
-                foreach($eventCategory->get() as $category){
-                    $query->whereHas('booking_product', function ($bookingQuery) use ($category) {
-                        $bookingQuery->where('event_type', $category->id);
-                    });
-                }
-            } 
-        }
-
+        
         $query->whereHas('booking_product', function ($bookingQuery) use ($args, $query) {
+            
+            if(isset($args['input']['event_category'])) {
+                $bookingQuery->where('event_type', $args['input']['event_category']);
+            }
 
             if(isset($args['input']['weekly_events'])) {
                 $bookingQuery->where('booking_products.available_every_week', '=', 1);

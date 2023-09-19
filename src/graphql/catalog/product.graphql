@@ -254,7 +254,7 @@ input FilterEventsInput {
     client_location_longitude:Float
     client_location_latitude:Float
 
-    event_category: String  # Exhibitions, Art Gallery, Immersive experience, Fashion Show
+    event_category: Int  
     search_text:String #search for event name, artist and promoter
     weekly_events : Int
 }
