@@ -90,7 +90,7 @@ input CardResponseInput
 }
 
 input ChangeCustomerTypeInput {
-    password: String!
+    password: String
     cutomerType: Int!
 }
 
