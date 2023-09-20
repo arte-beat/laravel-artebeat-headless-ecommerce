@@ -1116,16 +1116,19 @@ class ProductMutation extends Controller
             ->where('cart_items.product_id', $args['product_id']);
         if(!empty($args['input']['name']))
         {
-            $query->having("customer_name", "like", "%" .  $args['input']['name'] . "%");
-        }
-        if(!empty($args['input']['orderId']))
-        {
-          $query->where('orders.id', $args['input']['orderId']);
+            if(is_numeric(($args['input']['name'])))
+            {
+                $query->where('orders.id', $args['input']['name']);
+            }
+            else{
+                $query->having("customer_name", "like", "%" .  $args['input']['name'] . "%");
+            }
         }
         $query->orderBy('orders.id' ,'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
+
     }
 
     public function getBookedMerchantListByEvent($rootValue, array $args, GraphQLContext $context)
@@ -1135,6 +1138,7 @@ class ProductMutation extends Controller
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
             ->addSelect('products.id','products.sku as productName','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.id AS order_id','addresses.address_type','addresses.first_name','addresses.last_name','addresses.address1','addresses.address2','addresses.postcode','addresses.city','addresses.state','addresses.country','addresses.email','addresses.phone','cart_items.total as price','orders.status','cart_items.base_price as basePrice','cart_items.quantity as purchasedQuantity')
+            ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed','pending'])
             ->where('addresses.default_address', 1)
             ->where('products.type', 'simple')
@@ -1147,6 +1151,16 @@ class ProductMutation extends Controller
                 $owner = bagisto_graphql()->guard($this->guard)->user();
                 $query->where('orders.customer_email', $owner->email);
             }
+        if(!empty($args['input']['name']))
+        {
+            if(is_numeric(($args['input']['name'])))
+            {
+                $query->where('orders.id', $args['input']['name']);
+            }
+            else{
+                $query->having("customer_name", "like", "%" .  $args['input']['name'] . "%");
+            }
+        }
 
         $query->groupBy('cart_items.ticket_id','cart_items.cart_id')->orderBy('orders.id' ,'desc');
 
