@@ -34,7 +34,7 @@ extend type Query @guard(with: ["api"]){
 
      getBookedTicketsByCustomer: CustomerTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketListByCustomer")
 
-    getBookedMerchantListByEvent(product_id: ID!): BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedMerchantListByEvent")
+    getBookedMerchantListByEvent(product_id: ID!,input: FilterEventsInputByEventOrganizer): BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedMerchantListByEvent")
 
     getBookedMerchantsByCustomers: BookedMerchantResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedMerchantListByEvent")
 
@@ -84,7 +84,7 @@ extend type Mutation @guard(with: ["api"]) {
 
 input FilterEventsInputByEventOrganizer {
     name: String
-    orderId: Int
+
 }
 
 input SimilarFilterEventsInput {
