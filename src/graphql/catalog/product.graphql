@@ -347,6 +347,8 @@ type MerchantEventBookingResponse {
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     images: [Image!] @hasMany
     quantities: [Quantity!] @hasMany
+    artists: [Artist]
+    promoters: [Promoter]
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
