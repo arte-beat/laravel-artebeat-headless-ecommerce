@@ -30,7 +30,7 @@ extend type Query @guard(with: ["api"]){
 
     getMyeventsDataByEventOrganizer(product_id: ID!): MyEventsResponse!  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMyeventsDataByEventOrganizer")
 
-    getBookedTicketsByEventOrganizer(product_id: ID!): BookedTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketsByEventOrganizer")
+    getBookedTicketsByEventOrganizer(product_id: ID!,input: FilterEventsInputByEventOrganizer): BookedTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketsByEventOrganizer")
 
      getBookedTicketsByCustomer: CustomerTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getBookedTicketListByCustomer")
 
@@ -84,6 +84,7 @@ extend type Mutation @guard(with: ["api"]) {
 
 input FilterEventsInputByEventOrganizer {
     name: String
+    orderId: Int
 }
 
 input SimilarFilterEventsInput {

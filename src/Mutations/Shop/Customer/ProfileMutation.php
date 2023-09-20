@@ -242,7 +242,7 @@ class ProfileMutation extends Controller
         $customer = bagisto_graphql()->guard($this->guard)->user();
 //        dd($customer);
         try {
-            if (Hash::check($data['password'], $customer->password)) {
+            if (!empty($customer)) {
                 $updatedData['customer_type'] = $args['input']['cutomerType']; // Event Manager =2 ,customer =1
                 $updatedData['first_login'] = 1;
                 if ($customer = $this->customerRepository->update($updatedData, $customer->id)) {
@@ -257,7 +257,7 @@ class ProfileMutation extends Controller
                     );
                 }
             } else {
-                throw new Exception(trans('shop::app.customer.account.address.delete.wrong-password'));
+                throw new Exception('Unable to find Profile');
             }
         } catch (Exception $e) {
             throw new Exception($e->getMessage());

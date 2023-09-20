@@ -65,116 +65,99 @@ class ProductMutation extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function eventFilter($rootValue, array $args, GraphQLContext $context)
-    {  
-        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $query->with('booking_product', 'artists', 'promoters', 'categories');
+    {
+
+        $query = \Webkul\Product\Models\Product::query();
+        $query->with('booking_product');
         $query->where('type', 'booking');
-        $query->where('products.event_status', '=', 1);
+        $owner = bagisto_graphql()->guard($this->guard)->user();
+        $query->where('event_status', 1);
+        // owner_id: Int
+        if(!empty($owner) && $owner->customer_type ==2)
+        {
+            $query->orWhere('owner_id', $owner->id);
+            $query->Where('owner_type', 'customer');
+
+        }
+
+        if (isset($args['input']['name'])) {
+            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
+            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+        }
+
+        if (!empty($args['input']['owner_type'])) {
+            $query->where('owner_type', 'like', '%' . urldecode($args['input']['owner_type']) . '%');
+        }
+
+        if (!empty($args['input']['owner_id'])) {
+            $query->where('owner_id', '=', $args['input']['owner_id']);
+        }
+
+        if (!empty($args['input']['is_feature_event'])) {
+            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+        }
+
+        if (!empty($args['input']['is_hero_event'])) {
+            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+        }
 
         if(isset($args['input']['event_status'])) {
             $query->where('event_status', '=', $args['input']['event_status']);
         }
 
-        // *** WORKING ***
-        // name: String ----- Search by name ----SKU
-        if(isset($args['input']['name'])) {
-            $name = strtolower(str_replace(" ", "-", $args['input']['name']));
-            $query->where('sku', 'like', '%' . urldecode($name) . '%');
-        }
+        if(isset($args['input']['search_text'])) {
+            // Match artist, promoter, location and event name
+            $searchedName = strtolower(str_replace(" ", "-", $args['input']['search_text']));
+            $query->where('sku', 'like', '%'. urldecode($searchedName). '%');
 
-        // *** WORKING ***
-        // is_hero_event: Int
-        if(isset($args['input']['is_hero_event'])) {
-            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
-        }
+            $query->orWhereHas('promoters', function ($promoterQuery) use ($args) {
+                $promoterQuery->where('promoter_name', 'like', '%'.  $args['input']['search_text']. '%');
+            });
 
-        // *** WORKING ***
-        // is_feature_event: Int
-        if(isset($args['input']['is_feature_event'])) {
-            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
-        }
-
-        
-        $query->whereHas('booking_product', function ($bookingquery) use ($args, $query) {
-            // *** WORKING ***
-            // weekly_events: Int
-            if(isset($args['input']['weekly_events'])) {
-                $bookingquery->where('booking_products.available_every_week', '=', 1);
-            }
-
-            // *** WORKING ***
-            // ticket_price_min: Int
-            // ticket_price_max: Int
-            if(isset($args['input']['ticket_price_min']) && isset($args['input']['ticket_price_max'])) {
-                $bookingquery->whereHas('event_tickets', function ($eventticketquery) use ($args) {
-                    $eventticketquery->where('price', '>=', $args['input']['ticket_price_min']);
-                    $eventticketquery->where('price', '<=', $args['input']['ticket_price_max']);
-                });
-            }
-        
-            if(isset($args['input']['distance_min']) && isset($args['input']['distance_max']) && isset($args['input']['clinet_location_longitude']) && isset($args['input']['clinet_location_latitude'])) {
-
-                $longitude = $args['input']['clinet_location_longitude'];
-                $latitude = $args['input']['clinet_location_latitude'];
-                $minDistance = $args['input']['distance_min'];
-                $maxDistance = $args['input']['distance_max'];
-                        
-                // * 6371000 for meters, 6371 for kilometer and 3956 for miles
-                $bookingquery->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance", [$latitude, $longitude, $latitude]);
-        
-                $bookingquery->having('distance', '>=', $minDistance);
-                $bookingquery->having('distance', '<=', $maxDistance);
-            }
-        });   
-                
-        // \Log::info($query->toSql());
-        // $result = $query->get()->toArray();
-        // dd($result);
-        
-        // ! *** WORKING ***
-        // event_category: String  # Exhibitions, Art Gallery, Immersive experience, Fashion Show
-//        if(isset($args['input']['event_category'])) {
-//            $query->whereHas('categories', function ($categoryQuery) use ($args) {
-//                $categoryQuery->where('categories.name', 'like', '%' .  $args['input']['event_category'] . '%');
-//            });
-//        }
-
-        if(isset($args['input']['event_category'])) {
-            $query->whereHas('booking_product', function ($categoryQuery) use ($args) {
-                $categoryQuery->where('event_type',$args['input']['event_category']);
+            $query->orWhereHas('artists', function ($artistQuery) use ($args) {
+                $artistQuery->where('artist_name', 'like', '%'.  $args['input']['search_text']. '%');
             });
         }
 
-        // *** WORKING ***
-        // artist_name:String
-        // promoter_name:String
-        if(isset($args['input']['search_text'])) {
-            // Match artist, promoter, location and event name 
-            $searchedName = strtolower(str_replace(" ", "-", $args['input']['search_text']));
-            $query->where('sku', 'like', '%' . urldecode($searchedName) . '%')
-                ->orWhereHas('artists', function ($artistQuery) use ($args) {
-                    $artistQuery->where('artist_name', 'like', '%' .  $args['input']['search_text'] . '%');
-                })
-                ->orWhereHas('promoters', function ($promoterQuery) use ($args) {
-                    $promoterQuery->where('promoter_name', 'like', '%' .  $args['input']['search_text'] . '%');
+
+        $query->whereHas('booking_product', function ($bookingQuery) use ($args, $query) {
+
+            if(isset($args['input']['event_category'])) {
+                $bookingQuery->where('event_type', $args['input']['event_category']);
+            }
+
+            if(isset($args['input']['weekly_events'])) {
+                $bookingQuery->where('booking_products.available_every_week', '=', 1);
+            }
+
+            if(isset($args['input']['ticket_price_min']) && isset($args['input']['ticket_price_max'])) {
+                $bookingQuery->whereHas('event_tickets', function ($eventTicketQuery) use ($args) {
+                    $eventTicketQuery->where('price', '>=', $args['input']['ticket_price_min']);
+                    $eventTicketQuery->where('price', '<=', $args['input']['ticket_price_max']);
                 });
-        }
+            }
 
-        // owner_type: String --- customer, admin
-        $query->where('owner_type', 'customer');
+            if(isset($args['input']['distance_min']) && isset($args['input']['distance_max']) && isset($args['input']['client_location_longitude']) && isset($args['input']['client_location_latitude'])) {
 
-        // owner_id: Int
-        $owner = bagisto_graphql()->guard($this->guard)->user();
+                $clientLongitude = $args['input']['client_location_longitude'];
+                $clientLatitude = $args['input']['client_location_latitude'];
+                $minDistance = $args['input']['distance_min'];
+                $maxDistance = $args['input']['distance_max'];
 
-        // owner_id: Int
-        if(!empty($owner))
-            $query->where('owner_id', $owner->id);
+                // * 6371000 for meters, 6371 for kilometer and 3956 for miles
+                $bookingQuery->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance_from_client", [$clientLatitude, $clientLongitude, $clientLatitude]);
+
+                $bookingQuery->having('distance_from_client', '>', $minDistance);
+                $bookingQuery->having('distance_from_client', '<=', $maxDistance);
+            }
+        });
 
         $query->orderBy('id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count,['*'],'page',$page);
+        return $query->paginate($count, ['*'], 'page', $page);
+
     }
 
     /**
@@ -1128,14 +1111,21 @@ class ProductMutation extends Controller
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('booking_product_event_ticket_translations', 'cart_items.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
             ->addSelect('orders.customer_first_name as firstname','orders.customer_last_name as lastname','orders.customer_email as email','orders.created_at','cart_items.quantity','cart_items.ticket_id','orders.created_at','orders.id AS order_id','booking_product_event_ticket_translations.name as ticketType','cart_items.total as price','orders.status')
+            ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed','pending'])
-            ->where('cart_items.product_id', $args['product_id'])
-            ->orderBy('orders.id' ,'desc');
+            ->where('cart_items.product_id', $args['product_id']);
+        if(!empty($args['input']['name']))
+        {
+            $query->having("customer_name", "like", "%" .  $args['input']['name'] . "%");
+        }
+        if(!empty($args['input']['orderId']))
+        {
+          $query->where('orders.id', $args['input']['orderId']);
+        }
+        $query->orderBy('orders.id' ,'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count,['*'],'page',$page);
-
-        return $query;
     }
 
     public function getBookedMerchantListByEvent($rootValue, array $args, GraphQLContext $context)
