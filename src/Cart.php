@@ -49,7 +49,6 @@ class Cart extends BaseCart
         );
     }
 
-
     /**
      * Return current logged in customer
      *
