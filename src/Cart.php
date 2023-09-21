@@ -10,6 +10,7 @@ use Webkul\Customer\Repositories\CustomerAddressRepository;
 use Webkul\Customer\Repositories\WishlistRepository;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Tax\Repositories\TaxCategoryRepository;
+use Webkul\Core\Repositories\CommissionRateRepository;
 
 class Cart extends BaseCart
 {
@@ -23,6 +24,7 @@ class Cart extends BaseCart
      * @param  \Webkul\Tax\Repositories\TaxCategoryRepository           $taxCategoryRepository
      * @param  \Webkul\Customer\Repositories\WishlistRepository         $wishlistRepository
      * @param  \Webkul\Customer\Repositories\CustomerAddressRepository  $customerAddressRepository
+     * @param  Webkul\Core\Repositories\CommissionRateRepository  $commissionRateRepository
      * @return void
      */
     public function __construct(
@@ -32,7 +34,8 @@ class Cart extends BaseCart
         protected ProductRepository $productRepository,
         protected TaxCategoryRepository $taxCategoryRepository,
         protected WishlistRepository $wishlistRepository,
-        protected CustomerAddressRepository $customerAddressRepository
+        protected CustomerAddressRepository $customerAddressRepository,
+        protected CustomerAddressRepository $commissionRateRepository
     ) {
         parent::__construct(
             $cartRepository,
