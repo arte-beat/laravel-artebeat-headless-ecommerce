@@ -24,7 +24,7 @@ class Cart extends BaseCart
      * @param  \Webkul\Tax\Repositories\TaxCategoryRepository           $taxCategoryRepository
      * @param  \Webkul\Customer\Repositories\WishlistRepository         $wishlistRepository
      * @param  \Webkul\Customer\Repositories\CustomerAddressRepository  $customerAddressRepository
-     * @param  Webkul\Core\Repositories\CommissionRateRepository  $commissionRateRepository
+     * @param  \Webkul\Core\Repositories\CommissionRateRepository  $commissionRateRepository
      * @return void
      */
     public function __construct(
@@ -35,7 +35,7 @@ class Cart extends BaseCart
         protected TaxCategoryRepository $taxCategoryRepository,
         protected WishlistRepository $wishlistRepository,
         protected CustomerAddressRepository $customerAddressRepository,
-        protected CustomerAddressRepository $commissionRateRepository
+        protected CommissionRateRepository $commissionRateRepository
     ) {
         parent::__construct(
             $cartRepository,
@@ -44,7 +44,8 @@ class Cart extends BaseCart
             $productRepository,
             $taxCategoryRepository,
             $wishlistRepository,
-            $customerAddressRepository
+            $customerAddressRepository,
+            $commissionRateRepository
         );
     }
 
