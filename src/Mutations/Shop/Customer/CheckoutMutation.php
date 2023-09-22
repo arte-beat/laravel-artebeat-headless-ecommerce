@@ -18,7 +18,10 @@ use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\GraphQLAPI\Repositories\NotificationRepository;
 use Webkul\Customer\Repositories\CustomerPaymentMethodsRepository;
 use \Webkul\Customer\Models\CustomerPaymentMethods;
+use Webkul\Product\Repositories\ProductRepository;
 use Stripe;
+use App\Events\SendPlaceOrderEvent;
+
 
 class CheckoutMutation extends Controller
 {
@@ -37,6 +40,7 @@ class CheckoutMutation extends Controller
      * @param \Webkul\Sales\Repositories\OrderRepository $orderRepository
      * @param \Webkul\GraphQLAPI\Repositories\NotificationRepository $notificationRepository
      * @param \Webkul\Customer\Repositories\CustomerPaymentMethodsRepository $customerPaymentMethodsRepository
+     * @param \Webkul\Product\Repositories\ProductRepository           $productRepository
      * @return void
      */
     public function __construct(
@@ -44,7 +48,8 @@ class CheckoutMutation extends Controller
         protected CustomerAddressRepository $customerAddressRepository,
         protected OrderRepository           $orderRepository,
         protected NotificationRepository    $notificationRepository,
-        protected CustomerPaymentMethodsRepository $customerPaymentMethodsRepository
+        protected CustomerPaymentMethodsRepository $customerPaymentMethodsRepository,
+        protected ProductRepository $productRepository
     )
     {
         $this->guard = 'api';
@@ -721,6 +726,9 @@ class CheckoutMutation extends Controller
             Cart::collectTotals();
             $this->validateOrder();
             $cart = Cart::getCart();
+
+
+
             // Taking payment through stripe
             Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
@@ -853,7 +861,15 @@ class CheckoutMutation extends Controller
                     $updateOrderData['transaction_id'] =  $stripeCharge['balance_transaction'];
                     $updateOrder = $this->orderRepository->update($updateOrderData, $order->id);
                 }
-
+                foreach ($cart->items as $key=>$cartValue)
+                {
+                    $cart_product_id = $cartValue['product_id'];
+                    $product_arr =  $this->productRepository->findOrFail($cart_product_id);
+                    $product_owner_id = $product_arr['owner_id'];
+                    $organizer = $this->customerRepository->findOrFail($product_owner_id);
+                    //mail sent for an order to multiple organizer
+                    SendPlaceOrderEvent::dispatch($organizer, $organizer['email'],$cartValue);
+                }
                 return [
                     'success' => true,
                     'redirect_url' => null,
