@@ -237,7 +237,10 @@ class ProductMutation extends Controller
 
         $today = date('Y-m-d h:i:s');
         $query->where('products.type', 'booking');
-        $query->where('products.event_status', '=', 1);
+//        $query->where('products.event_status', '=', 1);
+        $owner = bagisto_graphql()->guard($this->guard)->user();
+
+        $query->where('products.owner_id', '=', $owner->id);
 
         if(isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
@@ -280,8 +283,10 @@ class ProductMutation extends Controller
 
         $today = date('Y-m-d h:i:s');
         $query->where('products.type', 'booking');
-        $query->where('products.event_status', '=', 1);
+//        $query->where('products.event_status', '=', 1);
+        $owner = bagisto_graphql()->guard($this->guard)->user();
 
+        $query->where('products.owner_id', '=', $owner->id);
         if(isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
             $query->where('products.sku', 'like', '%' . urldecode($name) . '%');
@@ -318,7 +323,9 @@ class ProductMutation extends Controller
 
         $now = now();
         $query->where('products.type', 'booking');
-        $query->where('products.event_status', '=', 1);
+       // $query->where('products.event_status', '=', 1);
+        $owner = bagisto_graphql()->guard($this->guard)->user();
+        $query->where('products.owner_id', '=', $owner->id);
 
         if(isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
