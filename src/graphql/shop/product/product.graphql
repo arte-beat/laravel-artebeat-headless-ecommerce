@@ -9,6 +9,8 @@ extend type Query @guard(with: ["api"]){
 
     getParticularEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@particularEventFilter")
 
+
+
     getEventByEventOrganizer(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
     # Promoter Related Queries
@@ -42,6 +44,12 @@ extend type Query @guard(with: ["api"]){
 
     downloadMerchTickets(product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@downloadMerchTickets")
 }
+
+extend type Query{
+    getFeaturedEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@featureEventFilter")
+}
+
+
 extend type Query @guard(with: ["api", "admin-api"]){
     getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
 
