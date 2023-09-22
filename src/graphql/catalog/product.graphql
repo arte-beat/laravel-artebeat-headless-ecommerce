@@ -86,6 +86,7 @@ input EventBookingInput {
     name: String!
     description: String!
     is_feature_event: Int
+    taxCategoryId: Int @rename(attribute: "tax_category_id")
     is_hero_event: Int
     commission: Float
     booking: CreateBookingInput
