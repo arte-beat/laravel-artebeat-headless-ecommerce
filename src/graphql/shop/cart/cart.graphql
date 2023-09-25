@@ -11,6 +11,10 @@ extend type Mutation {
         input: AddItemToCartInput!
     ): CartItemResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\CartMutation@store")
 
+    sendCollectionQueryMail(
+        input: AddItemToCartInput!
+    ): CollectionMailResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\CartMutation@sendMailCollection")
+
     addItemsToCart(
         input: AddItemsToCartInput!
     ): CartItemResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\CartMutation@addToCart")
@@ -217,4 +221,9 @@ type FormattedCartPriceData {
 type FormattedCartShippingRatePriceData {
     price: String
     basePrice: String @rename(attribute: "base_price")
+}
+type CollectionMailResponse{
+    status : Boolean
+    message : String
+
 }
