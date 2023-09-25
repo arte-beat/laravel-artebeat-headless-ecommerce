@@ -5,12 +5,16 @@ namespace Webkul\GraphQLAPI\Mutations\Shop\Customer;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Webkul\Customer\Http\Controllers\Controller;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Repositories\ShipmentRepository;
 use Webkul\Sales\Repositories\InvoiceRepository;
 use Webkul\Sales\Repositories\RefundRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use Webkul\Customer\Repositories\CustomerDeliveryStatusRepository;
 
 class OrderMutation extends Controller
 {
@@ -25,10 +29,12 @@ class OrderMutation extends Controller
      * Create a new controller instance.
      *
      * @param  \Webkul\Sales\Repositories\OrderRepository  $orderRepository
+     * @param  \Webkul\Customer\Repositories\CustomerDeliveryStatusRepository  $customerDeliveryStatusRepository
      * @return void
      */
     public function __construct(
-        protected OrderRepository $orderRepository
+        protected OrderRepository $orderRepository,
+        protected CustomerDeliveryStatusRepository $customerDeliveryStatusRepository
     ) {
         $this->guard = 'api';
 
@@ -371,6 +377,96 @@ class OrderMutation extends Controller
             }
         } else {
             throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+    }
+    public function deliverStatusUpdate($rootValue, array $args, GraphQLContext $context)
+    {
+
+
+        if (! isset($args['input']['orderId']) || (isset($args['input']['orderId']) && !$args['input']['orderId'])) {
+            throw new Exception(
+                trans('bagisto_graphql::app.admin.response.error-invalid-parameter'),
+                'Invalid request parameter.'
+            );
+        }
+
+        if (! bagisto_graphql()->guard($this->guard)->check() ) {
+            throw new Exception(
+                trans('bagisto_graphql::app.shop.customer.no-login-customer'),
+                'Customer Not Login.'
+            );
+        }
+        $orderId = $args['input']['orderId'];
+        $quantity = '';
+        if(!empty($args['input']['quantity']))
+        $quantity = $args['input']['quantity'];
+        $product_id = $args['input']['product_id'];
+        $ticket_id = $args['input']['ticket_id'];
+
+        try {
+            $customer = bagisto_graphql()->guard($this->guard)->user();
+            $order = $this->orderRepository->findOrFail($orderId);
+
+            if(!empty($order))
+            {
+                $cartid = $order['cart_id'];
+                $params ['orderId'] = $orderId;
+                $params ['cart_id'] = $cartid;
+                $params ['quantity'] = $quantity;
+                $params ['product_id'] = $product_id;
+                $params ['ticket_id'] = $ticket_id;
+                $params ['deliverd_by'] = $customer->id;
+                $params ['status'] = 1;
+                $params ['deliverd_on'] =Carbon::now();
+            }
+            $validator = Validator::make($args['input'], [
+                'orderId' => 'required',
+                'product_id' => 'required',
+                'ticket_id' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                throw new Exception($validator->messages());
+            }
+            try {
+                DB::enableQueryLog();
+                $result = $this->customerDeliveryStatusRepository->create($params);
+                $query = \Webkul\Checkout\Models\CartItem::query();
+
+                $res = $query->leftJoin('order_status_for_single_product', function($join)
+                {
+                    $join->on('cart_items.cart_id', '=', 'order_status_for_single_product.cart_id')
+                        ->on('cart_items.product_id', '=', 'order_status_for_single_product.product_id')
+                        ->on('cart_items.ticket_id', '=', 'order_status_for_single_product.ticket_id');
+                })
+                    ->Select( 'cart_items.id')
+                    ->where('cart_items.type', 'simple')
+                    ->whereNull('order_status_for_single_product.cart_id')
+                    ->where('cart_items.cart_id', $cartid)->first();
+
+                if(!empty($res))
+                {
+                    $partial_order = 1;
+                }
+                else{
+                    $order_data['status'] = 'completed';
+                    $this->orderRepository->update($order_data,$orderId);
+                    $partial_order = 2;
+                }
+
+            } catch (\Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+
+
+            return [
+                'status'    => $result ? true : false,
+                'order'     => $this->orderRepository->find($orderId),
+                'partial_order'     => $partial_order,
+                'message'   => $result ? trans('admin::app.response.update-success', ['name' => 'Order']) : trans('bagisto_graphql::app.admin.response.update-error')
+            ];
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
     }
 }
