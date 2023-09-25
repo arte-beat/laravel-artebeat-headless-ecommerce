@@ -8,6 +8,8 @@ use Webkul\Customer\Http\Controllers\Controller;
 use Webkul\Checkout\Repositories\CartRepository;
 use Webkul\Product\Repositories\ProductRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
+use App\Events\SendPlaceOrderEvent;
+use Webkul\Customer\Repositories\CustomerRepository;
 
 class CartMutation extends Controller
 {
@@ -23,11 +25,13 @@ class CartMutation extends Controller
      *
      * @param  \Webkul\Checkout\Repositories\CartRepository  $cartRepository
      * @param  \Webkul\Product\Repositories\ProductRepository  $productRepository
+     * @param  use Webkul\Customer\Repositories\CustomerRepository  $customerRepository
      * @return void
      */
     public function __construct(
        protected CartRepository $cartRepository,
-       protected ProductRepository $productRepository
+       protected ProductRepository $productRepository,
+       protected CustomerRepository  $customerRepository
     )
     {
         $this->guard = 'api';
@@ -99,6 +103,38 @@ class CartMutation extends Controller
             } else {
                 return $cart;
             }
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    public function sendMailCollection($rootValue, array $args, GraphQLContext $context)
+    {
+        if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        $data = $args['input'];
+
+        if (! isset($data['product_id']) || (isset($data['product_id']) && !$data['product_id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+
+        try {
+            $product = $this->productRepository->findOrFail($data['product_id']);
+//          $product = $this->productRepository->findOrFail($data['product_id']);
+            $product_owner_id = $product['owner_id'];
+            $organizer = $this->customerRepository->findOrFail($product_owner_id);
+            $cartValue['product'] = $product;
+            $cartValue['merchant'] = $data['merchant']['qty'];
+            //mail sent for an order to multiple organizer
+            SendPlaceOrderEvent::dispatch($organizer, $organizer['email'],$cartValue);
+
+                return [
+                    'status'    => true,
+                    'message'   => trans('Mail sent Successfully')
+                ];
+
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
