@@ -21,7 +21,14 @@ extend type Mutation @guard(with: ["api"]) {
     cancelCustomerOrder(
         id: ID!
     ): DeleteOrderResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\OrderMutation@cancel")
+
+#    deliverCustomerOrder(input: OrderInvoiceInput ): DeleteOrderResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\OrderMutation@deliverStatusUpdate")
+    deliverCustomerOrder(
+        input: DeliverCustomerOrderInput!
+    ): DeleteOrderResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Customer\\OrderMutation@deliverStatusUpdate")
+
 }
+
 
 input FilterCustomerOrderInput {
     id: Int
@@ -37,7 +44,13 @@ input FilterCustomerOrderInput {
     channelName: String @rename(attribute: "channel_name")
     status: String
 }
+input DeliverCustomerOrderInput {
+    orderId : Int!
+    productId:Int! @rename(attribute: "product_id")
+    ticketid:Int! @rename(attribute: "ticket_id")
+    quantity : Int
 
+}
 input OrderShipmentInput {
     page: Int
     limit: Int
