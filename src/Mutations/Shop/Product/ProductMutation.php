@@ -146,7 +146,9 @@ class ProductMutation extends Controller
                 $maxDistance = $args['input']['distance_max'];
 
                 // * 6371000 for meters, 6371 for kilometer and 3956 for miles
-                $bookingQuery->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance_from_client", [$clientLatitude, $clientLongitude, $clientLatitude]);
+//                $bookingQuery->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance_from_client", [$clientLatitude, $clientLongitude, $clientLatitude]);
+
+                $bookingQuery->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $clientLatitude . '), 2) + POW(69.1 * (' . $clientLongitude . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance_from_client');
 
                 $bookingQuery->having('distance_from_client', '>', $minDistance);
                 $bookingQuery->having('distance_from_client', '<=', $maxDistance);
