@@ -21,7 +21,7 @@ extend type Mutation @guard {
 input createTaxCategoryInput {
     code: String!
     name: String!
-    status: Int!
+    status: Int
     description: String!
     taxrates: [Int!]!
 }
