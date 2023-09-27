@@ -13,6 +13,7 @@ use Webkul\Customer\Repositories\CustomerAddressRepository;
 use Webkul\Shipping\Facades\Shipping;
 use Webkul\Payment\Facades\Payment;
 use Webkul\Sales\Repositories\OrderRepository;
+use Webkul\Sales\Repositories\BookedEventTicketsHistoryRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Webkul\GraphQLAPI\Repositories\NotificationRepository;
@@ -21,6 +22,7 @@ use \Webkul\Customer\Models\CustomerPaymentMethods;
 use Webkul\Product\Repositories\ProductRepository;
 use Stripe;
 use App\Events\SendPlaceOrderEvent;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 
 class CheckoutMutation extends Controller
@@ -38,6 +40,7 @@ class CheckoutMutation extends Controller
      * @param \Webkul\Customer\Repositories\CustomerRepository $customerRepository
      * @param \Webkul\Customer\Repositories\CustomerAddressRepository $customerAddressRepository
      * @param \Webkul\Sales\Repositories\OrderRepository $orderRepository
+     * @param \Webkul\Sales\Repositories\BookedEventTicketsHistoryRepository $bookedEventTicketsHistoryRepository
      * @param \Webkul\GraphQLAPI\Repositories\NotificationRepository $notificationRepository
      * @param \Webkul\Customer\Repositories\CustomerPaymentMethodsRepository $customerPaymentMethodsRepository
      * @param \Webkul\Product\Repositories\ProductRepository           $productRepository
@@ -49,7 +52,8 @@ class CheckoutMutation extends Controller
         protected OrderRepository           $orderRepository,
         protected NotificationRepository    $notificationRepository,
         protected CustomerPaymentMethodsRepository $customerPaymentMethodsRepository,
-        protected ProductRepository $productRepository
+        protected ProductRepository $productRepository,
+        protected BookedEventTicketsHistoryRepository $bookedEventTicketsHistoryRepository
     )
     {
         $this->guard = 'api';
@@ -699,6 +703,7 @@ class CheckoutMutation extends Controller
      */
     public function saveOrder($rootValue, array $args, GraphQLContext $context)
     {
+
         try {
             if (Cart::hasError()) {
                 throw new CustomException(
@@ -742,7 +747,7 @@ class CheckoutMutation extends Controller
                     $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
                 }
 
-                if (count($stripeCustomer) === 0) {
+                if (count($stripeCustomer) === 0 || $stripeCustomer['deleted'] == true) {
                     $stripeCustomer = Stripe\Customer::create(array(
                         "email" => $customerDetails->email,
                         "name" => $args['input']['name'],
@@ -861,15 +866,39 @@ class CheckoutMutation extends Controller
                     $updateOrderData['transaction_id'] =  $stripeCharge['balance_transaction'];
                     $updateOrder = $this->orderRepository->update($updateOrderData, $order->id);
                 }
-                foreach ($cart->items as $key=>$cartValue)
+                foreach($cart->items as $ky=>$cartDetails)
                 {
-                    $cart_product_id = $cartValue['product_id'];
-                    $product_arr =  $this->productRepository->findOrFail($cart_product_id);
-                    $product_owner_id = $product_arr['owner_id'];
-                    $organizer = $this->customerRepository->findOrFail($product_owner_id);
-                    //mail sent for an order to multiple organizer
-                    SendPlaceOrderEvent::dispatch($organizer, $organizer['email'],$cartValue);
+                   if($cartDetails['type'] == 'booking')
+                   {
+                       $ticketarr[$ky]['cart_items_id'] = $cartDetails['id'];
+                       $ticketarr[$ky]['ticket_id'] = $cartDetails['ticket_id'];
+                       //              $ticketarr[$ky]['order_id'] =  $order->id;
+                       $ticketarr[$ky]['cart_id'] = $cartDetails['cart_id'];
+                       $ticketarr[$ky]['quantity'] = $cartDetails['quantity'];
+                   }
                 }
+
+
+                foreach ($ticketarr as $ky=>$value)
+                {
+                    if($value['quantity']>1)
+                    {
+                        for($i=0; $i<$value['quantity'] ; $i++ )
+                        {
+                            $data = $value;
+                            $data['qrCode'] = QrCode::generate('https://harrk.dev');
+                            $this->bookedEventTicketsHistoryRepository->create($data);
+                        }
+                    }
+                    else
+                    {
+                        $data = $value;
+                        $data['qrCode'] = QrCode::generate('https://harrk.dev');
+                        $this->bookedEventTicketsHistoryRepository->create($data);
+                    }
+
+                }
+
                 return [
                     'success' => true,
                     'redirect_url' => null,

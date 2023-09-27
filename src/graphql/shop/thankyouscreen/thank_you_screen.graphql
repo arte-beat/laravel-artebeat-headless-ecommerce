@@ -1,6 +1,7 @@
 # Shop\Checkout\Addresses Related API
 extend type Query @guard(with: ["api", "admin-api"]){
-    thankYouScreen(order_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getData")
+  #  thankYouScreen(order_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getThankyouScreenData")
+    thankYouScreen(order_id: ID!): [ThankYouScreenDataResponse]  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getThankyouScreenData")
 
     downloadTicket(order_id: ID!, product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
 
@@ -59,6 +60,30 @@ type ThankYouScreenData{
     updatedAt: String @rename(attribute: "updated_at")
     success: String
 }
+
+type ThankYouScreenDataResponse{
+    orderedTicketId: Int
+    cart_id: Int
+    order_id: Int
+    productId: Int @rename(attribute: "product_id")
+    ticket_id: Int
+    first_name: String
+    last_name: String
+    email: String
+    qrCode: String
+    is_checkedIn: Boolean
+    base_price: Float
+    artists: [Artist] @hasMany
+    promoters: [Promoter] @hasMany
+    booking: BookingProduct @hasOne(relation: "booking_product")
+    productFlats: [ProductFlat] @hasMany(relation: "product_flats")
+    merchants: [MerchantEventBookingResponse] @hasMany
+    images: [Image] @hasMany
+    createdAt: String @rename(attribute: "created_at")
+    updatedAt: String @rename(attribute: "updated_at")
+    success: String
+}
+
 
 type ThankYouScreenQRCodeResponse{
     id: ID!
