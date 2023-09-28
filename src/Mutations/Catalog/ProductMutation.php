@@ -26,6 +26,7 @@ use Webkul\Customer\Repositories\CustomerRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use App\Events\SendMailForEventCreate;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Crypt;
 
 class ProductMutation extends Controller
 {
@@ -358,7 +359,9 @@ class ProductMutation extends Controller
             $id = $product->id;
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
-                $data['booking']['event_pwd'] = bcrypt(Str::random(10));
+                $event_pwd= Str::random(10);
+                $saltkey =   $data['sku'].'_'.date('H:i:s');
+                $data['booking']['event_pwd'] =Crypt::encryptString($event_pwd,$saltkey);
                 $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
 
             }
