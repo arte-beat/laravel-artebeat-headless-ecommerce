@@ -872,12 +872,12 @@ class CheckoutMutation extends Controller
                    {
                        $ticketarr[$ky]['cart_items_id'] = $cartDetails['id'];
                        $ticketarr[$ky]['ticket_id'] = $cartDetails['ticket_id'];
-                       //              $ticketarr[$ky]['order_id'] =  $order->id;
+                       $ticketarr[$ky]['orderId'] =  $order->id;
                        $ticketarr[$ky]['cart_id'] = $cartDetails['cart_id'];
                        $ticketarr[$ky]['quantity'] = $cartDetails['quantity'];
+                       $ticketarr[$ky]['product_id'] = $cartDetails['product_id'];
                    }
                 }
-
 
                 foreach ($ticketarr as $ky=>$value)
                 {

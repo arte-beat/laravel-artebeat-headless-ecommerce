@@ -62,17 +62,18 @@ type ThankYouScreenData{
 }
 
 type ThankYouScreenDataResponse{
+    id: ID!
     orderedTicketId: Int
     cart_id: Int
     order_id: Int
-    productId: Int @rename(attribute: "product_id")
+    product_id: Int
+    product_event_id: Int
     ticket_id: Int
     first_name: String
     last_name: String
     email: String
     qrCode: String
     is_checkedIn: Boolean
-    base_price: Float
     artists: [Artist] @hasMany
     promoters: [Promoter] @hasMany
     booking: BookingProduct @hasOne(relation: "booking_product")

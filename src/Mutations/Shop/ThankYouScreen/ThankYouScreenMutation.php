@@ -168,30 +168,17 @@ class ThankYouScreenMutation extends Controller
         $product = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $query->leftJoin('cart_items', 'cart_items.product_id', '=', 'products.id')
-              ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
-              ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.cart_items_id', '=', 'cart_items.id')
-              ->addSelect('orders.id as order_id','orders.customer_email','orders.customer_first_name','orders.customer_last_name','orders.customer_email','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','cart_items.product_id','cart_items.base_price','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+        $query
+            ->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
+           ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
             ->where('orders.id',$args['order_id'])
-            ->where('orders.customer_email',$customer->email);
+            ->where('booked_event_tickets_history.orderId',$args['order_id'])
+            ->where('orders.customer_email',$customer->email)
+            ->whereNotNull('products.id');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        $result_ticket_orders =  $query->paginate($count, ['*'], 'page', $page);
-
-        if(count($result_ticket_orders) > 0) {
-            foreach ($result_ticket_orders as $ticket_order_index => $ticket_order) {
-
-                $result_ticket_orders[$ticket_order_index]['orderedTicketId'] = $ticket_order->orderedTicketId;
-                $result_ticket_orders[$ticket_order_index]['product_id'] = $ticket_order->product_id;
-                $result_ticket_orders[$ticket_order_index]['order_id'] = $ticket_order->order_id;
-                $result_ticket_orders[$ticket_order_index]['first_name'] = $ticket_order->customer_first_name;
-                $result_ticket_orders[$ticket_order_index]['last_name'] = $ticket_order->customer_last_name;
-                $result_ticket_orders[$ticket_order_index]['email'] = $ticket_order->customer_email;
-            }
-
-        }
-//dd( $result_ticket_orders);
-        return  $result_ticket_orders;
+        return $query->paginate($count, ['*'], 'page', $page);
     }
 
     public function getQRCodeData($rootValue, array $args, GraphQLContext $context)

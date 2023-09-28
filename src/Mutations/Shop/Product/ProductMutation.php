@@ -518,7 +518,7 @@ class ProductMutation extends Controller
             $id = $product->id;
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
-                $data['booking']['event_pwd'] = bcrypt(Str::random(10));
+                $data['booking']['event_pwd'] = Str::random(10);
                 $data['booking'] = bagisto_graphql()->manageBookingRequest($data['booking']);
             }
             try {
