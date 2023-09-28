@@ -886,14 +886,14 @@ class CheckoutMutation extends Controller
                         for($i=0; $i<$value['quantity'] ; $i++ )
                         {
                             $data = $value;
-                            $data['qrCode'] = QrCode::generate('https://harrk.dev');
+                            $data['qrCode'] = QrCode::size(280)->generate('https://harrk.dev');
                             $this->bookedEventTicketsHistoryRepository->create($data);
                         }
                     }
                     else
                     {
                         $data = $value;
-                        $data['qrCode'] = QrCode::generate('https://harrk.dev');
+                        $data['qrCode'] = QrCode::size(280)->generate('https://harrk.dev');
                         $this->bookedEventTicketsHistoryRepository->create($data);
                     }
 
