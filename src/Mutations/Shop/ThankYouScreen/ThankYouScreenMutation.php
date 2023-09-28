@@ -17,6 +17,7 @@ use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use App\Events\SendEventTicket;
+use Webkul\Sales\Models\BookedEventTicketsHistory;
 
 class ThankYouScreenMutation extends Controller
 {
@@ -33,6 +34,7 @@ class ThankYouScreenMutation extends Controller
      * @param  \Webkul\Product\Repositories\TicketOrderRepository  $ticketOrderRepository
      * @param \Webkul\Customer\Repositories\CustomerRepository $customerRepository
      * @param \Webkul\Sales\Repositories\OrderRepository $orderRepository
+     * @param Webkul\Sales\Models\BookedEventTicketsHistory $bookedTicketRepository
      *
      * @return void
      */
@@ -41,7 +43,8 @@ class ThankYouScreenMutation extends Controller
         protected OrderRepository $orderRepository,
         protected CustomerAddressRepository $customerAddressRepository,
         protected TicketOrderRepository $ticketOrderRepository,
-        protected CustomerRepository $customerRepository
+        protected CustomerRepository $customerRepository,
+        protected BookedEventTicketsHistory $bookedTicketRepository
     ) {
         $this->guard = 'api';
         auth()->setDefaultDriver($this->guard);
@@ -179,6 +182,38 @@ class ThankYouScreenMutation extends Controller
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count, ['*'], 'page', $page);
+    }
+
+    public function getQrScanningScreenData($rootValue, array $args, GraphQLContext $context)
+    {
+        $product = [];
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $res = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
+            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+            ->where('booked_event_tickets_history.id',$args['ticket_id'])->first();
+
+        return $res;
+    }
+
+    public function getQRCheckInScreen($rootValue, array $args, GraphQLContext $context)
+    {
+        $product = [];
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $booking_ticket = $this->bookedTicketRepository->findOrFail($args['ticket_id']);
+
+        $data['is_checkedIn'] = 1 ;
+        if(!empty($booking_ticket))
+         $result = $this->bookedTicketRepository->update($data, $args['ticket_id']);
+
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $res = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
+            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+            ->where('booked_event_tickets_history.id',$args['ticket_id'])->first();
+
+        return $res;
     }
 
     public function getQRCodeData($rootValue, array $args, GraphQLContext $context)
