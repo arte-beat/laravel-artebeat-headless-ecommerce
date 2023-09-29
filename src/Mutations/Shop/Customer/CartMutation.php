@@ -110,6 +110,7 @@ class CartMutation extends Controller
 
     public function sendMailCollection($rootValue, array $args, GraphQLContext $context)
     {
+
         if (! isset($args['input']) || (isset($args['input']) && !$args['input'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
@@ -120,13 +121,26 @@ class CartMutation extends Controller
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
 
+
+
         try {
             $product = $this->productRepository->findOrFail($data['product_id']);
 //          $product = $this->productRepository->findOrFail($data['product_id']);
+
+            $owner = bagisto_graphql()->guard($this->guard)->user();
+            $email = $owner->email;
+            $name = $owner->first_name.' '.$owner->first_name;
+
             $product_owner_id = $product['owner_id'];
             $organizer = $this->customerRepository->findOrFail($product_owner_id);
-            $cartValue['product'] = $product;
-            $cartValue['merchant'] = $data['merchant']['qty'];
+            $cartValue['sku'] = $product['sku'];
+            $cartValue['qty'] = $data['merchant']['qty'][0]['quantity'];
+            if(isset($data['note']))
+            $cartValue['note'] = $data['note'];
+
+            $cartValue['email'] = $email;
+            $cartValue['name'] = $name;
+
             //mail sent for an order to multiple organizer
             SendPlaceOrderEvent::dispatch($organizer, $organizer['email'],$cartValue);
 

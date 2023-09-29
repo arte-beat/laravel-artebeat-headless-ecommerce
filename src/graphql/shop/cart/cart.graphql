@@ -51,6 +51,7 @@ input AddItemToCartInput {
     # Used in case of adding booking Product to Cart
     booking: BookingProductInput
     merchant: MerchantProductInput
+    note : String
 }
 
 input MerchantProductInput {
