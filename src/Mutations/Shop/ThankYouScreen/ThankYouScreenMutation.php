@@ -199,13 +199,22 @@ class ThankYouScreenMutation extends Controller
 
     public function getQRCheckInScreen($rootValue, array $args, GraphQLContext $context)
     {
-        $product = [];
+        $data = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $booking_ticket = $this->bookedTicketRepository->findOrFail($args['ticket_id']);
-
-        $data['is_checkedIn'] = 1 ;
+        $id =  $args['ticket_id'];
+        $date['is_checkedIn'] = 1 ;
         if(!empty($booking_ticket))
-         $result = $this->bookedTicketRepository->update($data, $args['ticket_id']);
+        {
+            $product = $this->productRepository->findOrFail($booking_ticket['product_id']);
+            $booking = $product->booking_product;
+            if($booking->event_pwd == $args['event_pwd'])
+            {
+                $this->bookedTicketRepository->where('id', $args['ticket_id'])->update(['is_checkedIn' => 1]);
+            }
+
+        }
+
 
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $res = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
