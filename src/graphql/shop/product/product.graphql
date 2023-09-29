@@ -3,32 +3,9 @@ extend type Query @guard(with: ["api"]){
 
 #    getEventsByEventOrganizer(input: FilterEventsInputByEventOrganizer @builder(method: "Webkul\\GraphQLAPI\\Queries\\Shop\\Product\\FilterEvents")): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
-    getEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@eventFilter")
-
-    getSimilarEvents(input: SimilarFilterEventsInput!): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@similarEventFilter")
-
-    getParticularEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@particularEventFilter")
-
-
-
-    getEventByEventOrganizer(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
-
-    # Promoter Related Queries
-    getPromotersByEventOrganizer(input: FilterPromoterInput): [Promoter!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterPromoter")
-
-    getPromoterByEventOrganizer(id: ID @eq): Promoter @find(model: "Webkul\\Product\\Models\\Promoter")
-
-    getShowcaseByEventOrganizer: ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getShowcase")
-
-    getMerchantByEventOrganizer(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
-
-    eventCategoriesByEventOrganizer(input: FilterEventCategoryInput ): [EventCategory!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterEventCategory")
-
     getAttemptEventsMerchant(input: AttemptEventInput ): [[BookedEventResponse]]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getAttemptEventsMerchant")
 
-   topsellingMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@topsellingMerchant")
 
-    getRandomMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getRandomMerchant")
 
     getMyeventsDataByEventOrganizer(product_id: ID!): MyEventsResponse!  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMyeventsDataByEventOrganizer")
 
@@ -47,11 +24,34 @@ extend type Query @guard(with: ["api"]){
 
 extend type Query{
     getFeaturedEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@featureEventFilter")
+
+    getEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@eventFilter")
+
+    getSimilarEvents(input: SimilarFilterEventsInput!): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@similarEventFilter")
+
+    getParticularEventsByEventOrganizer(input: FilterEventsInput): [EventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@particularEventFilter")
+    topsellingMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@topsellingMerchant")
+
+    getRandomMerchant(input: TopSellingProductInput ): [BookedEventResponse]! @field( resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getRandomMerchant")
+
+    getEventByEventOrganizer(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+
+    getMerchantByEventOrganizer(id: ID @eq): ShowCaseCollectionResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
+
+    getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
+
+    getShowcaseByEventOrganizer: ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getShowcase")
+
+    # Promoter Related Queries
+    getPromotersByEventOrganizer(input: FilterPromoterInput): [Promoter!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterPromoter")
+
+    getPromoterByEventOrganizer(id: ID @eq): Promoter @find(model: "Webkul\\Product\\Models\\Promoter")
+
+    eventCategoriesByEventOrganizer(input: FilterEventCategoryInput ): [EventCategory!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@filterEventCategory")
 }
 
 
 extend type Query @guard(with: ["api", "admin-api"]){
-    getMerchantByEvent(id: ID!, input: FilterEventsInput): [MerchantEventBookingResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getMerchantByEvent")
 
     getCollectionByShowcase(id:ID!, input: FilterCollectionsInput ): [ShowCaseCollectionResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\Product\\ProductMutation@getShowcaseCollectionByShowcase")
 
