@@ -14,6 +14,7 @@ use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Customer\Repositories\CustomerGroupRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Customer\Models\Customer;
+use App\Events\SendAccountBlockEvent;
 
 class CustomerMutation extends Controller
 {
@@ -115,17 +116,24 @@ class CustomerMutation extends Controller
         }
 
         try {
-            if(!empty($data['status']))
+            if(isset($data['status']))
             {
-                $data['status'] = 1;
-            }
-            else{
-                $data['status'] = 0;
+               if($data['status'])
+               {
+                   $data['status'] = 1;
+               }
+               else{
+                   $data['status'] = 0;
+               }
             }
 
             Event::dispatch('customer.customer.update.before');
 
             $customer = $this->customerRepository->update($data, $id);
+            if( isset($data['status']) && $data['status'] == 0)
+            {
+                SendAccountBlockEvent::dispatch($customer, $customer['email'],'customer');
+            }
 
             Event::dispatch('customer.customer.update.after', $customer);
 
