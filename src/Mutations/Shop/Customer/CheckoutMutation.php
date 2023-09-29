@@ -3,6 +3,7 @@
 namespace Webkul\GraphQLAPI\Mutations\Shop\Customer;
 
 use Exception;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 use Webkul\Core\Contracts\Validations\AlphaNumericSpace;
 use Webkul\Core\Contracts\Validations\PhoneNumber;
@@ -886,15 +887,20 @@ class CheckoutMutation extends Controller
                         for($i=0; $i<$value['quantity'] ; $i++ )
                         {
                             $data = $value;
-                            $data['qrCode'] = QrCode::size(280)->generate('https://harrk.dev');
-                            $this->bookedEventTicketsHistoryRepository->create($data);
+                            $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
+                            $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
+                            $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
+                            $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
+
                         }
                     }
                     else
                     {
                         $data = $value;
-                        $data['qrCode'] = QrCode::size(280)->generate('https://harrk.dev');
-                        $this->bookedEventTicketsHistoryRepository->create($data);
+                        $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
+                        $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
+                        $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
+                        $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
                     }
 
                 }

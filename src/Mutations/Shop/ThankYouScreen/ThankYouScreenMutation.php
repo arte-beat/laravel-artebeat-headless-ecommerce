@@ -178,7 +178,8 @@ class ThankYouScreenMutation extends Controller
             ->where('orders.id',$args['order_id'])
             ->where('booked_event_tickets_history.orderId',$args['order_id'])
             ->where('orders.customer_email',$customer->email)
-            ->whereNotNull('products.id');
+            ->whereNotNull('products.id')
+            ->orderBy('booked_event_tickets_history.product_id','desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count, ['*'], 'page', $page);
