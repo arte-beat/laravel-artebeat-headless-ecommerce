@@ -102,13 +102,12 @@ class CustomerMutation extends Controller
 
         $data = $args['input'];
         $id = $args['id'];
-        
         $validator = Validator::make($data, [
             'first_name'        => 'string|required',
             'last_name'         => 'string|required',
             'gender'            => 'required',
             'date_of_birth'     => 'date|before:today',
-//            'customer_group_id' => 'required|numeric',
+//          'customer_group_id' => 'required|numeric',
         ]);
         
         if ($validator->fails()) {
@@ -116,7 +115,13 @@ class CustomerMutation extends Controller
         }
 
         try {
-            $data['status'] = ! isset($data['status']) ? 0 : 1;
+            if(!empty($data['status']))
+            {
+                $data['status'] = 1;
+            }
+            else{
+                $data['status'] = 0;
+            }
 
             Event::dispatch('customer.customer.update.before');
 
