@@ -77,8 +77,7 @@ class ProductMutation extends Controller
         // owner_id: Int
         if (!empty($owner) && $owner->customer_type == 2) {
             $query->orWhere('owner_id', $owner->id);
-            $query->Where('owner_type', 'customer');
-
+           // $query->Where('owner_type', 'customer');
         }
 
         if (isset($args['input']['name'])) {
