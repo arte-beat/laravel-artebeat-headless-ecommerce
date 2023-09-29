@@ -1086,6 +1086,7 @@ class ProductMutation extends Controller
             ->SelectRaw('SUM(product_qty_size.qty) as total_sold')
             ->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $args["input"]["latitude"] . '), 2) + POW(69.1 * (' . $args["input"]["longitude"] . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance')
             ->where('products.type', 'simple')
+            ->where('products.event_status', 1)
             ->whereNULL('products.product_type')
             ->groupBy('products.id')
             ->havingRaw(' total_sold > 0 and distance <= ' . $distance)
