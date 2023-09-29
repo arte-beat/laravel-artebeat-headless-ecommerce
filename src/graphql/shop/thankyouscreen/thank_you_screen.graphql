@@ -15,13 +15,14 @@ extend type Query @guard(with: ["api", "admin-api"]){
 
     getBookedEvents(order_id: ID!): CustomerTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getBookedEvents")
 
-    qrScanningScreen(ticket_id: ID!): ThankYouScreenDataResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQrScanningScreenData")
 
-    qrCheckInScreen(ticket_id: ID!,event_pwd:String!): ThankYouScreenDataResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQRCheckInScreen")
 }
 
 extend type Query {
     thankYouScreenQRCode(order_id: ID!, product_id: ID!): ThankYouScreenQRCodeResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQRCodeData")
+    qrScanningScreen(ticket_id: ID!): ThankYouScreenDataResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQrScanningScreenData")
+
+    qrCheckInScreen(ticket_id: ID!,event_pwd:String!): ThankYouScreenDataResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQRCheckInScreen")
 }
 
 type DownloadTicketResponse{
