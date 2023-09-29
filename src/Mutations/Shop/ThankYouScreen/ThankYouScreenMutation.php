@@ -202,8 +202,6 @@ class ThankYouScreenMutation extends Controller
         $data = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $booking_ticket = $this->bookedTicketRepository->findOrFail($args['ticket_id']);
-        $id =  $args['ticket_id'];
-        $date['is_checkedIn'] = 1 ;
         if(!empty($booking_ticket))
         {
             $product = $this->productRepository->findOrFail($booking_ticket['product_id']);
