@@ -1208,11 +1208,14 @@ class ProductMutation extends Controller
     public function downloadMerchTickets($rootValue, array $args, GraphQLContext $context)
     {
         $response = [];
+        $arr_merchantList = [];
+        $owner = bagisto_graphql()->guard($this->guard)->user();
         $merchantList = \Webkul\GraphQLAPI\Models\Catalog\Product::query()
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'orders.status')
+            ->leftJoin('product_qty_size', 'cart_items.ticket_id', '=', 'product_qty_size.id')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'orders.status','product_qty_size.size')
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('addresses.default_address', 1)
             ->where('products.type', 'simple')
@@ -1222,28 +1225,60 @@ class ProductMutation extends Controller
             ->orderBy('orders.id', 'desc')->get();
 
         if (!empty($merchantList)) {
-            $responseData = $this->productRepository->downloadBookedEventMerchants($merchantList);
+            $arr_merchantList = $merchantList->map(function($item, $key) {
+                return [
+                    'Product Name' => $item->productName,
+                    'Size' => $item->size,
+                    'Price' => $item->basePrice,
+                    'Order No' => "#".$item->order_id,
+                    'Quantity' => $item->purchasedQuantity,
+                    'Total' => $item->price,
+                    'Delivery Status' => $item->status,
+                    'Customer Name' => $item->first_name." ".$item->last_name,
+                    'CustomerAddress' => $item->address1.",".$item->address2.",".$item->city.",".$item->state.",".$item->country.",".$item->postcode,
+                    'Order Date' => $item->created_at->format('d/m/Y H:i A')
+                ];
+            });
+
+            $responseData = $this->productRepository->downloadBookedEventMerchants($arr_merchantList,$owner->id);
             $response['url'] = $responseData['url'];
 
         } else {
-            throw new Exception("As of now no Merchants available For said Events .");
+            throw new Exception("As of now no Merchants available For said Events.");
         }
         return $response;
     }
 
     public function downloadEventTickets($rootValue, array $args, GraphQLContext $context)
     {
+
         $response = [];
+        $owner = bagisto_graphql()->guard($this->guard)->user();
         $eventList = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('booking_product_event_ticket_translations', 'cart_items.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->addSelect('orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.created_at', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.total as price', 'orders.status')
+            ->addSelect('orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.created_at', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.total as price','cart_items.base_price as base_price', 'orders.status')
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
             ->orderBy('orders.id', 'desc')->get();
 
         if (!empty($eventList)) {
-            $responseData = $this->productRepository->downloadBookedEventTickets($eventList);
+            $arr_merchantList = $eventList->map(function($item, $key) {
+                return [
+//                    'Product Name' => $item->productName,
+                    'Ticket Type' => $item->ticketType,
+                    'Price' => $item->base_price,
+                    'Order No' => "#".$item->order_id,
+                    'Quantity' => $item->quantity,
+                    'Total' => $item->price,
+                    'Delivery Status' => $item->status,
+                    'Customer Name' => $item->firstname." ".$item->lastname,
+//                  'CustomerAddress' => $item->address1.",".$item->address2.",".$item->city.",".$item->state.",".$item->country.",".$item->postcode,
+//                    /'Order Date' => $item->created_at->format('d/m/Y H:i A')
+                ];
+            });
+
+            $responseData = $this->productRepository->downloadBookedEventTickets($arr_merchantList,$owner->id);
             $response['url'] = $responseData['url'];
 
         } else {
