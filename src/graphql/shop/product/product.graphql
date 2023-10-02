@@ -211,4 +211,5 @@ type BookedMerchantResponse
     country: String
     phone: String
     status: String
+    deliveryStatus: Int
 }

@@ -704,6 +704,7 @@ class CheckoutMutation extends Controller
      */
     public function saveOrder($rootValue, array $args, GraphQLContext $context)
     {
+        $ticketarr= [];
 
         try {
             if (Cart::hasError()) {
@@ -879,31 +880,34 @@ class CheckoutMutation extends Controller
                        $ticketarr[$ky]['product_id'] = $cartDetails['product_id'];
                    }
                 }
-
-                foreach ($ticketarr as $ky=>$value)
+                if(!empty($ticketarr))
                 {
-                    if($value['quantity']>1)
+                    foreach ($ticketarr as $ky=>$value)
                     {
-                        for($i=0; $i<$value['quantity'] ; $i++ )
+                        if($value['quantity']>1)
+                        {
+                            for($i=0; $i<$value['quantity'] ; $i++ )
+                            {
+                                $data = $value;
+                                $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
+                                $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
+                                $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
+                                $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
+
+                            }
+                        }
+                        else
                         {
                             $data = $value;
                             $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
                             $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
                             $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
                             $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
-
                         }
-                    }
-                    else
-                    {
-                        $data = $value;
-                        $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
-                        $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
-                        $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
-                        $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
-                    }
 
+                    }
                 }
+
 
                 return [
                     'success' => true,

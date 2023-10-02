@@ -18,6 +18,7 @@ use Webkul\Sales\Repositories\OrderRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use App\Events\SendEventTicket;
 use Webkul\Sales\Models\BookedEventTicketsHistory;
+use Webkul\Customer\Repositories\CustomerDeliveryStatusRepository;
 
 class ThankYouScreenMutation extends Controller
 {
@@ -34,7 +35,8 @@ class ThankYouScreenMutation extends Controller
      * @param  \Webkul\Product\Repositories\TicketOrderRepository  $ticketOrderRepository
      * @param \Webkul\Customer\Repositories\CustomerRepository $customerRepository
      * @param \Webkul\Sales\Repositories\OrderRepository $orderRepository
-     * @param Webkul\Sales\Models\BookedEventTicketsHistory $bookedTicketRepository
+     * @param \Webkul\Sales\Models\BookedEventTicketsHistory $bookedTicketRepository
+     * @param \Webkul\Customer\Repositories\CustomerDeliveryStatusRepository $customerDeliveryStatusRepository
      *
      * @return void
      */
@@ -44,7 +46,8 @@ class ThankYouScreenMutation extends Controller
         protected CustomerAddressRepository $customerAddressRepository,
         protected TicketOrderRepository $ticketOrderRepository,
         protected CustomerRepository $customerRepository,
-        protected BookedEventTicketsHistory $bookedTicketRepository
+        protected BookedEventTicketsHistory $bookedTicketRepository,
+        protected CustomerDeliveryStatusRepository $customerDeliveryStatusRepository
     ) {
         $this->guard = 'api';
         auth()->setDefaultDriver($this->guard);
@@ -600,16 +603,36 @@ class ThankYouScreenMutation extends Controller
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity','cart_items.id as cart_id', 'cart_items.ticket_id', 'orders.id AS order_id', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity')
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('products.type', 'simple')
             ->whereNULL('products.product_type');
-            $query->where('orders.id', $args['order_id']);
+        $query->where('orders.id', $args['order_id']);
         $query->groupBy('cart_items.ticket_id');
         $query->orderBy('orders.id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count, ['*'], 'page', $page);
+        $res = $query->paginate($count, ['*'], 'page', $page);
+        if(!empty($res))
+        {
+            foreach ($res as $key=>$value)
+            {
+                $deliveredProduct = $this->customerDeliveryStatusRepository->findOneWhere([
+                    'cart_id' => $value['cart_id'],
+                ]);
+
+                if(!empty($deliveredProduct['status']))
+                {
+                    $res[$key]['deliveryStatus'] = 1 ;
+                }
+                else{
+                    $res[$key]['deliveryStatus'] = 0;
+                }
+            }
+
+        }
+
+        return $res;
     }
 
     public function getBookedEvents($rootValue, array $args, GraphQLContext $context)
