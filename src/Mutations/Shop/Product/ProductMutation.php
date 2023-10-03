@@ -1151,13 +1151,17 @@ class ProductMutation extends Controller
     public function getBookedTicketsByEventOrganizer($rootValue, array $args, GraphQLContext $context)
     {
 
-        $query = DB::table('orders')
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $query
+            ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+            ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-            ->leftJoin('booking_product_event_ticket_translations', 'cart_items.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->addSelect('orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.created_at', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.total as price', 'orders.status')
+            ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
+            ->select('orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at','cart_items.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price','orders.status')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
-            ->where('cart_items.product_id', $args['product_id']);
+            ->where('cart_items.product_id', $args['product_id'])
+            ->orderBy('booked_event_tickets_history.id','desc');
         if (!empty($args['input']['name'])) {
             if (is_numeric(($args['input']['name']))) {
                 $query->where('orders.id', $args['input']['name']);
@@ -1174,11 +1178,13 @@ class ProductMutation extends Controller
 
     public function getBookedMerchantListByEvent($rootValue, array $args, GraphQLContext $context)
     {
+        $res = [];
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query()
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity')
+            ->leftJoin('order_status_for_single_product', 'orders.id', '=', 'order_status_for_single_product.orderId')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity','order_status_for_single_product.status as deliveryStatus','orders.status')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('addresses.default_address', 1)
@@ -1202,7 +1208,8 @@ class ProductMutation extends Controller
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count, ['*'], 'page', $page);
+        $res = $query->paginate($count, ['*'], 'page', $page);
+        return $res;
     }
 
     public function downloadMerchTickets($rootValue, array $args, GraphQLContext $context)
@@ -1213,9 +1220,10 @@ class ProductMutation extends Controller
         $merchantList = \Webkul\GraphQLAPI\Models\Catalog\Product::query()
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('order_status_for_single_product', 'orders.id', '=', 'order_status_for_single_product.orderId')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
             ->leftJoin('product_qty_size', 'cart_items.ticket_id', '=', 'product_qty_size.id')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'orders.status','product_qty_size.size')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'orders.status','product_qty_size.size','order_status_for_single_product.status as deliveryStatus')
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('addresses.default_address', 1)
             ->where('products.type', 'simple')
@@ -1251,34 +1259,35 @@ class ProductMutation extends Controller
 
     public function downloadEventTickets($rootValue, array $args, GraphQLContext $context)
     {
-
         $response = [];
         $owner = bagisto_graphql()->guard($this->guard)->user();
-        $eventList = DB::table('orders')
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $eventList= $query
+            ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+            ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-            ->leftJoin('booking_product_event_ticket_translations', 'cart_items.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->addSelect('orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.created_at', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.total as price','cart_items.base_price as base_price', 'orders.status')
+            ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
+            ->select('products.*','orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at','cart_items.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price','orders.status')
+            ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
-            ->orderBy('orders.id', 'desc')->get();
+            ->orderBy('booked_event_tickets_history.id','desc')->get();
 
         if (!empty($eventList)) {
-            $arr_merchantList = $eventList->map(function($item, $key) {
+            $arr_ticketList = $eventList->map(function($item, $key) {
+
                 return [
-//                    'Product Name' => $item->productName,
+                    'Product Name' => $item->sku,
                     'Ticket Type' => $item->ticketType,
-                    'Price' => $item->base_price,
+                    'Price' => $item->price,
                     'Order No' => "#".$item->order_id,
-                    'Quantity' => $item->quantity,
-                    'Total' => $item->price,
-                    'Delivery Status' => $item->status,
                     'Customer Name' => $item->firstname." ".$item->lastname,
-//                  'CustomerAddress' => $item->address1.",".$item->address2.",".$item->city.",".$item->state.",".$item->country.",".$item->postcode,
-//                    /'Order Date' => $item->created_at->format('d/m/Y H:i A')
+                    'Customer Email' => $item->firstname." ".$item->email,
+                    'Order Date' => $item->created_at->format('d/m/Y H:i A')
                 ];
             });
 
-            $responseData = $this->productRepository->downloadBookedEventTickets($arr_merchantList,$owner->id);
+            $responseData = $this->productRepository->downloadBookedEventTickets($arr_ticketList,$owner->id);
             $response['url'] = $responseData['url'];
 
         } else {

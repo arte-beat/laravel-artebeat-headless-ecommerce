@@ -382,7 +382,6 @@ class OrderMutation extends Controller
     public function deliverStatusUpdate($rootValue, array $args, GraphQLContext $context)
     {
 
-
         if (! isset($args['input']['orderId']) || (isset($args['input']['orderId']) && !$args['input']['orderId'])) {
             throw new Exception(
                 trans('bagisto_graphql::app.admin.response.error-invalid-parameter'),
@@ -406,10 +405,17 @@ class OrderMutation extends Controller
         try {
             $customer = bagisto_graphql()->guard($this->guard)->user();
             $order = $this->orderRepository->findOrFail($orderId);
+            $bookingMerchant = $this->customerDeliveryStatusRepository->findWhere(['cart_id' =>$order['cart_id'],'orderId'=>$orderId,'ticket_id'=>$ticket_id])->first();
+            $cartid = $order['cart_id'];
+            if (!empty($bookingMerchant)) {
+                $params_update ['deliverd_by'] = $customer->id;
+                $params_update ['status'] = 1;
+                $params_update ['deliverd_on'] =Carbon::now();
+                $result =  $this->customerDeliveryStatusRepository->update($params_update, $bookingMerchant->id);
 
-            if(!empty($order))
+            }
+            else
             {
-                $cartid = $order['cart_id'];
                 $params ['orderId'] = $orderId;
                 $params ['cart_id'] = $cartid;
                 $params ['quantity'] = $quantity;
@@ -418,30 +424,29 @@ class OrderMutation extends Controller
                 $params ['deliverd_by'] = $customer->id;
                 $params ['status'] = 1;
                 $params ['deliverd_on'] =Carbon::now();
-            }
-            $validator = Validator::make($args['input'], [
-                'orderId' => 'required',
-                'product_id' => 'required',
-                'ticket_id' => 'required',
-            ]);
+                $validator = Validator::make($args['input'], [
+                    'orderId' => 'required',
+                    'product_id' => 'required',
+                    'ticket_id' => 'required',
+                ]);
 
-            if ($validator->fails()) {
-                throw new Exception($validator->messages());
-            }
-            try {
-                DB::enableQueryLog();
+                if ($validator->fails()) {
+                    throw new Exception($validator->messages());
+                }
                 $result = $this->customerDeliveryStatusRepository->create($params);
-                $query = \Webkul\Checkout\Models\CartItem::query();
+            }
 
+            try {
+                $query = \Webkul\Checkout\Models\CartItem::query();
                 $res = $query->leftJoin('order_status_for_single_product', function($join)
                 {
                     $join->on('cart_items.cart_id', '=', 'order_status_for_single_product.cart_id')
                         ->on('cart_items.product_id', '=', 'order_status_for_single_product.product_id')
                         ->on('cart_items.ticket_id', '=', 'order_status_for_single_product.ticket_id');
                 })
-                    ->Select( 'cart_items.id')
+                    ->Select( 'cart_items.id','order_status_for_single_product.status')
                     ->where('cart_items.type', 'simple')
-                    ->whereNull('order_status_for_single_product.cart_id')
+                    ->where('order_status_for_single_product.status',0)
                     ->where('cart_items.cart_id', $cartid)->first();
 
                 if(!empty($res))

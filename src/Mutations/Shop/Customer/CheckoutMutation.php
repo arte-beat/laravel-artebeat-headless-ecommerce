@@ -3,6 +3,7 @@
 namespace Webkul\GraphQLAPI\Mutations\Shop\Customer;
 
 use Exception;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Validator;
 use Webkul\Core\Contracts\Validations\AlphaNumericSpace;
@@ -24,6 +25,7 @@ use Webkul\Product\Repositories\ProductRepository;
 use Stripe;
 use App\Events\SendPlaceOrderEvent;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Webkul\Customer\Repositories\CustomerDeliveryStatusRepository;
 
 
 class CheckoutMutation extends Controller
@@ -45,6 +47,7 @@ class CheckoutMutation extends Controller
      * @param \Webkul\GraphQLAPI\Repositories\NotificationRepository $notificationRepository
      * @param \Webkul\Customer\Repositories\CustomerPaymentMethodsRepository $customerPaymentMethodsRepository
      * @param \Webkul\Product\Repositories\ProductRepository           $productRepository
+     * @param \Webkul\Customer\Repositories\CustomerDeliveryStatusRepository $customerDeliveryStatusRepository
      * @return void
      */
     public function __construct(
@@ -54,7 +57,8 @@ class CheckoutMutation extends Controller
         protected NotificationRepository    $notificationRepository,
         protected CustomerPaymentMethodsRepository $customerPaymentMethodsRepository,
         protected ProductRepository $productRepository,
-        protected BookedEventTicketsHistoryRepository $bookedEventTicketsHistoryRepository
+        protected BookedEventTicketsHistoryRepository $bookedEventTicketsHistoryRepository,
+        protected CustomerDeliveryStatusRepository $customerDeliveryStatusRepository
     )
     {
         $this->guard = 'api';
@@ -878,36 +882,55 @@ class CheckoutMutation extends Controller
                        $ticketarr[$ky]['cart_id'] = $cartDetails['cart_id'];
                        $ticketarr[$ky]['quantity'] = $cartDetails['quantity'];
                        $ticketarr[$ky]['product_id'] = $cartDetails['product_id'];
+                       if(!empty($ticketarr))
+                       {
+                           foreach ($ticketarr as $ky=>$value)
+                           {
+                               if($value['quantity']>1)
+                               {
+                                   for($i=0; $i<$value['quantity'] ; $i++ )
+                                   {
+                                       $data = $value;
+                                       $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
+                                       $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
+                                       $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
+                                       $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
+
+                                   }
+                               }
+                               else
+                               {
+                                   $data = $value;
+                                   $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
+                                   $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
+                                   $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
+                                   $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
+                               }
+
+                           }
+                       }
+                   }
+                   elseif ($cartDetails['type'] == 'simple')
+                   {
+                       $merch_params[$ky] ['orderId'] = $order->id;
+                       $merch_params[$ky] ['cart_id'] = $cartDetails['cart_id'];
+                       $merch_params[$ky] ['quantity'] = $cartDetails['quantity'];
+                       $merch_params[$ky] ['product_id'] = $cartDetails['product_id'];
+                       $merch_params[$ky] ['ticket_id'] = $cartDetails['ticket_id'];
+                       $merch_params[$ky] ['status'] = 0;
+
+                       if(!empty($ticketarr))
+                       {
+                           foreach ($merch_params as $mky=>$mvalue)
+                           {
+                               $merch_data = $mvalue;
+                               $this->customerDeliveryStatusRepository->create($merch_data);
+                           }
+
+                       }
+
                    }
                 }
-                if(!empty($ticketarr))
-                {
-                    foreach ($ticketarr as $ky=>$value)
-                    {
-                        if($value['quantity']>1)
-                        {
-                            for($i=0; $i<$value['quantity'] ; $i++ )
-                            {
-                                $data = $value;
-                                $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
-                                $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
-                                $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
-                                $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
-
-                            }
-                        }
-                        else
-                        {
-                            $data = $value;
-                            $bookedEventTicketsHistoryRepository = $this->bookedEventTicketsHistoryRepository->create($data);
-                            $qrCodeScanningUrl = config('otp.front_end_customer_qr_scanning').$bookedEventTicketsHistoryRepository->id;
-                            $updateQRData['qrCode'] = QrCode::size(280)->generate($qrCodeScanningUrl);
-                            $updateQrCode = $this->bookedEventTicketsHistoryRepository->update($updateQRData, $bookedEventTicketsHistoryRepository->id);
-                        }
-
-                    }
-                }
-
 
                 return [
                     'success' => true,
