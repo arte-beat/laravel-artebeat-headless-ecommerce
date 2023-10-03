@@ -1151,7 +1151,7 @@ class ProductMutation extends Controller
     public function getBookedTicketsByEventOrganizer($rootValue, array $args, GraphQLContext $context)
     {
 
-        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+       $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $query
             ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
@@ -1161,6 +1161,8 @@ class ProductMutation extends Controller
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
+            ->where('booked_event_tickets_history.product_id', $args['product_id'])
+             ->groupBy('booked_event_tickets_history.id')
             ->orderBy('booked_event_tickets_history.id','desc');
         if (!empty($args['input']['name'])) {
             if (is_numeric(($args['input']['name']))) {
@@ -1169,10 +1171,13 @@ class ProductMutation extends Controller
                 $query->having("customer_name", "like", "%" . $args['input']['name'] . "%");
             }
         }
+        $query->get();
+
         $query->orderBy('orders.id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count, ['*'], 'page', $page);
+
 
     }
 
