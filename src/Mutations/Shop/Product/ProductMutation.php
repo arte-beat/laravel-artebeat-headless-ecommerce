@@ -1171,7 +1171,6 @@ class ProductMutation extends Controller
                 $query->having("customer_name", "like", "%" . $args['input']['name'] . "%");
             }
         }
-        $query->get();
 
         $query->orderBy('orders.id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
@@ -1266,6 +1265,7 @@ class ProductMutation extends Controller
     {
         $response = [];
         $owner = bagisto_graphql()->guard($this->guard)->user();
+
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $eventList= $query
             ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
@@ -1276,6 +1276,8 @@ class ProductMutation extends Controller
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
+            ->where('booked_event_tickets_history.product_id', $args['product_id'])
+            ->groupBy('booked_event_tickets_history.id')
             ->orderBy('booked_event_tickets_history.id','desc')->get();
 
         if (!empty($eventList)) {

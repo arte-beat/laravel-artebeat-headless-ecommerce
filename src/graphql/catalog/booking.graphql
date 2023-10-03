@@ -21,6 +21,7 @@ input CreateBookingInput {
     tiktok: String!
     soundcloud: String!
     youtube: String!
+    youtubeLink: String @rename(attribute: "youtube_link")
     availableFrom: String @rename(attribute: "available_from")
     availableTo: String @rename(attribute: "available_to")
     tickets: [CreateBookingTicketsInput!]
@@ -120,6 +121,7 @@ type BookingProduct {
     tiktok: String!
     soundcloud: String!
     youtube: String!
+    youtubeLink: String @rename(attribute: "youtube_link")
     showLocation: Boolean @rename(attribute: "show_location")
     availableEveryWeek: Boolean @rename(attribute: "available_every_week")
     eventDate: String @rename(attribute: "event_date")
