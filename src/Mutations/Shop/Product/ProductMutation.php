@@ -1059,6 +1059,7 @@ class ProductMutation extends Controller
             ->whereNULL('products.product_type')
             ->groupBy('cart_items.product_id')
             ->havingRaw(' distance <= ' . $distance)
+            ->where('products.event_status', 1)
             ->orderBy('total_sold', 'desc')->get();
 
         if (count($queryBuilder) > 0) {
