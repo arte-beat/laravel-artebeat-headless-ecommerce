@@ -3,7 +3,7 @@ extend type Query @guard(with: ["api", "admin-api"]){
   #  thankYouScreen(order_id: ID!): ThankYouScreenResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getThankyouScreenData")
     thankYouScreen(order_id: ID!): [ThankYouScreenDataResponse]  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getThankyouScreenData")
 
-    downloadTicket(order_id: ID!, product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
+    downloadTicket(order_id: ID!, product_id: ID!,ticket_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
 
     emailEventTicket(order_id: ID!, product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailEventTicket")
 

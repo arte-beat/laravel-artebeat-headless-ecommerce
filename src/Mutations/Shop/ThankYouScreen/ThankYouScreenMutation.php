@@ -330,60 +330,46 @@ class ThankYouScreenMutation extends Controller
         $order_id = $args['order_id'];
         $order = $this->orderRepository->findOrFail($order_id);
 
-        $prefix = DB::getTablePrefix();
-        $result_event = DB::table('orders')
-            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
-            ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
-            ->where('products.type', 'booking')
-            ->where('cart_items.product_id', $product_id)
-            ->where('orders.id', $order_id)
-            ->whereIn('orders.status', ['completed', 'pending'])
-            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-            ->first();
+        $ordered_ticket_id= $args['ticket_id'];
 
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $result_event = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
+            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+            ->where('booked_event_tickets_history.id',$ordered_ticket_id)->first();
         if($result_event){
-            $product['noOfTickets'] = $result_event->quantity ?? 0;
-
             $orderPlacedOn = null;
             if (isset($result_event->created_at))
-                $orderPlacedOn = date("F d, Y, H:i", strtotime($result_event->created_at));
+                $orderPlacedOn = date("F d, Y, H:i", strtotime($order->created_at));
 
             $orderId = null;
             if (isset($result_event->order_id))
                 $orderId = "#" . $result_event->order_id;
 
+            $orderedTicket_id = null;
+            if (isset($result_event->orderedTicketId))
+                $orderedTicket_id = "#" . $result_event->orderedTicketId;
 
-            $product['orderStatus'] = $result_event->orderStatus ?? null;
+            $product['checkInStatus'] = $result_event->is_checkedIn ?? null;
             $product['orderId'] = $orderId;
-            $product['order_id'] = $result_event->order_id;
             $product['orderPlacedOn'] = $orderPlacedOn;
-            $product['paymentMethod'] = 'Credit Card';
+            $product['qrCode'] =  $result_event->qrCode;
+            $product['first_name'] = $result_event->first_name;
+            $product['last_name'] = $result_event->last_name;
+            $product['email'] = $result_event->email;
+            $product['ticketId'] = $orderedTicket_id;
+            $product['productName'] = $result_event->sku;
+            $product['product_id'] = $result_event->id;
         }
 
-        $result_ticket_orders = DB::table('ticket_orders')
-            ->where('ticket_orders.product_id', $product_id)
-            ->where('ticket_orders.order_id', $args['order_id'])
-            ->get();
-        if(count($result_ticket_orders) > 0) {
-            foreach ($result_ticket_orders as $ticket_order_index => $ticket_order) {
-                $ticketorders[$ticket_order_index] = [
-                    'id' => $ticket_order->id,
-                    'product_id' => $ticket_order->product_id,
-                    'order_id' => $ticket_order->order_id,
-                    'first_name' => $ticket_order->first_name,
-                    'last_name' => $ticket_order->last_name,
-                    'email' => $ticket_order->email,
-                    'created_at' => $ticket_order->created_at,
-                    'updated_at' => $ticket_order->updated_at,
-                ];
-                $product['ticketorders'] = $ticketorders;
-            }
+        if(!empty($product) ) {
+            $responseData = $this->productRepository->downloadTicket($product);
+            $response['url'] = $responseData['url'];
+        }
+        else{
+            throw new Exception('Ticket is not available');
         }
 
-        $responseData = $this->productRepository->downloadTicket($product);
-        $response['url'] = $responseData['url'];
         return $response;
     }
     public function downloadInvoice($rootValue, array $args, GraphQLContext $context)
