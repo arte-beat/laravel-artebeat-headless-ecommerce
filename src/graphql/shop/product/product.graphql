@@ -181,7 +181,10 @@ type CustomerTicketResponse
     promoters: [Promoter!]!
     productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
     booking: BookingProduct @hasOne(relation: "booking_product")
-
+    orderedDate : DateTime @rename(attribute: "orderDate")
+    orderedTicketId: Int
+    qrCode:String
+    is_checkedIn:String
 }
 
 type BookedMerchantResponse
