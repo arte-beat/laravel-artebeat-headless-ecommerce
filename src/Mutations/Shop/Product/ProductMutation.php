@@ -1190,7 +1190,7 @@ class ProductMutation extends Controller
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
             ->leftJoin('order_status_for_single_product', 'orders.id', '=', 'order_status_for_single_product.orderId')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity','order_status_for_single_product.status as deliveryStatus','orders.status')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'cart_items.commission_amount as commission','cart_items.total_with_commission as total_product_price','order_status_for_single_product.status as deliveryStatus','orders.status','cart_items.tax_amount','cart_items.tax_percent')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('addresses.default_address', 1)
@@ -1308,41 +1308,6 @@ class ProductMutation extends Controller
 
     public function getBookedTicketListByCustomer($rootValue, array $args, GraphQLContext $context)
     {
-
-
-        $product = [];
-
-//        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-//        $query
-//            ->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
-//            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
-//            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
-//            ->where('orders.id',$args['order_id'])
-//            ->where('booked_event_tickets_history.orderId',$args['order_id'])
-//            ->where('orders.customer_email',$customer->email)
-//            ->whereNotNull('products.id')
-//            ->where('products.type', 'booking')
-//            ->groupBy('booked_event_tickets_history.product_id')
-//            ->orderBy('booked_event_tickets_history.product_id','desc');
-//        $count = isset($args['first']) ? $args['first'] : 10;
-//        $page = isset($args['page']) ? $args['page'] : 1;
-//        return $query->paginate($count, ['*'], 'page', $page);
-   $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-//        $query
-//            ->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
-//            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
-//            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
-//            ->where('orders.id',$args['order_id'])
-//            ->where('booked_event_tickets_history.orderId',$args['order_id'])
-//            ->where('orders.customer_email',$customer->email)
-//            ->whereNotNull('products.id')
-//            ->where('products.type', 'booking')
-//            ->groupBy('booked_event_tickets_history.product_id')
-//            ->orderBy('booked_event_tickets_history.product_id','desc');
-//        $count = isset($args['first']) ? $args['first'] : 10;
-//        $page = isset($args['page']) ? $args['page'] : 1;
-//        return $query->paginate($count, ['*'], 'page', $page);
-
 
         $owner = bagisto_graphql()->guard($this->guard)->user();
 

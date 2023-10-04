@@ -216,4 +216,8 @@ type BookedMerchantResponse
     phone: String
     status: String
     deliveryStatus: Int
+    tax_percent : Float
+    tax_amount: Float
+    commission: Float
+    total_product_price: Float
 }
