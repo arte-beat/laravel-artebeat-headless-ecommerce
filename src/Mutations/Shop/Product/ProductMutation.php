@@ -1062,6 +1062,7 @@ class ProductMutation extends Controller
             ->where('products.event_status', 1)
             ->orderBy('total_sold', 'desc')->get();
 
+
         if (count($queryBuilder) > 0) {
             foreach ($queryBuilder as $index => $product) {
                 $responseData[$index] = $this->productRepository->findOrFail($product->id);
