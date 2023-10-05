@@ -1137,6 +1137,7 @@ class ProductMutation extends Controller
 
     public function getMyeventsDataByEventOrganizer($rootValue, array $args, GraphQLContext $context)
     {
+        DB::enableQueryLog();
         $product = $this->productRepository->findOrFail($args['product_id']);
         $merchants = [];
         $prefix = DB::getTablePrefix();
@@ -1146,7 +1147,7 @@ class ProductMutation extends Controller
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
             ->Select('orders.grand_total', 'products.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed','pending'])
             ->whereIn('products.id', $merchants)
             ->groupBy('cart_items.product_id')->get();
 
@@ -1158,7 +1159,7 @@ class ProductMutation extends Controller
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
             ->SelectRaw('SUM(' . $prefix . 'cart_items.quantity) as total_sold')
             ->where('products.type', 'booking')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed','pending'])
             ->where('cart_items.product_id', $args['product_id'])
             ->groupBy('cart_items.product_id')->first();
 
@@ -1168,7 +1169,7 @@ class ProductMutation extends Controller
             ->SelectRaw('SUM(' . $prefix . 'cart_items.quantity) as total_sold')
             ->where('products.type', 'simple')
             ->whereNULL('products.product_type')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed','pending'])
             ->where('products.parent_id', $args['product_id'])->first();
 
 
