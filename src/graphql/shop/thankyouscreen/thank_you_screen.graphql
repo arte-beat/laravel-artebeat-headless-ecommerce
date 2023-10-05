@@ -88,6 +88,7 @@ type ThankYouScreenDataResponse{
     createdAt: String @rename(attribute: "created_at")
     updatedAt: String @rename(attribute: "updated_at")
     success: String
+    name_counter: Int
 }
 
 

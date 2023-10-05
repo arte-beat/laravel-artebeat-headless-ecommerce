@@ -185,6 +185,7 @@ type CustomerTicketResponse
     orderedTicketId: Int
     qrCode:String
     is_checkedIn:String
+    name_counter:Int
 }
 
 type BookedMerchantResponse
