@@ -106,7 +106,7 @@ class CustomerMutation extends Controller
         $validator = Validator::make($data, [
             'first_name'        => 'string|required',
             'last_name'         => 'string|required',
-            'gender'            => 'required',
+//            'gender'            => 'required',
             'date_of_birth'     => 'date|before:today',
 //          'customer_group_id' => 'required|numeric',
         ]);

@@ -26,6 +26,7 @@ use Stripe;
 use App\Events\SendPlaceOrderEvent;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Webkul\Customer\Repositories\CustomerDeliveryStatusRepository;
+use App\Events\SendOrderedEventsTickets;
 
 
 class CheckoutMutation extends Controller
@@ -710,7 +711,6 @@ class CheckoutMutation extends Controller
     {
         $ticketarr= [];
         $merch_params= [];
-
         try {
             if (Cart::hasError()) {
                 throw new CustomException(
@@ -935,6 +935,8 @@ class CheckoutMutation extends Controller
                     }
 
                 }
+                SendOrderedEventsTickets::dispatch($customerDetails, $customerDetails->email, $order->id);
+
                 return [
                     'success' => true,
                     'redirect_url' => null,
