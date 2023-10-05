@@ -173,19 +173,35 @@ class ThankYouScreenMutation extends Controller
     {
         $product = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
+        DB::enableQueryLog();
+
+        $subQuery = DB::table( DB::raw("(SELECT COUNT('x') FROM booked_event_tickets_history ct 
+        WHERE ct.product_id = products.id and ct.orderId = orders.id) as name_counter") );
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $query
             ->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
-           ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at',DB::raw("(SELECT COUNT('x') FROM booked_event_tickets_history ct 
+   WHERE ct.product_id = products.id and ct.orderId = orders.id) as name_counter"))
+            //->mergeBindings($subQuery)
             ->where('orders.id',$args['order_id'])
             ->where('booked_event_tickets_history.orderId',$args['order_id'])
             ->where('orders.customer_email',$customer->email)
             ->whereNotNull('products.id')
             ->orderBy('booked_event_tickets_history.product_id','desc');
+
+
+
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count, ['*'], 'page', $page);
+        $res = $query->paginate($count, ['*'], 'page', $page);
+
+       return $res;
+
+
+
+
+        return $res;
     }
 
     public function getQrScanningScreenData($rootValue, array $args, GraphQLContext $context)
