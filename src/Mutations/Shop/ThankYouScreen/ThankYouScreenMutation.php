@@ -338,39 +338,40 @@ class ThankYouScreenMutation extends Controller
 
         $ordered_ticket_id= $args['ticket_id'];
 
-        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $result_event = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
-            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
-            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
-            ->where('booked_event_tickets_history.id',$ordered_ticket_id)->first();
-        if($result_event){
-            $orderPlacedOn = null;
-            if (isset($result_event->created_at))
-                $orderPlacedOn = date("F d, Y, H:i", strtotime($order->created_at));
-
-            $orderId = null;
-            if (isset($result_event->order_id))
-                $orderId = "#" . $result_event->order_id;
-
-            $orderedTicket_id = null;
-            if (isset($result_event->orderedTicketId))
-                $orderedTicket_id = "#" . $result_event->orderedTicketId;
-
-            $product['checkInStatus'] = $result_event->is_checkedIn ?? null;
-            $product['orderId'] = $orderId;
-            $product['orderPlacedOn'] = $orderPlacedOn;
-            $product['qrCode'] =  $result_event->qrCode;
-            $product['first_name'] = $result_event->first_name;
-            $product['last_name'] = $result_event->last_name;
-            $product['email'] = $result_event->email;
-            $product['ticketId'] = $orderedTicket_id;
-            $product['productName'] = $result_event->sku;
-            $product['product_id'] = $result_event->id;
-        }
+//        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+//        $result_event = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+//            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
+//            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+//            ->where('booked_event_tickets_history.id',$ordered_ticket_id)->first();
+//        if($result_event){
+//            $orderPlacedOn = null;
+//            if (isset($result_event->created_at))
+//                $orderPlacedOn = date("F d, Y, H:i", strtotime($order->created_at));
+//
+//            $orderId = null;
+//            if (isset($result_event->order_id))
+//                $orderId = "#" . $result_event->order_id;
+//
+//            $orderedTicket_id = null;
+//            if (isset($result_event->orderedTicketId))
+//                $orderedTicket_id = "#" . $result_event->orderedTicketId;
+//
+//            $product['checkInStatus'] = $result_event->is_checkedIn ?? null;
+//            $product['orderId'] = $orderId;
+//            $product['orderPlacedOn'] = $orderPlacedOn;
+//            $product['qrCode'] =  $result_event->qrCode;
+//            $product['first_name'] = $result_event->first_name;
+//            $product['last_name'] = $result_event->last_name;
+//            $product['email'] = $result_event->email;
+//            $product['ticketId'] = $orderedTicket_id;
+//            $product['productName'] = $result_event->sku;
+//            $product['product_id'] = $result_event->id;
+//        }
 
         if(!empty($product) ) {
-            $responseData = $this->productRepository->downloadTicket($product);
-            $response['url'] = $responseData['url'];
+            $pdfName = 'order_'.$ordered_ticket_id.'.pdf';
+            $response['url'] = Storage::disk('order')->url($pdfName);
+           // $response['url'] = $responseData['url'];
         }
         else{
             throw new Exception('Ticket is not available');

@@ -1107,7 +1107,7 @@ class ProductMutation extends Controller
         $product = $this->productRepository->findOrFail($args['product_id']);
         $merchants = [];
         $prefix = DB::getTablePrefix();
-        $merchants = \Webkul\GraphQLAPI\Models\Catalog\Product::query()->where('parent_id', 1)->pluck('id');
+        $merchants = \Webkul\GraphQLAPI\Models\Catalog\Product::query()->where('parent_id', $args['product_id'])->pluck('id');
         $merchants->push($args['product_id']);
         $result_price = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
