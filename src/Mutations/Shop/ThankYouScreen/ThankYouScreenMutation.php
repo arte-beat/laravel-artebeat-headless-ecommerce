@@ -189,19 +189,9 @@ class ThankYouScreenMutation extends Controller
             ->where('orders.customer_email',$customer->email)
             ->whereNotNull('products.id')
             ->orderBy('booked_event_tickets_history.product_id','desc');
-
-
-
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        $res = $query->paginate($count, ['*'], 'page', $page);
-
-       return $res;
-
-
-
-
-        return $res;
+        return $query->paginate($count, ['*'], 'page', $page);
     }
 
     public function getQrScanningScreenData($rootValue, array $args, GraphQLContext $context)
