@@ -33,7 +33,7 @@ input CreateCustomerInput {
 input UpdateCustomerInput {
     firstName: String! @rename(attribute: "first_name")
     lastName: String! @rename(attribute: "last_name")
-    gender: String!
+    gender: String
     dateOfBirth: String @rename(attribute: "date_of_birth")
 #    customerGroupId: Int! @rename(attribute: "customer_group_id")
     phone: String

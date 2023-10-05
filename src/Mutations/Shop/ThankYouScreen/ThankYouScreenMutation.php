@@ -19,7 +19,7 @@ use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use App\Events\SendEventTicket;
 use Webkul\Sales\Models\BookedEventTicketsHistory;
 use Webkul\Customer\Repositories\CustomerDeliveryStatusRepository;
-//use App\Events\SendOrderedEventsTickets;
+
 class ThankYouScreenMutation extends Controller
 {
     /**
@@ -191,8 +191,7 @@ class ThankYouScreenMutation extends Controller
             ->orderBy('booked_event_tickets_history.product_id','desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-     //   SendOrderedEventsTickets::dispatch($customer, $customer->email, $args['order_id']);
-        return $query->paginate($count, ['*'], 'page', $page);
+       return $query->paginate($count, ['*'], 'page', $page);
     }
 
     public function getQrScanningScreenData($rootValue, array $args, GraphQLContext $context)
