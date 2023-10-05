@@ -19,7 +19,7 @@ use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use App\Events\SendEventTicket;
 use Webkul\Sales\Models\BookedEventTicketsHistory;
 use Webkul\Customer\Repositories\CustomerDeliveryStatusRepository;
-
+//use App\Events\SendOrderedEventsTickets;
 class ThankYouScreenMutation extends Controller
 {
     /**
@@ -191,6 +191,7 @@ class ThankYouScreenMutation extends Controller
             ->orderBy('booked_event_tickets_history.product_id','desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
+     //   SendOrderedEventsTickets::dispatch($customer, $customer->email, $args['order_id']);
         return $query->paginate($count, ['*'], 'page', $page);
     }
 
@@ -595,11 +596,13 @@ class ThankYouScreenMutation extends Controller
             ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity','cart_items.id as cart_id', 'cart_items.ticket_id', 'orders.id AS order_id', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity','cart_items.id as cart_id', 'cart_items.ticket_id', 'orders.id AS order_id', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity','addresses.address1','addresses.address2','addresses.city','addresses.state','addresses.country','addresses.postcode')
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('products.type', 'simple')
             ->whereNULL('products.product_type');
         $query->where('orders.id', $args['order_id']);
+        $query->where('addresses.order_id', $args['order_id']);
+        $query->where('addresses.address_type', 'order_shipping');
         $query->groupBy('cart_items.ticket_id');
         $query->orderBy('orders.id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
