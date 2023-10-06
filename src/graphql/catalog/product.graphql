@@ -13,7 +13,7 @@ extend type Query @guard{
 
     getEvent(id: ID @eq): EventBookingResponse @find(model: "Webkul\\GraphQLAPI\\Models\\Catalog\\Product")
 
-    getTickets(input: FilterTicketsInput @builder(method: "Webkul\\GraphQLAPI\\Queries\\Catalog\\FilterTickets")): [TicketBookingResponse!] @paginate(type: "paginator", defaultCount:10 model: "Webkul\\Product\\Models\\EventTickets")
+    getTickets(input: FilterTicketsInput): BookedTicketResponse! @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@fetchAllTickets")
 
     getShowcase: ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Queries\\Catalog\\ProductContent@getShowcase")
 

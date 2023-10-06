@@ -1146,13 +1146,13 @@ class ProductMutation extends Controller
         $result_price = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->Select('orders.grand_total', 'products.id')
+            ->SelectRaw('SUM(' . $prefix . 'cart_items.total) as total_sale')
             ->whereIn('orders.status', ['completed','pending'])
             ->whereIn('products.id', $merchants)
-            ->groupBy('cart_items.product_id')->get();
+            ->first();
 
-        foreach ($result_price as $individual_price) {
-            $product['total_price'] += $individual_price->grand_total;
+        if (!empty($result_price)) {
+            $product['total_price']= $result_price->total_sale;
         }
         $result_product = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
@@ -1193,7 +1193,7 @@ class ProductMutation extends Controller
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->select('orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at','cart_items.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price','orders.status')
+            ->select('booked_event_tickets_history.id as orderedTicketId','orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at','cart_items.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price','orders.status')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
