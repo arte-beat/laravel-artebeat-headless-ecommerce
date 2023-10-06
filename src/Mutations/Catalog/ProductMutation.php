@@ -1331,4 +1331,40 @@ class ProductMutation extends Controller
             throw new Exception("Please select an event to update.");
         }
     }
+
+    public function fetchAllTickets($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $query
+            ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
+            ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
+            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
+            ->select('booked_event_tickets_history.id as orderedTicketId','products.sku as productName','orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at','cart_items.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price','orders.status')
+            ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
+            ->whereIn('orders.status', ['completed', 'pending'])
+            ->groupBy('booked_event_tickets_history.id')
+            ->orderBy('booked_event_tickets_history.id','desc');
+        if (!empty($args['input']['name'])) {
+            if (is_numeric(($args['input']['name']))) {
+                $query->where('orders.id', $args['input']['name']);
+            } else {
+                $query->having("customer_name", "like", "%" . $args['input']['name'] . "%");
+            }
+        }
+        if(!empty($args['input']['event_name']))
+        {
+            $query->having("productName", "like", "%" . $args['input']['event_name'] . "%");
+        }
+        if(!empty($args['input']['ticket_type']))
+        {
+            $query->having("ticketType", "like", "%" . $args['input']['ticket_type'] . "%");
+        }
+
+        $query->orderBy('orders.id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count, ['*'], 'page', $page);
+
+    }
 }
