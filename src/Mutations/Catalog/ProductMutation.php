@@ -110,15 +110,11 @@ class ProductMutation extends Controller
 
         if (!empty($args['input']['is_feature_event'])) {
             $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
-        }else{
-            $query->where('is_feature_event', '=', 0);
         }
 
         if (!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
-        } else{
-            $query->where('is_hero_event', '=', 0);
-        }
+        } 
 
         if(isset($args['input']['event_status'])) {
             $query->where('event_status', '=', $args['input']['event_status']);
