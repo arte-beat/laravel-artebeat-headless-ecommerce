@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Event;
@@ -68,7 +69,7 @@ class ProductMutation extends Controller
      */
     public function eventFilter($rootValue, array $args, GraphQLContext $context)
     {
-
+        DB::enableQueryLog();
         $query = \Webkul\Product\Models\Product::query();
         $query->with('booking_product');
         $query->where('type', 'booking');
@@ -160,8 +161,11 @@ class ProductMutation extends Controller
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-        return $query->paginate($count, ['*'], 'page', $page);
 
+        $results =  $query->paginate($count, ['*'], 'page', $page);
+
+        Log::info('eventFilter qry', ['query' => var_export(DB::getQueryLog(),true)]);
+        return $results;
     }
 
     /**
