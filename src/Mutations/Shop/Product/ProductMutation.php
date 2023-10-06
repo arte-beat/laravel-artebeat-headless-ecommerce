@@ -146,7 +146,7 @@ class ProductMutation extends Controller
                 $maxDistance = $args['input']['distance_max'];
 
                 // * 6371000 for meters, 6371 for kilometer and 3956 for miles
-                $bookingQuery->selectRaw("(6371000 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance_from_client", [$clientLatitude, $clientLongitude, $clientLatitude]);
+                $bookingQuery->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance_from_client", [$clientLatitude, $clientLongitude, $clientLatitude]);
 
                 $bookingQuery->having('distance_from_client', '>', $minDistance);
                 $bookingQuery->having('distance_from_client', '<', $maxDistance);
@@ -1030,24 +1030,41 @@ class ProductMutation extends Controller
     public function getAttemptEventsMerchant($rootValue, array $args, GraphQLContext $context)
     {
         $responseData = [];
+        DB::enableQueryLog();
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $owner = bagisto_graphql()->guard($this->guard)->user();
         $args['input']['email'] = $owner->email;
-        $query->whereHas('bookedProduct', function ($getAttemptedProducts) use ($args) {
-            if (!empty($args['input']['email']))
+        $query->whereHas('parent.bookedProduct', function ($getAttemptedProducts) use ($args) {
+            if (!empty($args['input']['email'])){
                 $getAttemptedProducts->where('orders.customer_email', '=', $args['input']['email']);
-        });
-        $query->where('type', 'booking');
-        $result = $query->get();
-        if (count($result) > 0) {
-            foreach ($result as $index => $product) {
-                $merchants = $product->listOfBookedProductsmerchants($args['input']['limit']);
-                foreach ($merchants as $merchantindex => $merchant) {
-                    $responseData[$index][$merchantindex] = $merchant;
-                }
             }
-        }
-        return $responseData;
+            return $getAttemptedProducts;
+               // $getAttemptedProducts->listOfBookedProductsmerchants;
+        });
+        $query->with('parent.bookedProduct');
+        $query->whereNull('product_type');
+        $query->whereNotNull('parent_id');
+        $query->where('type', 'simple');
+
+        //$query->with('listOfBookedProductsmerchants');
+        //$query->where('type', 'booking');
+        $query->orderBy('id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+
+        return $result = $query->paginate($count, ['*'], 'page', $page);
+        //dd($result);
+        //dd(DB::getQueryLog());
+//        $result = $query->get();
+//        if (count($result) > 0) {
+//            foreach ($result as $index => $product) {
+//                $merchants = $product->listOfBookedProductsmerchants($args['input']['limit']);
+//                foreach ($merchants as $merchantindex => $merchant) {
+//                    $responseData[$index][$merchantindex] = $merchant;
+//                }
+//            }
+//        }
+      //  return $responseData;
     }
 
     public function topsellingMerchant($rootValue, array $args, GraphQLContext $context)
