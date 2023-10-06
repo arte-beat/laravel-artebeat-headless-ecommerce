@@ -1045,26 +1045,11 @@ class ProductMutation extends Controller
         $query->whereNull('product_type');
         $query->whereNotNull('parent_id');
         $query->where('type', 'simple');
-
-        //$query->with('listOfBookedProductsmerchants');
-        //$query->where('type', 'booking');
-        $query->orderBy('id', 'desc');
+        $query->inRandomOrder();
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-
-        return $result = $query->paginate($count, ['*'], 'page', $page);
-        //dd($result);
-        //dd(DB::getQueryLog());
-//        $result = $query->get();
-//        if (count($result) > 0) {
-//            foreach ($result as $index => $product) {
-//                $merchants = $product->listOfBookedProductsmerchants($args['input']['limit']);
-//                foreach ($merchants as $merchantindex => $merchant) {
-//                    $responseData[$index][$merchantindex] = $merchant;
-//                }
-//            }
-//        }
-      //  return $responseData;
+        $result = $query->paginate($count, ['*'], 'page', $page);
+        return $result;
     }
 
     public function topsellingMerchant($rootValue, array $args, GraphQLContext $context)
