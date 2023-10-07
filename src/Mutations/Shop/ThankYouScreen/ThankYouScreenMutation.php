@@ -2,6 +2,7 @@
 
 namespace Webkul\GraphQLAPI\Mutations\Shop\ThankYouScreen;
 
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -450,72 +451,31 @@ class ThankYouScreenMutation extends Controller
     {
         $product_id = $args['product_id'];
         $product = $this->productRepository->findOrFail($product_id);
-
+        $customer = bagisto_graphql()->guard($this->guard)->user();
         $order_id = $args['order_id'];
         $order = $this->orderRepository->findOrFail($order_id);
+        $ordered_ticket_id = $args['ticket_id'];
+        $booking = $product->booking_product;
+        $carbonFrom = Carbon::parse($booking->available_from);
+        $carbonTo = Carbon::parse($booking->to);
+        $formattedDateRange = $carbonFrom->format('F j') . ' & ' . $carbonTo->format('j') . ' | ' . $carbonFrom->format('g A') . ' - ' . $carbonTo->format('g A');
 
-        $prefix = DB::getTablePrefix();
-        $result_event = DB::table('orders')
-            ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-            ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-            ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
-            ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
-            ->where('products.type', 'booking')
-            ->where('cart_items.product_id', $product_id)
-            ->where('orders.id', $order_id)
-            ->whereIn('orders.status', ['completed', 'pending'])
-            ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-            ->first();
-
-        if($result_event){
-            $product['noOfTickets'] = $result_event->quantity ?? 0;
-
-            $orderPlacedOn = null;
-            if (isset($result_event->created_at))
-                $orderPlacedOn = date("F d, Y, H:i", strtotime($result_event->created_at));
-
-            $orderId = null;
-            if (isset($result_event->order_id))
-                $orderId = "#" . $result_event->order_id;
-
-
-            $product['orderStatus'] = $result_event->orderStatus ?? null;
-            $product['orderId'] = $orderId;
-            $product['order_id'] = $result_event->order_id;
-            $product['orderPlacedOn'] = $orderPlacedOn;
-            $product['paymentMethod'] = 'Credit Card';
-
-            if (isset($result_event->customer_email)) {
-                $customer = $this->customerRepository->where("email", "=", $result_event->customer_email)->first();
-            }
+        $data['event_date'] = $formattedDateRange;
+        $data['location'] = $booking->location.",".$booking->city;
+        if(!empty($product) ) {
+            $pdfName = 'order_'.$ordered_ticket_id.'.pdf';
+            $response['path'] = Storage::disk('order')->path($pdfName);
+            $data['pdfPath'] = $response['path'];
+            $data['event_name'] = $response['path'];
+            $data['ticket_ref'] = $ordered_ticket_id;
+            $response['message'] = "Email sent successfully.";
+        }
+        else{
+            throw new Exception('Ticket is not available');
         }
 
-        $result_ticket_orders = DB::table('ticket_orders')
-            ->where('ticket_orders.product_id', $product_id)
-            ->where('ticket_orders.order_id', $args['order_id'])
-            ->get();
-        if(count($result_ticket_orders) > 0) {
-            foreach ($result_ticket_orders as $ticket_order_index => $ticket_order) {
-                $ticketorders[$ticket_order_index] = [
-                    'id' => $ticket_order->id,
-                    'product_id' => $ticket_order->product_id,
-                    'order_id' => $ticket_order->order_id,
-                    'first_name' => $ticket_order->first_name,
-                    'last_name' => $ticket_order->last_name,
-                    'email' => $ticket_order->email,
-                    'created_at' => $ticket_order->created_at,
-                    'updated_at' => $ticket_order->updated_at,
-                ];
-                $product['ticketorders'] = $ticketorders;
-            }
-        }
-
-        $responseData = $this->productRepository->downloadTicket($product);
-        $response['message'] = "Email sent successfully.";
-        $files = [$responseData['url']];
-        $path = $responseData['path'];
         if(!empty($customer))
-            SendEventTicket::dispatch($customer, $path);
+            SendEventTicket::dispatch($customer,$customer->email,$data);
         return $response;
     }
 
