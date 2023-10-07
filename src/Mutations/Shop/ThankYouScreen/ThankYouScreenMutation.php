@@ -339,36 +339,6 @@ class ThankYouScreenMutation extends Controller
 
         $ordered_ticket_id= $args['ticket_id'];
 
-//        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-//        $result_event = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
-//            ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
-//            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
-//            ->where('booked_event_tickets_history.id',$ordered_ticket_id)->first();
-//        if($result_event){
-//            $orderPlacedOn = null;
-//            if (isset($result_event->created_at))
-//                $orderPlacedOn = date("F d, Y, H:i", strtotime($order->created_at));
-//
-//            $orderId = null;
-//            if (isset($result_event->order_id))
-//                $orderId = "#" . $result_event->order_id;
-//
-//            $orderedTicket_id = null;
-//            if (isset($result_event->orderedTicketId))
-//                $orderedTicket_id = "#" . $result_event->orderedTicketId;
-//
-//            $product['checkInStatus'] = $result_event->is_checkedIn ?? null;
-//            $product['orderId'] = $orderId;
-//            $product['orderPlacedOn'] = $orderPlacedOn;
-//            $product['qrCode'] =  $result_event->qrCode;
-//            $product['first_name'] = $result_event->first_name;
-//            $product['last_name'] = $result_event->last_name;
-//            $product['email'] = $result_event->email;
-//            $product['ticketId'] = $orderedTicket_id;
-//            $product['productName'] = $result_event->sku;
-//            $product['product_id'] = $result_event->id;
-//        }
-
         if(!empty($product) ) {
             $pdfName = 'order_'.$ordered_ticket_id.'.pdf';
             $response['url'] = Storage::disk('order')->url($pdfName);
@@ -382,68 +352,13 @@ class ThankYouScreenMutation extends Controller
     }
     public function downloadInvoice($rootValue, array $args, GraphQLContext $context)
     {
-        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $query->whereHas('bookedProduct', function ($getBookedMerhants) use ($args) {
-            $getBookedMerhants->where('orders.id', '=', $args['order_id']);
-        });
-        $result = $query->pluck('id');
-        foreach ($result as $index => $product_id) {
-            $product[$index] = $this->productRepository->findOrFail($product_id);
-            $customer = bagisto_graphql()->guard($this->guard)->user();
-            if(!empty($customer)) {
-                $product[$index]['customerFirstName'] = $customer->first_name ?? null;
-                $product[$index]['customerLastName'] = $customer->last_name ?? null;
-                $product[$index]['customerEmail'] = $customer->email ?? null;
-                $product[$index]['customerPhone'] = $customer->phone ?? null;
-                $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
-                if(!empty($customerAddress)){
-                    $product[$index]['customerAddressFirstName'] = $customerAddress['first_name'];
-                    $product[$index]['customerAddressLastName'] = $customerAddress['last_name'];
-                    $product[$index]['customerAddressEmail'] = $customerAddress['email'];
-                    $product[$index]['customerAddress1'] = $customerAddress['address1'];
-                    $product[$index]['customerAddress2'] = $customerAddress['address2'];
-                    if($customer->phone == null) {
-                        $product[$index]['customerPhone'] = $customerAddress['phone'] ?? null;
-                    }
-                    $product[$index]['customerAddressCity'] = $customerAddress['city'];
-                    $product[$index]['customerAddressState'] = $customerAddress['state'];
-                    $product[$index]['customerAddressCountry'] = $customerAddress['country'];
-                    $product[$index]['customerAddressPostCode'] = $customerAddress['postcode'];
-                }
-            }
-
-            $prefix = DB::getTablePrefix();
-            $result = DB::table('orders')
-                ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-                ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
-                ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
-                ->where('products.type', 'booking')
-                ->where('cart_items.product_id', $product_id)
-                ->whereIn('orders.status', ['completed', 'pending'])
-                ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-                ->first();
-
-            if(isset($result)) {
-                $orderPlacedOn = null;
-                if(isset($result->created_at))
-                    $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
-
-                $orderId = null;
-                if(isset($result->order_id))
-                    $orderId = "#".$result->order_id;
-
-                $product[$index]['noOfTickets'] = $result->quantity ?? 0;
-                $product[$index]['orderStatus'] = $result->orderStatus ?? null;
-                $product[$index]['orderId'] = $orderId;
-                $product[$index]['order_id'] = $result->order_id;
-                $product[$index]['orderPlacedOn'] = $orderPlacedOn;
-                $product[$index]['paymentMethod'] = 'Credit Card';
-            }
+        $order_id = $args['order_id'];
+        $order = $this->orderRepository->findOrFail($order_id);
+        if(!empty($order))
+        {
+            $pdfName = 'new_order_invoice_'.$order_id.'.pdf';
+            $response['url'] = Storage::disk('order')->url($pdfName);
         }
-
-        $responseData = $this->productRepository->downloadInvoice($product);
-        $response['url'] = $responseData['url'];
         return $response;
     }
 
@@ -468,6 +383,7 @@ class ThankYouScreenMutation extends Controller
             $data['pdfPath'] = $response['path'];
             $data['event_name'] = $product->sku;
             $data['ticket_ref'] = $ordered_ticket_id;
+            $data['productType'] = 'booking';
             $response['message'] = "Email sent successfully.";
         }
         else{
@@ -481,71 +397,24 @@ class ThankYouScreenMutation extends Controller
 
     public function emailInvoice($rootValue, array $args, GraphQLContext $context)
     {
-        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $query->whereHas('bookedProduct', function ($getBookedMerhants) use ($args) {
-            $getBookedMerhants->where('orders.id', '=', $args['order_id']);
-        });
-        $result = $query->pluck('id');
-        foreach ($result as $index => $product_id) {
-            $product[$index] = $this->productRepository->findOrFail($product_id);
-            $customer = bagisto_graphql()->guard($this->guard)->user();
-            if(!empty($customer)) {
-                $product[$index]['customerFirstName'] = $customer->first_name ?? null;
-                $product[$index]['customerLastName'] = $customer->last_name ?? null;
-                $product[$index]['customerEmail'] = $customer->email ?? null;
-                $product[$index]['customerPhone'] = $customer->phone ?? null;
-                $customerAddress = $this->customerAddressRepository->where([["customer_id", $customer->id], ['default_address', 1]])->first();
-                if(!empty($customerAddress)){
-                    $product[$index]['customerAddressFirstName'] = $customerAddress['first_name'];
-                    $product[$index]['customerAddressLastName'] = $customerAddress['last_name'];
-                    $product[$index]['customerAddressEmail'] = $customerAddress['email'];
-                    $product[$index]['customerAddress1'] = $customerAddress['address1'];
-                    $product[$index]['customerAddress2'] = $customerAddress['address2'];
-                    if($customer->phone == null) {
-                        $product[$index]['customerPhone'] = $customerAddress['phone'] ?? null;
-                    }
-                    $product[$index]['customerAddressCity'] = $customerAddress['city'];
-                    $product[$index]['customerAddressState'] = $customerAddress['state'];
-                    $product[$index]['customerAddressCountry'] = $customerAddress['country'];
-                    $product[$index]['customerAddressPostCode'] = $customerAddress['postcode'];
-                }
-            }
 
-            $prefix = DB::getTablePrefix();
-            $result = DB::table('orders')
-                ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
-                ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
-                ->addSelect('orders.created_at', 'orders.id AS order_id', 'orders.status as orderStatus', 'orders.customer_email')
-                ->selectRaw('SUM('.$prefix.'cart_items.quantity) as quantity')
-                ->where('products.type', 'booking')
-                ->where('cart_items.product_id', $product_id)
-                ->whereIn('orders.status', ['completed', 'pending'])
-                ->groupBy('cart_items.product_id', 'cart_items.cart_id')
-                ->first();
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $order = $this->orderRepository->findOrFail($args['order_id']);
 
-            if(isset($result)) {
-                $orderPlacedOn = null;
-                if(isset($result->created_at))
-                    $orderPlacedOn = date("F d, Y, H:i", strtotime($result->created_at));
-
-                $orderId = null;
-                if(isset($result->order_id))
-                    $orderId = "#".$result->order_id;
-
-                $product[$index]['noOfTickets'] = $result->quantity ?? 0;
-                $product[$index]['orderStatus'] = $result->orderStatus ?? null;
-                $product[$index]['orderId'] = $orderId;
-                $product[$index]['order_id'] = $result->order_id;
-                $product[$index]['orderPlacedOn'] = $orderPlacedOn;
-                $product[$index]['paymentMethod'] = 'Credit Card';
-            }
+        if(!empty($order) ) {
+            $pdfName = 'new_order_invoice_'.$args['order_id'].'.pdf';
+            $response['path'] = Storage::disk('order')->path($pdfName);
+            $data['pdfPath'] = $response['path'];
+            $data['productType'] = 'simple';
+            $data['order_id'] = $args['order_id'];
+            $response['message'] = "Email sent successfully.";
+        }
+        else{
+            throw new Exception('Invoice is not available');
         }
 
-        $responseData = $this->productRepository->downloadInvoice($product);
-        $response['message'] = "Email sent successfully.";
-        $files = [$responseData['url']];
-        $path = $responseData['path'];
-        SendEventTicket::dispatch($customer, $path);
+        if(!empty($customer))
+            SendEventTicket::dispatch($customer,$customer->email,$data);
         return $response;
     }
 
