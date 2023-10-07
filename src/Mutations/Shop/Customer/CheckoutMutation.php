@@ -935,7 +935,11 @@ class CheckoutMutation extends Controller
                     }
 
                 }
-                SendOrderedEventsTickets::dispatch($customerDetails, $customerDetails->email, $order->id);
+                if(!empty($ticketarr))
+                {
+                    SendOrderedEventsTickets::dispatch($customerDetails, $customerDetails->email, $order->id);
+                }
+
 
                 return [
                     'success' => true,
