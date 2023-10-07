@@ -466,7 +466,7 @@ class ThankYouScreenMutation extends Controller
             $pdfName = 'order_'.$ordered_ticket_id.'.pdf';
             $response['path'] = Storage::disk('order')->path($pdfName);
             $data['pdfPath'] = $response['path'];
-            $data['event_name'] = $response['path'];
+            $data['event_name'] = $product->sku;
             $data['ticket_ref'] = $ordered_ticket_id;
             $response['message'] = "Email sent successfully.";
         }
