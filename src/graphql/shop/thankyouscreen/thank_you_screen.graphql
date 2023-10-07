@@ -5,7 +5,7 @@ extend type Query @guard(with: ["api", "admin-api"]){
 
     downloadTicket(order_id: ID!, product_id: ID!,ticket_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadTicket")
 
-    emailEventTicket(order_id: ID!, product_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailEventTicket")
+    emailEventTicket(order_id: ID!, product_id: ID!,ticket_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@emailEventTicket")
 
     downloadInvoice(order_id: ID!): DownloadTicketResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@downloadInvoice")
 
