@@ -59,6 +59,7 @@ type Customer {
     name: String
     customerType: Int @rename(attribute: "customer_type")
     firstLogin: Int @rename(attribute: "first_login")
+    socialLogin: Int @rename(attribute: "is_social_login")
     gender: String
     dateOfBirth: String @rename(attribute: "date_of_birth")
     email: String

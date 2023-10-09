@@ -274,7 +274,7 @@ class RegistrationMutation extends Controller
                     'email'             => isset($socialUser->email) ? $socialUser->email : null,
                     'api_token'         => Str::random(80),
                     'is_verified'       => core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
-                    'email_verified'    =>  0 ,
+//                    'email_verified'    =>  0 ,
                     'is_social_login'    =>  1 ,
                     'customer_group_id' => $this->customerGroupRepository->findOneWhere(['code' => 'general'])->id,
                     'token'             => $token,
