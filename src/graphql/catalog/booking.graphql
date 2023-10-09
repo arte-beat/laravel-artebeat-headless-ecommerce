@@ -13,7 +13,7 @@ input CreateBookingInput {
     city: String!
     latitude: String!
     longitude: String!
-    age_restriction: Int!
+    age_restriction: Int
     event_type: Int!
     website: String!
     instagram: String!
@@ -113,7 +113,7 @@ type BookingProduct {
     city: String!
     latitude: String!
     longitude: String!
-    age_restriction: Int!
+    age_restriction: Int
     event_type: Int!
     website: String!
     instagram: String!

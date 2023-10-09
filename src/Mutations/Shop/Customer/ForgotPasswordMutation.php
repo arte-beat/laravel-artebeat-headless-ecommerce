@@ -79,6 +79,12 @@ class ForgotPasswordMutation extends Controller
             if(!$customer){
                 throw new Exception('We are unable to find account with given email. Please try again.');
             }
+            else{
+                if(!empty($customer->is_social_login)){
+                    throw new Exception('We are unable to Process as this account has LoggedIn through Social Login.');
+                }
+
+            }
 
             $OTP = (new OTPGenerationHelper())->generateNumericOTP(config('otp.generate_otp_number'));
             $encryptedKeyText = json_encode(["customerId" => $customer['id'], "otp" => $OTP]);
