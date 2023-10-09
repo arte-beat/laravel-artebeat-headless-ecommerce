@@ -14,8 +14,12 @@ extend type Mutation @guard {
         id: ID!,
         input: UpdateCustomerInput!
     ): Customer @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@update")
-    
-    deleteCustomer(id: ID!): Customer @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@delete")
+
+}
+
+extend type Mutation @guard(with: ["api", "admin-api"]) {
+
+    deleteCustomer(id: ID!): Customer  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@delete")
 }
 
 input CreateCustomerInput {
