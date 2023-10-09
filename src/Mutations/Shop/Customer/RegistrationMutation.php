@@ -59,7 +59,7 @@ class RegistrationMutation extends Controller
         $this->guard = 'api';
 
         auth()->setDefaultDriver($this->guard);
-        
+
         $this->middleware('auth:' . $this->guard, ['except' => ['register']]);
     }
 
@@ -76,9 +76,9 @@ class RegistrationMutation extends Controller
                 'Invalid request parameters.'
             );
         }
-    
+
         $data = $args['input'];
-        
+
         $validator = Validator::make($data, [
             'first_name' => 'string|required',
             'last_name'  => 'string|required',
@@ -86,16 +86,16 @@ class RegistrationMutation extends Controller
             'password'   => 'min:6|required',
             'password_confirmation' => 'required|required_with:password|same:password',
         ]);
-                
+
         if ($validator->fails()) {
-            
+
             $errorMessage = [];
             foreach ($validator->messages()->toArray() as $index => $message) {
                 $error = is_array($message) ? $message[0] : $message;
-                
+
                 $errorMessage[] = in_array($error, $this->errorCode) ? trans('bagisto_graphql::app.' . $error, ['field' => $index]) : $error;
             }
-            
+
             throw new CustomException(
                 implode(", ", $errorMessage),
                 'Invalid Register Details.'
@@ -130,7 +130,7 @@ class RegistrationMutation extends Controller
             return [
                 'status'    => false,
                 'success'   => trans('bagisto_graphql::app.shop.response.error-registration')
-            ]; 
+            ];
         }
 
         if (core()->getConfigData('customer.settings.email.verification')) {
@@ -214,7 +214,7 @@ class RegistrationMutation extends Controller
             'signup_type' => 'string|required|in:facebook,google,twitter,linkedin,github',
             'remember' => 'boolean',
         ]);
-        
+
         $errorMessage = [];
 
         if ($validator->fails()) {
@@ -222,7 +222,7 @@ class RegistrationMutation extends Controller
                 $error = is_array($message) ? $message[0] : $message;
                 $errorMessage[] = in_array($error, $this->errorCode) ? trans('bagisto_graphql::app.' . $error, ['field' => $index]) : $error;
             }
-            
+
             throw new CustomException(
                 implode(", ", $errorMessage),
                 'Invalid Register Details.'
@@ -238,7 +238,7 @@ class RegistrationMutation extends Controller
             $socialLoginDetails = CustomerSocialAccount::where('provider_name', $signUpType)
                 ->where('provider_id', $socialUser->id)
                 ->first();
-            
+
             if($socialLoginDetails && $socialLoginDetails->customer_id) {
                 //Customer already exists
                 $customer = $this->customerRepository->findOneByField('id', $socialLoginDetails->customer_id);
@@ -267,7 +267,7 @@ class RegistrationMutation extends Controller
 
                 //create customer
                 $name = explode(" ",$socialUser->name);
-                
+
                 $data   = array_merge($data, [
                     'first_name'        => $name[0],
                     'last_name'         => isset($name[1]) ? $name[1] : '',
@@ -275,6 +275,7 @@ class RegistrationMutation extends Controller
                     'api_token'         => Str::random(80),
                     'is_verified'       => core()->getConfigData('customer.settings.email.verification') ? 0 : 1,
                     'email_verified'    =>  0 ,
+                    'is_social_login'    =>  1 ,
                     'customer_group_id' => $this->customerGroupRepository->findOneWhere(['code' => 'general'])->id,
                     'token'             => $token,
                 ]);
@@ -287,7 +288,7 @@ class RegistrationMutation extends Controller
                     return [
                         'status'    => false,
                         'success'   => trans('bagisto_graphql::app.shop.response.error-registration')
-                    ]; 
+                    ];
                 }
 
                 CustomerSocialAccount::create([
@@ -329,18 +330,18 @@ class RegistrationMutation extends Controller
     public function loginCustomer($customer, $data)
     {
         $jwtToken = null;
-        
+
         if (!isset($data['password'])) {
             $data['password'] = $password = Str::random(8);
-            
+
             $customer->password = bcrypt($password);
             $customer->save();
-            
+
             try {
                 Mail::queue(new SocialLoginPasswordResetEmail($data));
             } catch(\Exception $e) {}
         }
-        
+
         $remember = isset($data['remember']) ? $data['remember'] : 0;
 
         $jwtToken = JWTAuth::attempt([
@@ -354,7 +355,7 @@ class RegistrationMutation extends Controller
                 'Invalid Email and Password.'
             );
         }
-        
+
         $customer = bagisto_graphql()->guard($this->guard)->user();
 
         /**
