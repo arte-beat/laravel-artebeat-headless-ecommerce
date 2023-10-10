@@ -1060,20 +1060,22 @@ class ProductMutation extends Controller
         } else {
             $distance = 100;
         }
+
         $queryBuilder = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
+            ->join('products as products_x', 'products_x.id', '=', 'products.parent_id')
             ->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
             ->addSelect('products.*', 'booking_products.latitude', 'booking_products.longitude')
             ->selectRaw('COUNT(cart_items.id) AS total_sold')
-            ->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $args["input"]["latitude"] . '), 2) + POW(69.1 * (' . $args["input"]["longitude"] . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance')
+            ->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(booking_products.latitude)) * cos(radians(booking_products.longitude) - radians(?)) + sin(radians(?)) * sin(radians(booking_products.latitude)))) AS distance", [$args["input"]["latitude"], $args["input"]["longitude"], $args["input"]["latitude"]])
             ->where('products.type', 'simple')
             ->where('orders.status', 'completed')
             ->whereNULL('products.product_type')
             ->groupBy('cart_items.product_id')
             ->havingRaw(' distance <= ' . $distance)
-            ->where('products.event_status', 1)
-            ->orderBy('total_sold', 'desc')->get();
+            ->where('products_x.event_status', 1)
+            ->orderBy('total_soldv', 'desc')->get();
 
 
         if (count($queryBuilder) > 0) {
@@ -1089,24 +1091,23 @@ class ProductMutation extends Controller
     {
         $responseData = [];
         $result = [];
-DB::enableQueryLog();
+
         if (!empty($args["input"]["distance"])) {
             $distance = $args["input"]["distance"];
         } else {
             $distance = 800;
         }
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $query->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
+        $query->join('products as products_x', 'products_x.id', '=', 'products.parent_id')
+            ->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
             ->leftJoin('product_qty_size', 'product_qty_size.product_id', '=', 'products.id')
             ->addSelect('products.*')
             ->SelectRaw('SUM(product_qty_size.qty) as total_qty');
-//        if (!empty($args["input"]["longitude"]) && !empty($args["input"]["latitude"])) {
-//            $query->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $args["input"]["latitude"] . '), 2) + POW(69.1 * (' . $args["input"]["longitude"] . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance');
         if (!empty($args["input"]["longitude"]) && !empty($args["input"]["latitude"])) {
             $query->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(booking_products.latitude)) * cos(radians(booking_products.longitude) - radians(?)) + sin(radians(?)) * sin(radians(booking_products.latitude)))) AS distance", [$args["input"]["latitude"], $args["input"]["longitude"], $args["input"]["latitude"]]);
         }
         $query->where('products.type', 'simple')
-            ->where('products.event_status', 1)
+            ->where('products_x.event_status', 1)
             ->whereNULL('products.product_type')
             ->groupBy('products.id');
         if (!empty($args["input"]["longitude"]) && !empty($args["input"]["latitude"])) {
@@ -1118,32 +1119,24 @@ DB::enableQueryLog();
         $result = $query->inRandomOrder()->get();
 
         if ($result->count() > 0) {
-            foreach ($result as $index => $product) {
-                $responseData[$index] = $product;
-            }
+            //
         } else {
 
             $another_query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-            $another_result = $another_query->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
+            $result = $another_query->join('products as products_x', 'products_x.id', '=', 'products.parent_id')
+                ->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
                 ->leftJoin('product_qty_size', 'product_qty_size.product_id', '=', 'products.id')
                 ->addSelect('products.*')
-                ->SelectRaw('SUM(product_qty_size.qty) as total_qty')
+                ->selectRaw('SUM(product_qty_size.qty) as total_qty')
                 ->where('products.type', 'simple')
-                ->where('products.event_status', 1)
-                ->whereNULL('products.product_type')
+                ->where('products_x.event_status', 1)
+                ->whereNull('products.product_type')
                 ->groupBy('products.id')
-                ->havingRaw(' total_qty > 0')
-                ->inRandomOrder()->get();
-
-            if (count($another_result) > 0) {
-                foreach ($another_result as $index => $product) {
-                    $responseData[$index] = $product;
-
-                }
-            }
-
+                ->havingRaw('total_qty > 0')
+                ->inRandomOrder()
+                ->get();
         }
-        return $responseData;
+        return $result;
     }
 
     public function getMyeventsDataByEventOrganizer($rootValue, array $args, GraphQLContext $context)
