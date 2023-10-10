@@ -1070,7 +1070,7 @@ class ProductMutation extends Controller
             ->selectRaw('COUNT(cart_items.id) AS total_sold')
             ->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(booking_products.latitude)) * cos(radians(booking_products.longitude) - radians(?)) + sin(radians(?)) * sin(radians(booking_products.latitude)))) AS distance", [$args["input"]["latitude"], $args["input"]["longitude"], $args["input"]["latitude"]])
             ->where('products.type', 'simple')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['pending','completed'])
             ->whereNULL('products.product_type')
             ->groupBy('cart_items.product_id')
             ->havingRaw(' distance <= ' . $distance)
