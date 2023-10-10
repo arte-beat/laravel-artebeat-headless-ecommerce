@@ -1058,7 +1058,7 @@ class ProductMutation extends Controller
         if (!empty($args["input"]["distance"])) {
             $distance = $args["input"]["distance"];
         } else {
-            $distance = 100;
+            $distance = 800;
         }
 
         $queryBuilder = DB::table('orders')
@@ -1075,7 +1075,7 @@ class ProductMutation extends Controller
             ->groupBy('cart_items.product_id')
             ->havingRaw(' distance <= ' . $distance)
             ->where('products_x.event_status', 1)
-            ->orderBy('total_sold', 'desc')->get();
+            ->orderBy('total_solds', 'desc')->get();
 
 
         if (count($queryBuilder) > 0) {
