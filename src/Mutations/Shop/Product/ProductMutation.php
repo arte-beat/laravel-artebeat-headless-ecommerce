@@ -158,9 +158,9 @@ class ProductMutation extends Controller
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
 
-        $results =  $query->paginate($count, ['*'], 'page', $page);
+        $results = $query->paginate($count, ['*'], 'page', $page);
 
-        Log::info('eventFilter qry', ['query' => var_export(DB::getQueryLog(),true)]);
+        Log::info('eventFilter qry', ['query' => var_export(DB::getQueryLog(), true)]);
         return $results;
     }
 
@@ -270,7 +270,7 @@ class ProductMutation extends Controller
 
         if (!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
-        } 
+        }
 
         $query->orderBy('id', 'desc');
 
@@ -316,7 +316,7 @@ class ProductMutation extends Controller
 
         if (!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
-        } 
+        }
 
         $query->orderBy('id', 'desc');
 
@@ -358,7 +358,7 @@ class ProductMutation extends Controller
 
         if (!empty($args['input']['is_hero_event'])) {
             $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
-        } 
+        }
 
         $query->orderBy('id', 'desc');
 
@@ -1035,11 +1035,11 @@ class ProductMutation extends Controller
         $owner = bagisto_graphql()->guard($this->guard)->user();
         $args['input']['email'] = $owner->email;
         $query->whereHas('parent.bookedProduct', function ($getAttemptedProducts) use ($args) {
-            if (!empty($args['input']['email'])){
+            if (!empty($args['input']['email'])) {
                 $getAttemptedProducts->where('orders.customer_email', '=', $args['input']['email']);
             }
             return $getAttemptedProducts;
-               // $getAttemptedProducts->listOfBookedProductsmerchants;
+            // $getAttemptedProducts->listOfBookedProductsmerchants;
         });
         $query->with('parent.bookedProduct');
         $query->whereNull('product_type');
@@ -1095,22 +1095,51 @@ class ProductMutation extends Controller
             $distance = 800;
         }
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $result = $query->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
+        $query->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
             ->leftJoin('product_qty_size', 'product_qty_size.product_id', '=', 'products.id')
             ->addSelect('products.*')
-            ->SelectRaw('SUM(product_qty_size.qty) as total_sold')
-            ->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $args["input"]["latitude"] . '), 2) + POW(69.1 * (' . $args["input"]["longitude"] . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance')
-            ->where('products.type', 'simple')
+            ->SelectRaw('SUM(product_qty_size.qty) as total_qty');
+        if (!empty($args["input"]["longitude"]) && !empty($args["input"]["latitude"])) {
+            $query->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $args["input"]["latitude"] . '), 2) + POW(69.1 * (' . $args["input"]["longitude"] . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance');
+        }
+        $query->where('products.type', 'simple')
             ->where('products.event_status', 1)
             ->whereNULL('products.product_type')
-            ->groupBy('products.id')
-            ->havingRaw(' total_sold > 0 and distance <= ' . $distance)
-            ->inRandomOrder()->get();
+            ->groupBy('products.id');
+        if (!empty($args["input"]["longitude"]) && !empty($args["input"]["latitude"])) {
+
+            $query->havingRaw(' total_qty > 0 and distance <= ' . $distance);
+        } else {
+            $query->havingRaw(' total_qty > 0 ');
+        }
+        $result = $query->inRandomOrder()->get();
+
         if (count($result) > 0) {
             foreach ($result as $index => $product) {
                 $responseData[$index] = $product;
 
             }
+        } else {
+
+            $another_query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+            $another_result = $another_query->leftJoin('booking_products', 'products.parent_id', '=', 'booking_products.product_id')
+                ->leftJoin('product_qty_size', 'product_qty_size.product_id', '=', 'products.id')
+                ->addSelect('products.*')
+                ->SelectRaw('SUM(product_qty_size.qty) as total_qty')
+                ->where('products.type', 'simple')
+                ->where('products.event_status', 1)
+                ->whereNULL('products.product_type')
+                ->groupBy('products.id')
+                ->havingRaw(' total_qty > 0')
+                ->inRandomOrder()->get();
+
+            if (count($another_result) > 0) {
+                foreach ($another_result as $index => $product) {
+                    $responseData[$index] = $product;
+
+                }
+            }
+
         }
         return $responseData;
     }
@@ -1127,19 +1156,19 @@ class ProductMutation extends Controller
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
             ->SelectRaw('SUM(' . $prefix . 'cart_items.total) as total_sale')
-            ->whereIn('orders.status', ['completed','pending'])
+            ->whereIn('orders.status', ['completed', 'pending'])
             ->whereIn('products.id', $merchants)
             ->first();
 
         if (!empty($result_price)) {
-            $product['total_price']= $result_price->total_sale;
+            $product['total_price'] = $result_price->total_sale;
         }
         $result_product = DB::table('orders')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('products', 'cart_items.product_id', '=', 'products.id')
             ->SelectRaw('SUM(' . $prefix . 'cart_items.quantity) as total_sold')
             ->where('products.type', 'booking')
-            ->whereIn('orders.status', ['completed','pending'])
+            ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
             ->groupBy('cart_items.product_id')->first();
 
@@ -1149,7 +1178,7 @@ class ProductMutation extends Controller
             ->SelectRaw('SUM(' . $prefix . 'cart_items.quantity) as total_sold')
             ->where('products.type', 'simple')
             ->whereNULL('products.product_type')
-            ->whereIn('orders.status', ['completed','pending'])
+            ->whereIn('orders.status', ['completed', 'pending'])
             ->where('products.parent_id', $args['product_id'])->first();
 
 
@@ -1167,19 +1196,19 @@ class ProductMutation extends Controller
     public function getBookedTicketsByEventOrganizer($rootValue, array $args, GraphQLContext $context)
     {
 
-       $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $query
             ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('cart_items', 'cart_items.id', '=', 'booked_event_tickets_history.cart_items_id')
             ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->select('booked_event_tickets_history.id as orderedTicketId','orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at','booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price','orders.status')
+            ->select('booked_event_tickets_history.id as orderedTicketId', 'orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price', 'orders.status')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
             ->where('booked_event_tickets_history.product_id', $args['product_id'])
-             ->groupBy('booked_event_tickets_history.id')
-            ->orderBy('booked_event_tickets_history.id','desc');
+            ->groupBy('booked_event_tickets_history.id')
+            ->orderBy('booked_event_tickets_history.id', 'desc');
         if (!empty($args['input']['name'])) {
             if (is_numeric(($args['input']['name']))) {
                 $query->where('orders.id', $args['input']['name']);
@@ -1204,7 +1233,7 @@ class ProductMutation extends Controller
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
             ->leftJoin('order_status_for_single_product', 'orders.id', '=', 'order_status_for_single_product.orderId')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'cart_items.commission_amount as commission','cart_items.total_with_commission as total_product_price','order_status_for_single_product.status as deliveryStatus','orders.status','cart_items.tax_amount','cart_items.tax_percent')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'cart_items.commission_amount as commission', 'cart_items.total_with_commission as total_product_price', 'order_status_for_single_product.status as deliveryStatus', 'orders.status', 'cart_items.tax_amount', 'cart_items.tax_percent')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('addresses.default_address', 1)
@@ -1243,7 +1272,7 @@ class ProductMutation extends Controller
             ->leftJoin('order_status_for_single_product', 'orders.id', '=', 'order_status_for_single_product.orderId')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
             ->leftJoin('product_qty_size', 'cart_items.ticket_id', '=', 'product_qty_size.id')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'orders.status','product_qty_size.size','order_status_for_single_product.status as deliveryStatus')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'orders.status', 'product_qty_size.size', 'order_status_for_single_product.status as deliveryStatus')
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('addresses.default_address', 1)
             ->where('products.type', 'simple')
@@ -1253,22 +1282,22 @@ class ProductMutation extends Controller
             ->orderBy('orders.id', 'desc')->get();
 
         if (!empty($merchantList)) {
-            $arr_merchantList = $merchantList->map(function($item, $key) {
+            $arr_merchantList = $merchantList->map(function ($item, $key) {
                 return [
                     'Product Name' => $item->productName,
                     'Size' => $item->size,
                     'Price' => $item->basePrice,
-                    'Order No' => "#".$item->order_id,
+                    'Order No' => "#" . $item->order_id,
                     'Quantity' => $item->purchasedQuantity,
                     'Total' => $item->price,
                     'Delivery Status' => $item->status,
-                    'Customer Name' => $item->first_name." ".$item->last_name,
-                    'CustomerAddress' => $item->address1.",".$item->address2.",".$item->city.",".$item->state.",".$item->country.",".$item->postcode,
+                    'Customer Name' => $item->first_name . " " . $item->last_name,
+                    'CustomerAddress' => $item->address1 . "," . $item->address2 . "," . $item->city . "," . $item->state . "," . $item->country . "," . $item->postcode,
                     'Order Date' => $item->created_at->format('d/m/Y H:i A')
                 ];
             });
 
-            $responseData = $this->productRepository->downloadBookedEventMerchants($arr_merchantList,$owner->id);
+            $responseData = $this->productRepository->downloadBookedEventMerchants($arr_merchantList, $owner->id);
             $response['url'] = $responseData['url'];
 
         } else {
@@ -1283,34 +1312,34 @@ class ProductMutation extends Controller
         $owner = bagisto_graphql()->guard($this->guard)->user();
 
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
-        $eventList= $query
+        $eventList = $query
             ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('cart_items', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->select('products.*','orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at','cart_items.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price','orders.status')
+            ->select('products.*', 'orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'cart_items.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price', 'orders.status')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
             ->where('booked_event_tickets_history.product_id', $args['product_id'])
             ->groupBy('booked_event_tickets_history.id')
-            ->orderBy('booked_event_tickets_history.id','desc')->get();
+            ->orderBy('booked_event_tickets_history.id', 'desc')->get();
 
         if (!empty($eventList)) {
-            $arr_ticketList = $eventList->map(function($item, $key) {
+            $arr_ticketList = $eventList->map(function ($item, $key) {
 
                 return [
                     'Event Name' => $item->sku,
                     'Ticket Type' => $item->ticketType,
                     'Price' => $item->price,
-                    'Order No' => "#".$item->order_id,
-                    'Customer Name' => $item->firstname." ".$item->lastname,
-                    'Customer Email' => $item->firstname." ".$item->email,
+                    'Order No' => "#" . $item->order_id,
+                    'Customer Name' => $item->firstname . " " . $item->lastname,
+                    'Customer Email' => $item->firstname . " " . $item->email,
                     'Order Date' => $item->created_at->format('d/m/Y H:i A')
                 ];
             });
 
-            $responseData = $this->productRepository->downloadBookedEventTickets($arr_ticketList,$owner->id);
+            $responseData = $this->productRepository->downloadBookedEventTickets($arr_ticketList, $owner->id);
             $response['url'] = $responseData['url'];
 
         } else {
@@ -1329,7 +1358,7 @@ class ProductMutation extends Controller
             ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.*', 'products.sku as productName',  'booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name as firstname', 'addresses.last_name  as lastname', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone',  'orders.status','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at as orderDate',DB::raw("(SELECT COUNT('x') FROM booked_event_tickets_history ct 
+            ->addSelect('products.*', 'products.sku as productName', 'booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name as firstname', 'addresses.last_name  as lastname', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'orders.status', 'booked_event_tickets_history.id as orderedTicketId', 'booked_event_tickets_history.qrCode', 'booked_event_tickets_history.is_checkedIn', 'booked_event_tickets_history.ticket_id', 'orders.created_at as orderDate', DB::raw("(SELECT COUNT('x') FROM booked_event_tickets_history ct
    WHERE ct.product_id = products.id and ct.orderId = orders.id) as name_counter"))
             ->where('products.type', 'booking')
             ->where('orders.customer_email', $owner->email)
