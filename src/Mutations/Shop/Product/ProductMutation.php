@@ -1088,7 +1088,8 @@ class ProductMutation extends Controller
     public function getRandomMerchant($rootValue, array $args, GraphQLContext $context)
     {
         $responseData = [];
-
+        $result = [];
+DB::enableQueryLog();
         if (!empty($args["input"]["distance"])) {
             $distance = $args["input"]["distance"];
         } else {
@@ -1099,8 +1100,10 @@ class ProductMutation extends Controller
             ->leftJoin('product_qty_size', 'product_qty_size.product_id', '=', 'products.id')
             ->addSelect('products.*')
             ->SelectRaw('SUM(product_qty_size.qty) as total_qty');
+//        if (!empty($args["input"]["longitude"]) && !empty($args["input"]["latitude"])) {
+//            $query->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $args["input"]["latitude"] . '), 2) + POW(69.1 * (' . $args["input"]["longitude"] . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance');
         if (!empty($args["input"]["longitude"]) && !empty($args["input"]["latitude"])) {
-            $query->selectRaw('SQRT( POW(69.1 * (booking_products.latitude - ' . $args["input"]["latitude"] . '), 2) + POW(69.1 * (' . $args["input"]["longitude"] . ' - booking_products.longitude) * COS(booking_products.latitude / 57.3), 2)) as distance');
+            $query->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(booking_products.latitude)) * cos(radians(booking_products.longitude) - radians(?)) + sin(radians(?)) * sin(radians(booking_products.latitude)))) AS distance", [$args["input"]["latitude"], $args["input"]["longitude"], $args["input"]["latitude"]]);
         }
         $query->where('products.type', 'simple')
             ->where('products.event_status', 1)
@@ -1114,10 +1117,9 @@ class ProductMutation extends Controller
         }
         $result = $query->inRandomOrder()->get();
 
-        if (count($result) > 0) {
+        if ($result->count() > 0) {
             foreach ($result as $index => $product) {
                 $responseData[$index] = $product;
-
             }
         } else {
 
