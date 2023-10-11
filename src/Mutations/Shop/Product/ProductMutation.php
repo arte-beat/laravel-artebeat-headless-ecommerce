@@ -519,7 +519,7 @@ class ProductMutation extends Controller
             Event::dispatch('catalog.product.create.before');
             $product = $this->productRepository->create($data);
             Event::dispatch('catalog.product.create.after', $product);
-            SendMailForEventCreate::dispatch($owner, $customer['email'], 3);
+            SendMailForEventCreate::dispatch($owner, $customer['email'], 3,$product->id);
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
