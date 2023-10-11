@@ -249,6 +249,11 @@ class RegistrationMutation extends Controller
                 // No Customer found
                 if($socialUser->email){
                     $customer = $this->customerRepository->findOneByField('email', $socialUser->email);
+                    if($customer->is_social_login == 0)
+                    {
+                        throw new Exception('This Customer has already registered in by Email/Password');
+                    }
+
                 }
                 // If customer email already exists Login the customer
                 if (isset($customer) && $customer) {
