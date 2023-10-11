@@ -20,6 +20,7 @@ type CustomerLoginResult {
     tokenType: String @rename(attribute: "token_type")
     expiresIn: Int @rename(attribute: "expires_in")
     customer: Customer
+    firstLogin: Int @rename(attribute: "first_login")
 }
 type VerifyCustomerLoginResult {
     customerId : Int
