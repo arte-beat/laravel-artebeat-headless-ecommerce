@@ -138,18 +138,23 @@ class ProductMutation extends Controller
                 });
             }
 
-            if (isset($args['input']['distance_min']) && isset($args['input']['distance_max']) && isset($args['input']['client_location_longitude']) && isset($args['input']['client_location_latitude'])) {
+            if (isset($args['input']['client_location_longitude']) && isset($args['input']['client_location_latitude'])) {
 
                 $clientLongitude = $args['input']['client_location_longitude'];
                 $clientLatitude = $args['input']['client_location_latitude'];
-                $minDistance = $args['input']['distance_min'];
-                $maxDistance = $args['input']['distance_max'];
 
                 // * 6371000 for meters, 6371 for kilometer and 3956 for miles
                 $bookingQuery->selectRaw("(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance_from_client", [$clientLatitude, $clientLongitude, $clientLatitude]);
 
-                $bookingQuery->having('distance_from_client', '>', $minDistance);
-                $bookingQuery->having('distance_from_client', '<', $maxDistance);
+                if(isset($args['input']['distance_min']) && isset($args['input']['distance_max']))
+                {
+                    $minDistance = $args['input']['distance_min'];
+                    $maxDistance = $args['input']['distance_max'];
+                    $bookingQuery->having('distance_from_client', '>', $minDistance);
+                    $bookingQuery->having('distance_from_client', '<', $maxDistance);
+                }
+
+
             }
         });
 
