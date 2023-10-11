@@ -201,7 +201,7 @@ class ProductMutation extends Controller
                     $owner_id = $owner->id;
 
                  Product::where('id', $id)->update(['event_status_modified_on' => date('Y-m-d H:i:s'), "event_status" => $args['event_status'], "event_status_changed_by" => $owner_id]);
-                SendMailForEventCreate::dispatch($customer, $customer['email'],$args['event_status']);
+                SendMailForEventCreate::dispatch($customer, $customer['email'],$args['event_status'],$id);
                 return [
                     'status' => true,
                     'message' => "Status changed successfully."
