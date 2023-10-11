@@ -617,7 +617,7 @@ class ProfileMutation extends Controller
 
       public function getAllPaymentsHistory($rootValue, array $args, GraphQLContext $context)
     {
-        $cardDetails = [];
+
         if (!bagisto_graphql()->validateAPIUser($this->guard)) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
         }
@@ -627,7 +627,6 @@ class ProfileMutation extends Controller
         }
         $customer = bagisto_graphql()->guard($this->guard)->user();
         if (!empty($customer)) {
-            DB::enableQueryLog();
             $query = \Webkul\Sales\Models\Order::query();
             $query->addSelect("*");
             $query->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name");
@@ -638,8 +637,10 @@ class ProfileMutation extends Controller
             $count = isset($args['first']) ? $args['first'] : 10;
             $page = isset($args['page']) ? $args['page'] : 1;
             $result = $query->paginate($count, ['*'], 'page', $page);
-            if(!empty($cardDetails)) {
+
+            if(!empty($result)) {
                 foreach ($result as $index => $item) {
+                    $cardDetails = [];
                     if(!empty($item['payment_method_id']))
                     {
                         $cardDetails = $this->customerPaymentMethodsRepository->findOrFail($item['payment_method_id']);
@@ -649,8 +650,9 @@ class ProfileMutation extends Controller
                     $result[$index]['type'] = '';
                     $result[$index]['last4'] = '';
                     if (!empty($cardDetails)) {
-                        $result[$index]['mode_of_payment'] = $cardDetails['brand'];
+                        $result[$index]['mode_of_payment'] = $cardDetails['funding'].' '. $cardDetails['type'];
                         $result[$index]['funding'] = $cardDetails['funding'];
+                        $result[$index]['brand'] = $cardDetails['brand'];
                         $result[$index]['type'] = $cardDetails['type'];
                         $result[$index]['last4'] = $cardDetails['last4'];
                     }
