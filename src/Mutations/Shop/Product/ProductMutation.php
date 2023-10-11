@@ -1058,7 +1058,7 @@ class ProductMutation extends Controller
         if (!empty($args["input"]["distance"])) {
             $distance = $args["input"]["distance"];
         } else {
-            $distance = 100;
+            $distance = 800;
         }
 
         $queryBuilder = DB::table('orders')
