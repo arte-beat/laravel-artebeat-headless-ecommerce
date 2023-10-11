@@ -154,7 +154,7 @@ class ProductMutation extends Controller
                     $bookingQuery->having('distance_from_client', '<', $maxDistance);
                 }
                 else{
-                    $bookingQuery->having('distance_from_client', '=', 0);
+                    $bookingQuery->having('distance_from_client', '<', 100);
                 }
 
 
