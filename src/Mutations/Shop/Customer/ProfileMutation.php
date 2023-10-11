@@ -617,7 +617,7 @@ class ProfileMutation extends Controller
 
       public function getAllPaymentsHistory($rootValue, array $args, GraphQLContext $context)
     {
-
+        $cardDetails = [];
         if (!bagisto_graphql()->validateAPIUser($this->guard)) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
         }
@@ -640,10 +640,18 @@ class ProfileMutation extends Controller
             $result = $query->paginate($count, ['*'], 'page', $page);
             foreach ($result as $index => $item) {
                 $cardDetails = $this->customerPaymentMethodsRepository->findOrFail($item['payment_method_id']);
-                $result[$index]['mode_of_payment'] = $cardDetails['brand'];
-                $result[$index]['funding'] = $cardDetails['funding'];
-                $result[$index]['type'] = $cardDetails['type'];
-                $result[$index]['last4'] = $cardDetails['last4'];
+                $result[$index]['mode_of_payment'] = '';
+                $result[$index]['funding'] = '';
+                $result[$index]['type'] = '';
+                $result[$index]['last4'] = '';
+                if(!empty($cardDetails))
+                {
+                    $result[$index]['mode_of_payment'] = $cardDetails['brand'];
+                    $result[$index]['funding'] = $cardDetails['funding'];
+                    $result[$index]['type'] = $cardDetails['type'];
+                    $result[$index]['last4'] = $cardDetails['last4'];
+                }
+
                 $result[$index]['order_id'] = '#' . $item['id'];
                 $result[$index]['order_date'] = $item['created_at'];
             }
