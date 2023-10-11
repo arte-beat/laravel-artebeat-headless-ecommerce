@@ -153,13 +153,15 @@ class ProductMutation extends Controller
                     $bookingQuery->having('distance_from_client', '>', $minDistance);
                     $bookingQuery->having('distance_from_client', '<', $maxDistance);
                 }
+                else{
+                    $bookingQuery->having('distance_from_client', '=', 0);
+                }
 
 
             }
         });
 
         $query->orderBy('id', 'desc');
-
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
 
