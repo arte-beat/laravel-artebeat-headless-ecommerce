@@ -480,9 +480,9 @@ class ProfileMutation extends Controller
                 "object" => "bank_account",
                 "country" => $args['input']['country'],
                 "currency" => $args['input']['currency'],
-                "account_holder_name" => $args['input']['account_holder_name'],
-                "account_holder_type" => $args['input']['account_holder_type'],
-                "routing_number" => $args['input']['routing_number'],
+//                "account_holder_name" => $args['input']['account_holder_name'],
+//                "account_holder_type" => $args['input']['account_holder_type'],
+//                "routing_number" => $args['input']['routing_number'],
                 "account_number" => $args['input']['account_number']
             )
         ]);
