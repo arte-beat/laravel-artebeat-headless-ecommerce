@@ -638,22 +638,26 @@ class ProfileMutation extends Controller
             $count = isset($args['first']) ? $args['first'] : 10;
             $page = isset($args['page']) ? $args['page'] : 1;
             $result = $query->paginate($count, ['*'], 'page', $page);
-            foreach ($result as $index => $item) {
-                $cardDetails = $this->customerPaymentMethodsRepository->findOrFail($item['payment_method_id']);
-                $result[$index]['mode_of_payment'] = '';
-                $result[$index]['funding'] = '';
-                $result[$index]['type'] = '';
-                $result[$index]['last4'] = '';
-                if(!empty($cardDetails))
-                {
-                    $result[$index]['mode_of_payment'] = $cardDetails['brand'];
-                    $result[$index]['funding'] = $cardDetails['funding'];
-                    $result[$index]['type'] = $cardDetails['type'];
-                    $result[$index]['last4'] = $cardDetails['last4'];
-                }
+            if(!empty($cardDetails)) {
+                foreach ($result as $index => $item) {
+                    if(!empty($item['payment_method_id']))
+                    {
+                        $cardDetails = $this->customerPaymentMethodsRepository->findOrFail($item['payment_method_id']);
+                    }
+                    $result[$index]['mode_of_payment'] = '';
+                    $result[$index]['funding'] = '';
+                    $result[$index]['type'] = '';
+                    $result[$index]['last4'] = '';
+                    if (!empty($cardDetails)) {
+                        $result[$index]['mode_of_payment'] = $cardDetails['brand'];
+                        $result[$index]['funding'] = $cardDetails['funding'];
+                        $result[$index]['type'] = $cardDetails['type'];
+                        $result[$index]['last4'] = $cardDetails['last4'];
+                    }
 
-                $result[$index]['order_id'] = '#' . $item['id'];
-                $result[$index]['order_date'] = $item['created_at'];
+                    $result[$index]['order_id'] = '#' . $item['id'];
+                    $result[$index]['order_date'] = $item['created_at'];
+                }
             }
         }
         return $result;
