@@ -209,7 +209,7 @@ class RegistrationMutation extends Controller
      */
     public function socialSignUp($rootValue, array $args , GraphQLContext $context) {
         $data = $args;
-        Log::info('Social user data', ['query' => var_export($data, true)]);
+        Log::channel('sociallog')->info('Sociallog_input',$data);
         $validator = Validator::make($data, [
             'access_token' => 'string|required',
             'signup_type' => 'string|required|in:facebook,google,twitter,linkedin,github',
@@ -228,7 +228,8 @@ class RegistrationMutation extends Controller
                 implode(", ", $errorMessage),
                 'Invalid Register Details.'
             );
-            Log::info('Social user fails', ['query' => var_export($validator, true)]);
+            Log::channel('sociallog')->info('sociallog_validator',$validator);
+
         }
 
         $token = $data['access_token'];
@@ -236,26 +237,25 @@ class RegistrationMutation extends Controller
 
         $socialUser = Socialite::driver($signUpType)->userFromToken($token);
 
-        Log::info('Social user', ['query' => var_export($socialUser, true)]);
+        Log::channel('sociallog')->info('Social_log_details',$socialUser);
+
+
         if ($socialUser) {
             $socialLoginDetails = CustomerSocialAccount::where('provider_name', $signUpType)
                 ->where('provider_id', $socialUser->id)
                 ->first();
+            Log::channel('sociallog')->info('Social_log_provider',$socialLoginDetails);
 
             if($socialLoginDetails && $socialLoginDetails->customer_id) {
                 //Customer already exists
                 $customer = $this->customerRepository->findOneByField('id', $socialLoginDetails->customer_id);
-
+                Log::channel('sociallog')->info('Social_log_provider',$socialLoginDetails);
                 return $this->loginCustomer($customer, $data);
 
             } else {
                 // No Customer found
                 if($socialUser->email){
                     $customer = $this->customerRepository->findOneByField('email', $socialUser->email);
-                    if($customer->is_social_login == 0)
-                    {
-                        throw new Exception('This Customer has already registered in by Email/Password');
-                    }
 
                 }
                 // If customer email already exists Login the customer
@@ -263,7 +263,10 @@ class RegistrationMutation extends Controller
                     if ($customer->status == 0 || $customer->is_verified == 0) {
                         throw new CustomException(trans('shop::app.customer.login-form.not-activated'),'Account Not Activated.');
                     }
-
+                    if($customer->is_social_login == 0)
+                    {
+                        throw new Exception('This Customer has already registered in by Email/Password');
+                    }
                     CustomerSocialAccount::create([
                         'provider_name' => $signUpType,
                         'provider_id' => $socialUser->id,
