@@ -4,6 +4,7 @@ namespace Webkul\GraphQLAPI\Mutations\Shop\Customer;
 
 use Exception;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 use JWTAuth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -208,7 +209,7 @@ class RegistrationMutation extends Controller
      */
     public function socialSignUp($rootValue, array $args , GraphQLContext $context) {
         $data = $args;
-
+        Log::info('Social user data', ['query' => var_export($data, true)]);
         $validator = Validator::make($data, [
             'access_token' => 'string|required',
             'signup_type' => 'string|required|in:facebook,google,twitter,linkedin,github',
@@ -227,6 +228,7 @@ class RegistrationMutation extends Controller
                 implode(", ", $errorMessage),
                 'Invalid Register Details.'
             );
+            Log::info('Social user fails', ['query' => var_export($validator, true)]);
         }
 
         $token = $data['access_token'];
@@ -234,6 +236,7 @@ class RegistrationMutation extends Controller
 
         $socialUser = Socialite::driver($signUpType)->userFromToken($token);
 
+        Log::info('Social user', ['query' => var_export($socialUser, true)]);
         if ($socialUser) {
             $socialLoginDetails = CustomerSocialAccount::where('provider_name', $signUpType)
                 ->where('provider_id', $socialUser->id)
