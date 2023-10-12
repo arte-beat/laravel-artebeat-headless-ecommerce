@@ -351,9 +351,9 @@ class RegistrationMutation extends Controller
             $customer->password = bcrypt($password);
             $customer->save();
 
-            try {
-                Mail::queue(new SocialLoginPasswordResetEmail($data));
-            } catch(\Exception $e) {}
+//            try {
+//                Mail::queue(new SocialLoginPasswordResetEmail($data));
+//            } catch(\Exception $e) {}
         }
 
         $remember = isset($data['remember']) ? $data['remember'] : 0;
