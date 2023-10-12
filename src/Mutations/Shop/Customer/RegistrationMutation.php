@@ -237,19 +237,22 @@ class RegistrationMutation extends Controller
 
         $socialUser = Socialite::driver($signUpType)->userFromToken($token);
 
-        Log::channel('sociallog')->info('Social_log_details',$socialUser);
+        $arr[] = $socialUser;
+        Log::channel('sociallog')->info('Social_log_details',$arr);
 
 
         if ($socialUser) {
             $socialLoginDetails = CustomerSocialAccount::where('provider_name', $signUpType)
                 ->where('provider_id', $socialUser->id)
                 ->first();
-            Log::channel('sociallog')->info('Social_log_provider',$socialLoginDetails);
+            $arr2[] = $socialUser;
+            Log::channel('sociallog')->info('Social_log_provider',$arr2);
 
             if($socialLoginDetails && $socialLoginDetails->customer_id) {
                 //Customer already exists
                 $customer = $this->customerRepository->findOneByField('id', $socialLoginDetails->customer_id);
-                Log::channel('sociallog')->info('Social_log_provider',$socialLoginDetails);
+                $carr[] = $customer;
+                Log::channel('sociallog')->info('Social_log_provider',$carr);
                 return $this->loginCustomer($customer, $data);
 
             } else {
@@ -348,9 +351,9 @@ class RegistrationMutation extends Controller
             $customer->password = bcrypt($password);
             $customer->save();
 
-            try {
-                Mail::queue(new SocialLoginPasswordResetEmail($data));
-            } catch(\Exception $e) {}
+//            try {
+//                Mail::queue(new SocialLoginPasswordResetEmail($data));
+//            } catch(\Exception $e) {}
         }
 
         $remember = isset($data['remember']) ? $data['remember'] : 0;
