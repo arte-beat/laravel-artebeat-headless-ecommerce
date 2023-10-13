@@ -330,10 +330,11 @@ class ProfileMutation extends Controller
             $createStripeUser = false;
         }
 
-        if($createStripeUser) {
+        if($createStripeUser === false) {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name
+                "name" => $customer->first_name . ' ' . $customer->last_name,
+                "source" => $args['input']['stripeToken']
             ));
         }
 
@@ -398,7 +399,8 @@ class ProfileMutation extends Controller
         if($createStripeUser) {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name
+                "name" => $customer->first_name . ' ' . $customer->last_name,
+                "source" => $args['input']['stripeToken']
             ));
         }
 
