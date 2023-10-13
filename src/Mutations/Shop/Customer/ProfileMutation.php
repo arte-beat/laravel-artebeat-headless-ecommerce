@@ -457,8 +457,7 @@ class ProfileMutation extends Controller
         if (empty($customer->stripe_customer_id)) {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
+                "name" => $customer->first_name . ' ' . $customer->last_name
             ));
         }
 
@@ -467,8 +466,7 @@ class ProfileMutation extends Controller
         if (count($stripeCustomer) === 0) {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
+                "name" => $customer->first_name . ' ' . $customer->last_name
             ));
         }
         if (!empty($createstripeCustomer)) {
