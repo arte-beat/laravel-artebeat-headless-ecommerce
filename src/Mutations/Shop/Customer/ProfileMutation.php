@@ -315,27 +315,30 @@ class ProfileMutation extends Controller
             throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
         }
 
+        $storePaymentMethod = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $stripe_cust_id = $customer->stripe_customer_id;
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
-        if (empty($customer->stripe_customer_id)) {
+        $stripeCustomer = array();
+        $createStripeUser = true;
+        if (!empty($customer->stripe_customer_id)) {
+            $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
+        }
+
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
+            $createStripeUser = false;
+        }
+
+        if($createStripeUser === false) {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
                 "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
+                "source" => $args['input']['stripeToken']
             ));
         }
 
-        $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
 
-        if (count($stripeCustomer) === 0) {
-            $createstripeCustomer = Stripe\Customer::create(array(
-                "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
-            ));
-        }
         if (!empty($createstripeCustomer)) {
             $stripe_cust_id = $createstripeCustomer->id;
             $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
@@ -378,27 +381,29 @@ class ProfileMutation extends Controller
             throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
         }
 
+        $storePaymentMethod = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $stripe_cust_id = $customer->stripe_customer_id;
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
-        if (empty($customer->stripe_customer_id)) {
+        $stripeCustomer = array();
+        $createStripeUser = true;
+        if (!empty($customer->stripe_customer_id)) {
+            $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
+        }
+
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
+            $createStripeUser = false;
+        }
+
+          if($createStripeUser === false)  {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
                 "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
+                "source" => $args['input']['stripeToken']
             ));
         }
 
-        $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
-
-        if (count($stripeCustomer) === 0) {
-            $createstripeCustomer = Stripe\Customer::create(array(
-                "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
-            ));
-        }
         if (!empty($createstripeCustomer)) {
             $stripe_cust_id = $createstripeCustomer->id;
             $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
@@ -460,11 +465,11 @@ class ProfileMutation extends Controller
             $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
         }
 
-        if (!empty($stripeCustomer) && count($stripeCustomer) === 0) {
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
             $createStripeUser = false;
         }
 
-        if($createStripeUser) {
+          if($createStripeUser === false)  {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
                 "name" => $customer->first_name . ' ' . $customer->last_name
@@ -521,23 +526,24 @@ class ProfileMutation extends Controller
         $stripe_cust_id = $customer->stripe_customer_id;
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
-        if (empty($customer->stripe_customer_id)) {
+        $stripeCustomer = array();
+        $createStripeUser = true;
+        if (!empty($customer->stripe_customer_id)) {
+            $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
+        }
+
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
+            $createStripeUser = false;
+        }
+
+          if($createStripeUser === false)  {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
+                "name" => $customer->first_name . ' ' . $customer->last_name
             ));
         }
 
-        $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
 
-        if (count($stripeCustomer) === 0) {
-            $createstripeCustomer = Stripe\Customer::create(array(
-                "email" => $customer->email,
-                "name" => $customer->first_name . ' ' . $customer->last_name,
-                "source" => $args['stripeToken']
-            ));
-        }
         if (!empty($createstripeCustomer)) {
             $stripe_cust_id = $createstripeCustomer->id;
             $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
