@@ -326,7 +326,7 @@ class ProfileMutation extends Controller
             $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
         }
 
-        if (!empty($stripeCustomer) && count($stripeCustomer) === 0) {
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
             $createStripeUser = false;
         }
 
@@ -391,7 +391,7 @@ class ProfileMutation extends Controller
             $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
         }
 
-        if (!empty($stripeCustomer) && count($stripeCustomer) === 0) {
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
             $createStripeUser = false;
         }
 
@@ -463,7 +463,7 @@ class ProfileMutation extends Controller
             $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
         }
 
-        if (!empty($stripeCustomer) && count($stripeCustomer) === 0) {
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
             $createStripeUser = false;
         }
 
@@ -530,7 +530,7 @@ class ProfileMutation extends Controller
             $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
         }
 
-        if (!empty($stripeCustomer) && count($stripeCustomer) === 0) {
+        if (empty($stripeCustomer) && count($stripeCustomer) === 0) {
             $createStripeUser = false;
         }
 
