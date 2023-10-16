@@ -745,7 +745,6 @@ class CheckoutMutation extends Controller
             Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
             $paymentSuccess = false;
-            $paymentTokenPass = false;
             $stripeCustomer = array();
             $customerDetails = bagisto_graphql()->guard($this->guard)->user();
 
@@ -763,7 +762,6 @@ class CheckoutMutation extends Controller
                     ));
                     $stripe_cust_id = $stripeCustomer->id;
                     $this->customerRepository->where('id', $customerDetails->id)->update(['stripe_customer_id' => $stripe_cust_id]);
-                    $paymentTokenPass = true;
                 }
 
                 if (isset($args['input']['shippingId'])) {
