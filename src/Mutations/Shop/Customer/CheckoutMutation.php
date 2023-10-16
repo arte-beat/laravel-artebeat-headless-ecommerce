@@ -745,6 +745,7 @@ class CheckoutMutation extends Controller
             Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
             $paymentSuccess = false;
+            $paymentTokenPass = false;
             $stripeCustomer = array();
             $customerDetails = bagisto_graphql()->guard($this->guard)->user();
 
@@ -762,6 +763,7 @@ class CheckoutMutation extends Controller
                     ));
                     $stripe_cust_id = $stripeCustomer->id;
                     $this->customerRepository->where('id', $customerDetails->id)->update(['stripe_customer_id' => $stripe_cust_id]);
+                    $paymentTokenPass = true;
                 }
 
                 if (isset($args['input']['shippingId'])) {
@@ -772,6 +774,7 @@ class CheckoutMutation extends Controller
                         "amount" => 100 * $cart->grand_total,
                         "currency" => $cart->base_currency_code,
                         "customer" => $stripe_cust_id,
+                        "source" => $args['input']['card_id'],
                         //"description" => "Test payment from itsolutionstuff.com.",
                         "shipping" => [
                             "name" => $customerDetails->name ?? 'NA',
@@ -786,12 +789,13 @@ class CheckoutMutation extends Controller
                         ]
                     ]);
                 } else {
-                    $stripeCharge = Stripe\Charge::create([
-                        "amount" => 100 * $cart->grand_total,
-                        "currency" => $cart->base_currency_code,
-                        "customer" => $stripe_cust_id,
-                        //"description" => "Test payment from itsolutionstuff.com.",
-                    ]);
+                        $stripeCharge = Stripe\Charge::create([
+                            "amount" => 100 * $cart->grand_total,
+                            "currency" => $cart->base_currency_code,
+                            "customer" => $stripe_cust_id,
+                            "source" => $args['input']['card_id']
+                            //"description" => "Test payment from itsolutionstuff.com.",
+                        ]);
                 }
 
                 if ($stripeCharge) {
