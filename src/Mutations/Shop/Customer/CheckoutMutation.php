@@ -772,6 +772,7 @@ class CheckoutMutation extends Controller
                         "amount" => 100 * $cart->grand_total,
                         "currency" => $cart->base_currency_code,
                         "customer" => $stripe_cust_id,
+                        "source" => $args['input']['card_id'],
                         //"description" => "Test payment from itsolutionstuff.com.",
                         "shipping" => [
                             "name" => $customerDetails->name ?? 'NA',
@@ -786,12 +787,13 @@ class CheckoutMutation extends Controller
                         ]
                     ]);
                 } else {
-                    $stripeCharge = Stripe\Charge::create([
-                        "amount" => 100 * $cart->grand_total,
-                        "currency" => $cart->base_currency_code,
-                        "customer" => $stripe_cust_id,
-                        //"description" => "Test payment from itsolutionstuff.com.",
-                    ]);
+                        $stripeCharge = Stripe\Charge::create([
+                            "amount" => 100 * $cart->grand_total,
+                            "currency" => $cart->base_currency_code,
+                            "customer" => $stripe_cust_id,
+                            "source" => $args['input']['card_id']
+                            //"description" => "Test payment from itsolutionstuff.com.",
+                        ]);
                 }
 
                 if ($stripeCharge) {
