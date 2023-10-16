@@ -316,6 +316,7 @@ class ProfileMutation extends Controller
         }
 
         $storePaymentMethod = [];
+        $createstripeCustomer = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $stripe_cust_id = $customer->stripe_customer_id;
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
@@ -336,6 +337,13 @@ class ProfileMutation extends Controller
                 "name" => $customer->first_name . ' ' . $customer->last_name,
                 "source" => $args['input']['stripeToken']
             ));
+
+        }
+        else{
+            if(!empty($stripe_cust_id))
+            {
+                $stripecardSave =  Stripe\Customer::createSource($stripe_cust_id, ['source' => $args['input']['stripeToken']]);
+            }
         }
 
 
@@ -343,6 +351,9 @@ class ProfileMutation extends Controller
             $stripe_cust_id = $createstripeCustomer->id;
             $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
         }
+
+
+
         $params ['customer_id'] = $customer->id;
         $params ['card_id'] = $args['input']['card'][0]['id'];
         $params ['brand'] = $args['input']['card'][0]['brand'];
@@ -536,7 +547,7 @@ class ProfileMutation extends Controller
             $createStripeUser = false;
         }
 
-          if($createStripeUser === false)  {
+         {
             $createstripeCustomer = Stripe\Customer::create(array(
                 "email" => $customer->email,
                 "name" => $customer->first_name . ' ' . $customer->last_name
