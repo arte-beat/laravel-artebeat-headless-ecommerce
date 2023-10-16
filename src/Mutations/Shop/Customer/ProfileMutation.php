@@ -395,6 +395,8 @@ class ProfileMutation extends Controller
         $storePaymentMethod = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $stripe_cust_id = $customer->stripe_customer_id;
+        $id = $args['id'];
+        $cardDetails = $this->customerPaymentMethodsRepository->findOrFail($id);
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
         $stripeCustomer = array();
@@ -414,7 +416,6 @@ class ProfileMutation extends Controller
                 "source" => $args['input']['stripeToken']
             ));
         }
-
         if (!empty($createstripeCustomer)) {
             $stripe_cust_id = $createstripeCustomer->id;
             $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
@@ -429,11 +430,19 @@ class ProfileMutation extends Controller
         if ($validator->fails()) {
             throw new Exception($validator->messages());
         }
-        try {
-            $storePaymentMethod = $this->customerPaymentMethodsRepository->update($params, $id);
-            return $storePaymentMethod;
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage());
+        if($cardDetails)
+        {
+            $card_id = $cardDetails['card_id'];
+            $update_card = Stripe\Customer::updateSource($stripe_cust_id, $card_id,["name" =>$args['input']['name'] ]);
+
+            if (!empty($update_card)) {
+                try {
+                    $storePaymentMethod = $this->customerPaymentMethodsRepository->update($params, $id);
+                    return $storePaymentMethod;
+                } catch (\Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            }
         }
 
     }
@@ -443,17 +452,22 @@ class ProfileMutation extends Controller
         if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
         }
-
+        $card_delete = [];
         $id = $args['id'];
         $cardExist = $this->customerPaymentMethodsRepository->findOrFail($id);
-
-        try {
-            $this->customerPaymentMethodsRepository->delete($id);
-            return ['success' => trans('admin::app.response.delete-success', ['name' => 'Card Details'])];
-        } catch (\Exception $e) {
-            throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Card Details']));
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        $customer = bagisto_graphql()->guard($this->guard)->user();
+        $stripe_cust_id = $customer->stripe_customer_id;
+        $card_id = $cardExist->card_id;
+        $card_delete = Stripe\Customer::deleteSource($stripe_cust_id, $card_id, []);
+        if ($card_delete['deleted']) {
+            try {
+                $this->customerPaymentMethodsRepository->delete($id);
+                return ['success' => trans('admin::app.response.delete-success', ['name' => 'Card Details'])];
+            } catch (\Exception $e) {
+                throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Card Details']));
+            }
         }
-
     }
 
     public function saveBankDetails($rootValue, array $args, GraphQLContext $context)
