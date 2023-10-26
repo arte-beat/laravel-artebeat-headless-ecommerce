@@ -60,9 +60,7 @@ class BookingPaymentsAndTransactionsMutation extends Controller
         $result = $query->paginate($count,['*'],'page',$page);
 
         foreach ($result as $index => $item) {
-            $result[$index]['mode_of_payment'] = $item->paymentMethodCards[0]['funding'].' '.$item->paymentMethodCards[0]['type'];
             $result[$index]['order_id'] = '#'.$item['id'];
-            $result[$index]['last4'] =$item->paymentMethodCards[0]['last4'];
         }
 
         return $result;
