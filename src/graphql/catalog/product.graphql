@@ -364,7 +364,9 @@ type ShowCaseCollectionResponse {
     images: [Image!] @hasMany
     quantities: [Quantity!] @hasMany
     artists: [Artist]
+    merchantArtists: [Artist]
     promoters: [Promoter]
+    merchantsPromoters: [Promoter]
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
