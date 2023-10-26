@@ -43,6 +43,7 @@ class BookingPaymentsAndTransactionsMutation extends Controller
 //        $query->leftJoin('products', 'cart_items.product_id', '=', 'products.id');
         $query->addSelect("*");
         $query->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name");
+        $query->with('paymentMethodCards');
         if(!empty($args['input']['customer_name'])){
             $query->having("customer_name", "like", "%" .  $args['input']['customer_name'] . "%");
         }
@@ -57,10 +58,13 @@ class BookingPaymentsAndTransactionsMutation extends Controller
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         $result = $query->paginate($count,['*'],'page',$page);
+
         foreach ($result as $index => $item) {
-            $result[$index]['mode_of_payment'] = 'Credit Card';
+            $result[$index]['mode_of_payment'] = $item->paymentMethodCards[0]['funding'].' '.$item->paymentMethodCards[0]['type'];
             $result[$index]['order_id'] = '#'.$item['id'];
+            $result[$index]['last4'] =$item->paymentMethodCards[0]['last4'];
         }
+
         return $result;
     }
 
