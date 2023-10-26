@@ -140,6 +140,7 @@ input ShowCaseCollectionInput {
 input ShowCaseInput {
     id: Int
     title: String!
+    subtitle: String!
     introduction: String!
     description: String!
     website: String
@@ -371,7 +372,8 @@ type ShowCaseCollectionResponse {
 
 type ShowCaseResponse {
     id: ID!
-    title: String!
+    title: String
+    subtitle: String
     introduction: String!
     description: String!
     image: String @rename(attribute: "image_link")
