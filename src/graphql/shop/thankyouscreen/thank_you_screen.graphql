@@ -79,6 +79,7 @@ type ThankYouScreenDataResponse{
     email: String
     qrCode: String
     is_checkedIn: Boolean
+    checkedIn_time: String
     artists: [Artist] @hasMany
     promoters: [Promoter] @hasMany
     booking: BookingProduct @hasOne(relation: "booking_product")
