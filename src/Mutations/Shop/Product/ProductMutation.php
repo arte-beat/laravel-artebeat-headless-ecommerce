@@ -1204,7 +1204,7 @@ class ProductMutation extends Controller
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('cart_items', 'cart_items.id', '=', 'booked_event_tickets_history.cart_items_id')
             ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->select('booked_event_tickets_history.id as orderedTicketId', 'orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price', 'orders.status')
+            ->select('booked_event_tickets_history.id as orderedTicketId', 'orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'booked_event_tickets_history.ticket_id','booked_event_tickets_history.checkedIn_time', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price', 'orders.status')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])

@@ -155,6 +155,7 @@ type BookedTicketResponse
     status: String
     price : Float
     productName:String
+    checkedIn_time:String
     orderedTicketId: Int
     booking: BookingProduct @hasOne(relation: "booking_product")
     deliveryStatus: Int
