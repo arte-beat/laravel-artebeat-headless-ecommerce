@@ -19,7 +19,7 @@ class ActiveUserAuthMiddleware
     {
         $authUser = auth('api')->user();
 
-        if (!empty($authUser)  && $authUser->status == 1) {
+        if (!empty($authUser)  && $authUser->status == 0) {
             auth('api')->logout();
         }
         return $next($request);
