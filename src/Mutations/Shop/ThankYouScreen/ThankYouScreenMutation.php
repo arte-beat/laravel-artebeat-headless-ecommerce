@@ -202,7 +202,7 @@ class ThankYouScreenMutation extends Controller
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $res = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
-            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.checkedIn_time','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
             ->where('booked_event_tickets_history.id',$args['ticket_id'])->first();
 
         return $res;
@@ -219,7 +219,7 @@ class ThankYouScreenMutation extends Controller
             $booking = $product->booking_product;
             if($booking->event_pwd == $args['event_pwd'])
             {
-                $this->bookedTicketRepository->where('id', $args['ticket_id'])->update(['is_checkedIn' => 1]);
+                $this->bookedTicketRepository->where('id', $args['ticket_id'])->update(['is_checkedIn' => 1,'checkedIn_time'=> Carbon::now()]);
             }
 
         }
@@ -228,7 +228,7 @@ class ThankYouScreenMutation extends Controller
         $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query();
         $res = $query->join('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->join('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
-            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
+            ->select('products.*','booked_event_tickets_history.product_id','orders.id as order_id','orders.customer_email as email','orders.customer_first_name as first_name','orders.customer_last_name as last_name','booked_event_tickets_history.id as orderedTicketId','booked_event_tickets_history.qrCode','booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.checkedIn_time','booked_event_tickets_history.ticket_id','orders.created_at','orders.updated_at')
             ->where('booked_event_tickets_history.id',$args['ticket_id'])->first();
 
         return $res;

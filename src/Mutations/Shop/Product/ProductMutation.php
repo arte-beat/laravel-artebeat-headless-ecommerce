@@ -1204,7 +1204,7 @@ class ProductMutation extends Controller
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('cart_items', 'cart_items.id', '=', 'booked_event_tickets_history.cart_items_id')
             ->leftJoin('booking_product_event_ticket_translations', 'booked_event_tickets_history.ticket_id', '=', 'booking_product_event_ticket_translations.booking_product_event_ticket_id')
-            ->select('booked_event_tickets_history.id as orderedTicketId', 'orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price', 'orders.status')
+            ->select('booked_event_tickets_history.id as orderedTicketId', 'orders.customer_first_name as firstname', 'orders.customer_last_name as lastname', 'orders.customer_email as email', 'orders.created_at', 'booked_event_tickets_history.ticket_id','booked_event_tickets_history.checkedIn_time', 'orders.id AS order_id', 'booking_product_event_ticket_translations.name as ticketType', 'cart_items.base_price as price', 'orders.status')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('cart_items.product_id', $args['product_id'])
@@ -1360,7 +1360,7 @@ class ProductMutation extends Controller
             ->leftJoin('booked_event_tickets_history', 'booked_event_tickets_history.product_id', '=', 'products.id')
             ->leftJoin('orders', 'booked_event_tickets_history.orderId', '=', 'orders.id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
-            ->addSelect('products.*', 'products.sku as productName', 'booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name as firstname', 'addresses.last_name  as lastname', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'orders.status', 'booked_event_tickets_history.id as orderedTicketId', 'booked_event_tickets_history.qrCode', 'booked_event_tickets_history.is_checkedIn', 'booked_event_tickets_history.ticket_id', 'orders.created_at as orderDate', DB::raw("(SELECT COUNT('x') FROM booked_event_tickets_history ct
+            ->addSelect('products.*', 'products.sku as productName', 'booked_event_tickets_history.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name as firstname', 'addresses.last_name  as lastname', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'orders.status', 'booked_event_tickets_history.id as orderedTicketId', 'booked_event_tickets_history.qrCode', 'booked_event_tickets_history.is_checkedIn','booked_event_tickets_history.checkedIn_time', 'booked_event_tickets_history.ticket_id', 'orders.created_at as orderDate', DB::raw("(SELECT COUNT('x') FROM booked_event_tickets_history ct
    WHERE ct.product_id = products.id and ct.orderId = orders.id) as name_counter"))
             ->where('products.type', 'booking')
             ->where('orders.customer_email', $owner->email)

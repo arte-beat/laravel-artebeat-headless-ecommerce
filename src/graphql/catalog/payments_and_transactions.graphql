@@ -40,4 +40,12 @@ type BookingPaymentsAndTransactionsResponse {
     last4: String
     created_at: String
     updated_at: String
+    paymentMethodCards : [paymentMethodCards]
+}
+type paymentMethodCards{
+    id:ID!
+    last4:Int
+    brand:String
+    funding:String
+    type:String
 }
