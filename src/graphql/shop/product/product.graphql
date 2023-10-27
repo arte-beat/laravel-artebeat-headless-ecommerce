@@ -188,6 +188,7 @@ type CustomerTicketResponse
     orderedTicketId: Int
     qrCode:String
     is_checkedIn:String
+    checkedIn_time:String
     name_counter:Int
 }
 
