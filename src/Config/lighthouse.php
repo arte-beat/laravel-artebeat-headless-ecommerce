@@ -42,6 +42,9 @@ return [
             
             // Validate Currency in request
             \Webkul\GraphQLAPI\Http\Middleware\CurrencyMiddleware::class,
+
+            // Validate User is Active
+            \Webkul\GraphQLAPI\Http\Middleware\ActiveUserAuthMiddleware::class,
         ],
 
         /*
