@@ -81,7 +81,7 @@ class BagistoGraphql
         'png'   => 'image/png',
 //        'jpe'   => 'image/jpeg',
         'jpeg'  => 'image/jpeg',
-        'jpg'   => 'image/jpeg',
+        'jpg'   => 'image/jpg',
 //        'bmp'   => 'image/bmp',
 //        'webp'  => 'image/webp',
     ];
