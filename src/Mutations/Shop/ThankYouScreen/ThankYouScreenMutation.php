@@ -393,7 +393,10 @@ class ThankYouScreenMutation extends Controller
             $data['ticket_ref'] = $ordered_ticket_id;
             $data['productType'] = 'booking';
             $response['message'] = "Email sent successfully.";
-            $googleCalendarLink = 'https://www.google.com/calendar/render?action=TEMPLATE&text='.urlencode($product->sku).'&dates='.$booking->available_from.'/'.$booking->available_from.'/&details='.urlencode($description).'&location='.urlencode($location);
+            $formattedStartDateTime =date('Ymd\THis', strtotime($booking->available_from));
+            $formattedEndDateTime =date('Ymd\THis', strtotime($booking->available_to));
+//            dd($formattedStartDateTime,$formattedEndDateTime);
+            $googleCalendarLink = 'https://www.google.com/calendar/render?action=TEMPLATE&text='.urlencode($product->sku). '&dates='. $formattedStartDateTime . '/' .$formattedEndDateTime . '&details=' . urlencode($description) . '&location=' . urlencode($location);
             $data['event_calender'] = $googleCalendarLink;
 
         }
