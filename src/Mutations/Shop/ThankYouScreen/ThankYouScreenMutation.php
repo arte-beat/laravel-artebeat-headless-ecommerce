@@ -375,16 +375,28 @@ class ThankYouScreenMutation extends Controller
         $carbonTo = Carbon::parse($booking->to);
         $formattedDateRange = $carbonFrom->format('F j') . ' & ' . $carbonTo->format('j') . ' | ' . $carbonFrom->format('g A') . ' - ' . $carbonTo->format('g A');
 
+
+
+
         $data['event_date'] = $formattedDateRange;
         $data['location'] = $booking->location.",".$booking->city;
+        $image = $product->images;
         if(!empty($product) ) {
+
+
+            $location= $booking->location . ' ' . $booking->city;
+            $description='Your tickets are secured for the upcoming '.$product->sku.' event booked from Arte-Beat! – get ready to be captivated by the magic of the moment! Enjoy your event to the fullest!';
             $pdfName = 'order_'.$ordered_ticket_id.'.pdf';
             $response['path'] = Storage::disk('order')->path($pdfName);
             $data['pdfPath'] = $response['path'];
+            $data['imagePath'] = 'storage/product/'.$image[0]['product_id'].'/'.$image[0]['path'];
             $data['event_name'] = $product->sku;
             $data['ticket_ref'] = $ordered_ticket_id;
             $data['productType'] = 'booking';
             $response['message'] = "Email sent successfully.";
+            $googleCalendarLink = 'https://www.google.com/calendar/render?action=TEMPLATE&text='.urlencode($product->sku).'&dates='.$booking->available_from.'/'.$booking->available_from.'/&details='.urlencode($description).'&location='.urlencode($location);
+            $data['event_calender'] = $googleCalendarLink;
+
         }
         else{
             throw new Exception('Ticket is not available');
