@@ -383,7 +383,6 @@ class ThankYouScreenMutation extends Controller
         $image = $product->images;
         if(!empty($product) ) {
 
-
             $location= $booking->location . ' ' . $booking->city;
             $description='Your tickets are secured for the upcoming '.$product->sku.' event booked from Arte-Beat! – get ready to be captivated by the magic of the moment! Enjoy your event to the fullest!';
             $pdfName = 'order_'.$ordered_ticket_id.'.pdf';
