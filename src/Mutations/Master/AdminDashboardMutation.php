@@ -46,7 +46,8 @@ class AdminDashboardMutation extends Controller
 
             $data['total_event_revenue'] = \Webkul\Sales\Models\OrderItem::with('product')
             ->whereHas('product', function ($query) {
-                $query->where('product_type', '=', null);
+                $query->where('product_type', '=', null)
+                ->where('type', '=', 'booking');
             })
             ->sum('total_with_commission');
 
