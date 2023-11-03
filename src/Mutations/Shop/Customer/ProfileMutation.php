@@ -240,7 +240,6 @@ class ProfileMutation extends Controller
         $data = $args['input'];
 
         $customer = bagisto_graphql()->guard($this->guard)->user();
-//        dd($customer);
         try {
             if (!empty($customer)) {
                 $updatedData['customer_type'] = $args['input']['cutomerType']; // Event Manager =2 ,customer =1
@@ -316,6 +315,7 @@ class ProfileMutation extends Controller
         }
 
         $storePaymentMethod = [];
+        $params = [];
         $createstripeCustomer = [];
         $customer = bagisto_graphql()->guard($this->guard)->user();
         $stripe_cust_id = $customer->stripe_customer_id;
@@ -342,45 +342,64 @@ class ProfileMutation extends Controller
         else{
             if(!empty($stripe_cust_id))
             {
-                $stripecardSave =  Stripe\Customer::createSource($stripe_cust_id, ['source' => $args['input']['stripeToken']]);
+                $validator = Validator::make($args['input'], [
+                    'stripeToken' => 'required'
+                ]);
+                if ($validator->fails()) {
+                    throw new Exception($validator->messages());
+                }
+                $retrieve_card_details_from_stripe =  Stripe\Customer::allSources($stripe_cust_id, ['object' => 'card']);
+                $fingerprint_arr = array_map(function ($item) {
+                    return $item['fingerprint'];
+                }, $retrieve_card_details_from_stripe->data);
+               if(!empty($args['input']['stripeToken']))
+               {
+                   $stripe_token_retrieve = Stripe\Token::retrieve($args['input']['stripeToken'],[]);
+                   $curren_fingerprint = $stripe_token_retrieve->card['fingerprint'];
+                   if(!in_array($curren_fingerprint,$fingerprint_arr))
+                   {
+                       $stripecardSave =  Stripe\Customer::createSource($stripe_cust_id, ['source' => $args['input']['stripeToken']]);
+
+                       $params ['customer_id'] = $customer->id;
+                       $params ['card_id'] = $stripe_token_retrieve->card['id'];
+                       $params ['brand'] = $stripe_token_retrieve->card['brand'];
+                       $params ['funding'] = $stripe_token_retrieve->card['funding'];
+                       $params ['type'] = $stripe_token_retrieve->card['object'];
+                       $params ['country'] = $stripe_token_retrieve->card['country'];
+                       $params ['exp_month'] = $stripe_token_retrieve->card['exp_month'];
+                       $params ['exp_year'] =$stripe_token_retrieve->card['exp_year'];
+                       $params ['fingerprint'] = $stripe_token_retrieve->card['fingerprint'];
+                       $params ['last4'] = $stripe_token_retrieve->card['last4'];
+                       $params ['name'] = $stripe_token_retrieve->card['name'];
+                       $params ['card_response'] = json_encode($stripe_token_retrieve);
+
+                   }
+                   else{
+                       throw new Exception("We dont allow to store duplicate cards,please from already saved cards");
+                   }
+
+               }
+
             }
         }
-
 
         if (!empty($createstripeCustomer)) {
             $stripe_cust_id = $createstripeCustomer->id;
             $this->customerRepository->where('id', $customer->id)->update(['stripe_customer_id' => $stripe_cust_id]);
         }
 
+        if(!empty($params))
+        {
+            try {
+                $storePaymentMethod = $this->customerPaymentMethodsRepository->create($params);
+                return $storePaymentMethod;
+            } catch (\Exception $e) {
+                throw new Exception($e->getMessage());
+            }
 
-
-        $params ['customer_id'] = $customer->id;
-        $params ['card_id'] = $args['input']['card'][0]['id'];
-        $params ['brand'] = $args['input']['card'][0]['brand'];
-        $params ['funding'] = $args['input']['card'][0]['funding'];
-        $params ['type'] = $args['input']['card'][0]['object'];
-        $params ['country'] = $args['input']['card'][0]['country'];
-        $params ['exp_month'] = $args['input']['card'][0]['exp_month'];
-        $params ['exp_year'] = $args['input']['card'][0]['exp_year'];
-        $params ['last4'] = $args['input']['card'][0]['last4'];
-        $params ['name'] = $args['input']['card'][0]['name'];
-        $params ['card_response'] = json_encode($args['input']);
-        $validator = Validator::make($args['input'], [
-            'stripeToken' => 'required',
-            'card' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            throw new Exception($validator->messages());
         }
-        try {
-            $storePaymentMethod = $this->customerPaymentMethodsRepository->create($params);
-            return $storePaymentMethod;
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage());
-        }
-
     }
+
 
     public function updateCardDetails($rootValue, array $args, GraphQLContext $context)
     {
