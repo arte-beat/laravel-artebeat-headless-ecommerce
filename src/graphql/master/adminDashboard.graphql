@@ -17,9 +17,9 @@ type AdminDashboardStatistics {
     total_event_bookings: Int
     total_merchandise_orders: Int
     total_events: Int
-    total_revenue: Int
-    total_event_revenue: Int
-    total_merchandise_revenue: Int
+    total_revenue: Float
+    total_event_revenue: Float
+    total_merchandise_revenue: Float
     total_rating_and_reviews: Int
     total_booking_enquiries: Int
 }
