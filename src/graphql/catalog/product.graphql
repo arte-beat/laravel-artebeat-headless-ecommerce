@@ -316,6 +316,7 @@ type MerchantResponse {
     images: [Image!] @hasMany
     quantities: [Quantity!] @hasMany
     owner: Owner @hasOne
+    eventOrganizer: eventOrganizer @hasOne
     success: String
 }
 
@@ -328,6 +329,12 @@ type TicketBookingResponse {
     qty: Float
 }
 type Owner {
+    id: ID!
+    name: String!
+    email:String!
+}
+
+type eventOrganizer {
     id: ID!
     name: String!
     email:String!
