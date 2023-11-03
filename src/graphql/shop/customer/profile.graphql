@@ -52,7 +52,7 @@ input UpdateProfileInput {
 input CardDetailsInput {
     stripeToken: String!
     object: String,
-    card : [CardResponseInput]!
+    card : [CardResponseInput]
     client_ip: String,
     created: Int,
     livemode: Boolean,
@@ -85,6 +85,7 @@ input CardResponseInput
     funding: String!,
     last4: Int!,
     name: String,
+    fingerprint: String,
     tokenization_method: String,
     wallet: String
 }
@@ -138,6 +139,7 @@ type CardDetailsOutput {
     country: String
     exp_month : Int
     last4:Int
+    fingerprint:String
     card_response: String
     success: String
     account_holder_type : String
