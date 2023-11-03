@@ -42,20 +42,20 @@ class AdminDashboardMutation extends Controller
             })
             ->count();
 
-            $data['total_revenue'] = \Webkul\Sales\Models\OrderItem::sum('total_invoiced');
+            $data['total_revenue'] = \Webkul\Sales\Models\OrderItem::sum('total_with_commission');
 
             $data['total_event_revenue'] = \Webkul\Sales\Models\OrderItem::with('product')
             ->whereHas('product', function ($query) {
                 $query->where('product_type', '=', null);
             })
-            ->sum('total_invoiced');
+            ->sum('total_with_commission');
 
             $data['total_merchandise_revenue'] = \Webkul\Sales\Models\OrderItem::with('product')
             ->whereHas('product', function ($query) {
                 $query->where('product_type', '=', null)
                 ->where('type', '=', 'simple');
             })
-            ->sum('total_invoiced');
+            ->sum('total_with_commission');
 
             $data['total_rating_and_reviews'] = \Webkul\Product\Models\ProductReview::count();
             $data['total_booking_enquiries'] = \Webkul\BookingProduct\Models\BookingProduct::count();
