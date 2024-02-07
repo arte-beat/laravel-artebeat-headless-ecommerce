@@ -15,6 +15,7 @@ use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Customer\Repositories\CustomerPaymentMethodsRepository;
 use \Webkul\Customer\Models\CustomerPaymentMethods;
 use \Webkul\Customer\Models\Customer;
+use App\Models\BillingInfo;
 use Webkul\GraphQLAPI\Validators\Customer\CustomException;
 use Stripe;
 
@@ -489,7 +490,7 @@ class ProfileMutation extends Controller
         }
     }
 
-    public function saveBankDetails($rootValue, array $args, GraphQLContext $context)
+    /*public function saveBankDetails($rootValue, array $args, GraphQLContext $context)
     {
         if (!bagisto_graphql()->validateAPIUser($this->guard)) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
@@ -554,9 +555,60 @@ class ProfileMutation extends Controller
 
         }
         return $storePaymentMethod;
+    }*/
+
+    public function saveBankDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (!bagisto_graphql()->guard($this->guard)->check()) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+        $invoiceInfodata = [ 
+            "customer_id" =>bagisto_graphql()->guard($this->guard)->user()->id,
+            "country" => $args['input']['country'],
+            "currency" => $args['input']['currency'],
+            "account_holder_name" => $args['input']['account_holder_name'],
+            "account_holder_type" => $args['input']['account_holder_type'],
+            "routing_number" => $args['input']['routing_number'],
+            "account_number" => $args['input']['account_number']
+        ];
+        $insertData = BillingInfo::updateOrCreate(
+            ['customer_id' => bagisto_graphql()->guard($this->guard)->user()->id], 
+            $invoiceInfodata
+        );
+        
+        $returndata = [
+            'id' => $insertData->id,
+            'name' => $insertData->account_holder_name,
+            'customer_id' => $insertData->customer_id,
+            'country' => $insertData->country,
+            'account_holder_type' => $insertData->account_holder_type,
+            'currency' => $insertData->currency,
+            'last4' => substr($insertData->account_number, -4),
+            'routing_number' => $insertData->routing_number,
+            'createdAt' => $insertData->created_at,
+            'updatedAt' => $insertData->updated_at,
+        ];
+        
+        $returndataVal = [
+            'id' => $insertData->id,
+            'name' => $insertData->account_holder_name,
+            'customer_id' => $insertData->customer_id,
+            'country' => $insertData->country,
+            'account_holder_type' => $insertData->account_holder_type,
+            'currency' => $insertData->currency,
+            'last4' => substr($insertData->account_number, -4), // Corrected to extract last 4 characters
+            'createdAt' => $insertData->created_at,
+            'card_response' => json_encode($returndata), // Assuming this field requires JSON data
+            'updatedAt' => $insertData->updated_at,
+        ];
+        return $returndataVal;
     }
 
-    public function updateBankDetails($rootValue, array $args, GraphQLContext $context)
+    /*public function updateBankDetails($rootValue, array $args, GraphQLContext $context)
     {
         if (!bagisto_graphql()->validateAPIUser($this->guard)) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
@@ -617,9 +669,55 @@ class ProfileMutation extends Controller
         }
 
         return $storePaymentMethod;
+    }*/
+
+    public function updateBankDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!bagisto_graphql()->validateAPIUser($this->guard)) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.invalid-header'));
+        }
+
+        if (!bagisto_graphql()->guard($this->guard)->check()) {
+            throw new Exception(trans('bagisto_graphql::app.shop.customer.no-login-customer'));
+        }
+        $invoiceInfodata = [ 
+            "account_holder_name" => $args['input']['account_holder_name'],
+            "account_holder_type" => $args['input']['account_holder_type'],
+        ];
+        $insertData = BillingInfo::updateOrCreate(
+            ['customer_id' => bagisto_graphql()->guard($this->guard)->user()->id], 
+            $invoiceInfodata
+        );
+        
+        $returndata = [
+            'id' => $insertData->id,
+            'name' => $insertData->account_holder_name,
+            'customer_id' => $insertData->customer_id,
+            'country' => $insertData->country,
+            'account_holder_type' => $insertData->account_holder_type,
+            'currency' => $insertData->currency,
+            'last4' => substr($insertData->account_number, -4),
+            'routing_number' => $insertData->routing_number,
+            'createdAt' => $insertData->created_at,
+            'updatedAt' => $insertData->updated_at,
+        ];
+        
+        $returndataVal = [
+            'id' => $insertData->id,
+            'name' => $insertData->account_holder_name,
+            'customer_id' => $insertData->customer_id,
+            'country' => $insertData->country,
+            'account_holder_type' => $insertData->account_holder_type,
+            'currency' => $insertData->currency,
+            'last4' => substr($insertData->account_number, -4), // Corrected to extract last 4 characters
+            'createdAt' => $insertData->created_at,
+            'card_response' => json_encode($returndata), // Assuming this field requires JSON data
+            'updatedAt' => $insertData->updated_at,
+        ];
+        return $returndataVal;
     }
 
-    public function deleteBankDetails($rootValue, array $args, GraphQLContext $context)
+    /*public function deleteBankDetails($rootValue, array $args, GraphQLContext $context)
     {
         if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
             throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
@@ -635,6 +733,39 @@ class ProfileMutation extends Controller
         if ($bank_account['deleted']) {
             try {
                 $this->customerPaymentMethodsRepository->delete($id);
+                return ['success' => trans('admin::app.response.delete-success', ['name' => 'Bank Details'])];
+            } catch (\Exception $e) {
+                throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Bank Details']));
+            }
+        }
+    }*/
+
+    public function deleteBankDetails($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['id']) || (isset($args['id']) && !$args['id'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        // Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        // $customer = bagisto_graphql()->guard($this->guard)->user();
+        // $stripe_cust_id = $customer->stripe_customer_id;
+        // $id = $args['id'];
+        // $bankacc = $this->customerPaymentMethodsRepository->findOrFail($id);
+        // $bank_account_id = $bankacc['card_id'];
+        // $bank_account = Stripe\Customer::deleteSource($stripe_cust_id, $bank_account_id, []);
+
+        // if ($bank_account['deleted']) {
+        //     try {
+        //         $this->customerPaymentMethodsRepository->delete($id);
+        //         return ['success' => trans('admin::app.response.delete-success', ['name' => 'Bank Details'])];
+        //     } catch (\Exception $e) {
+        //         throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Bank Details']));
+        //     }
+        // }
+
+        $invoice = BillingInfo::find($args['id']);
+        if ($invoice) {
+            try {
+                $invoice->delete();
                 return ['success' => trans('admin::app.response.delete-success', ['name' => 'Bank Details'])];
             } catch (\Exception $e) {
                 throw new Exception(trans('admin::app.response.delete-failed', ['name' => 'Bank Details']));
@@ -661,6 +792,13 @@ class ProfileMutation extends Controller
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         $result = $query->paginate($count, ['*'], 'page', $page);
+
+        foreach($result as $k=>$val){
+            $getData = BillingInfo::where('customer_id',$customer->id)->first();
+            $getData->last4 = substr($getData->account_number, -4);
+            $result[$k]['paymenthistory'] = $getData;
+            
+        }
 
         return $result;
 

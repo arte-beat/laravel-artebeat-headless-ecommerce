@@ -7,6 +7,8 @@ extend type Mutation @guard(with: ["admin-api"]) {
 
     getLatestTenEvents: [EventBookingResponse!] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\AdminDashboardMutation@getLatestTenEvents")
 
+    getLatestTenCollections: [EventBookingResponse!] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\AdminDashboardMutation@getLatestTenCollections")
+
     getLatestTenPaymentAndTransactions: [BookingPaymentsAndTransactionsResponse!] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Master\\AdminDashboardMutation@getLatestTenPaymentAndTransactions")
 }
 
@@ -22,4 +24,5 @@ type AdminDashboardStatistics {
     total_merchandise_revenue: Float
     total_rating_and_reviews: Int
     total_booking_enquiries: Int
+    total_collections: Int
 }

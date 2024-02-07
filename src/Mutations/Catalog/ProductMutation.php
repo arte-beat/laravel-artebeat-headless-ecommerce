@@ -168,7 +168,6 @@ class ProductMutation extends Controller
         });  
 
         $query->orderBy('id', 'desc');
-
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count, ['*'], 'page', $page);
@@ -334,7 +333,7 @@ class ProductMutation extends Controller
             throw new Exception($validator->messages());
         }
 
-//        $event = new Product();
+       $event = new Product();
 //        $eventdata = $event::where('sku', '=', $data['sku'])->first();
 //
 //        if (!empty($eventdata)) {
@@ -457,7 +456,7 @@ class ProductMutation extends Controller
             if (isset($data['product_id']) && empty($data['id'])) {
                 $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
                 $validator = Validator::make($data, [
-                    'sku' => ['required', 'unique:products,sku', new Slug],
+                    'sku' => ['required', new Slug],
                 ]);
 
                 if ($validator->fails()) {
@@ -556,6 +555,7 @@ class ProductMutation extends Controller
                 $file = isset($args['image']) ? $args['image'] : null;
                 $header_image = isset($args['header_image']) ? $args['header_image'] : null;
                 $section_file = isset($args['section_file']) ? $args['section_file'] : null;
+                $whole_collection_banner = isset($args['whole_collection_banner']) ? $args['whole_collection_banner'] : null;
 
                 $validator = Validator::make($data, [
                     'title' => 'string|required',
@@ -582,6 +582,11 @@ class ProductMutation extends Controller
                         $showcaseSectionFileNameForDB = basename($section_file) . '.' . $section_file->getClientOriginalExtension();
                         Storage::disk('showcase')->put($showcaseSectionFileNameForDB, $section_file->getContent());
                         $data['section_file'] = $showcaseSectionFileNameForDB;
+                    }
+                    if ($whole_collection_banner != null) {
+                        $showcaseWholeCollectionNameForDB = basename($whole_collection_banner) . '.' . $whole_collection_banner->getClientOriginalExtension();
+                        Storage::disk('showcase')->put($showcaseWholeCollectionNameForDB, $whole_collection_banner->getContent());
+                        $data['whole_collection_banner'] = $showcaseWholeCollectionNameForDB;
                     }
                     $showcase = $this->showcaseRepository->create($data);
                     return $showcase;
@@ -611,6 +616,7 @@ class ProductMutation extends Controller
         $file = isset($args['image']) ? $args['image'] : null;
         $header_image = isset($args['header_image']) ? $args['header_image'] : null;
         $section_file = isset($args['section_file']) ? $args['section_file'] : null;
+        $whole_collection_banner = isset($args['whole_collection_banner']) ? $args['whole_collection_banner'] : null;        
 
         $validator = Validator::make($data, [
             'title' => 'string|required',
@@ -639,6 +645,12 @@ class ProductMutation extends Controller
                     Storage::disk('showcase')->put($showcaseSectionFileNameForDB, $section_file->getContent());
                     $data['section_file'] = $showcaseSectionFileNameForDB;
                 }
+                if ($whole_collection_banner != null) {
+                    $showcaseWholeCollectionNameForDB = basename($whole_collection_banner) . '.' . $whole_collection_banner->getClientOriginalExtension();
+                    Storage::disk('showcase')->put($showcaseWholeCollectionNameForDB, $whole_collection_banner->getContent());
+                    $data['whole_collection_banner'] = $showcaseWholeCollectionNameForDB;
+                }
+                
                 $showcase = $this->showcaseRepository->update($data, $id);
                 return $showcase;
             } catch (Exception $e) {
@@ -739,23 +751,26 @@ class ProductMutation extends Controller
         $multipleData = $args['input'];
         $multipleFiles = $args['files'];
         $multipleDeleteData = $args['deleteInput'];
+
         foreach ($multipleDeleteData as $deleteData) {
             Product::where("id", "=", $deleteData['id'])->delete();
             ProductImage::where("product_id", "=", $deleteData['id'])->delete();
         }
+
         foreach ($multipleData as $index => $data) {
             if (isset($data['showcase_id']) && empty($data['product_id'])) {
                 $showcase = $this->showcaseRepository->findOrFail($data['showcase_id']);
                 if (!empty($showcase)) {
                     $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
                     $validator = Validator::make($data, [
-                        'sku' => ['required', 'unique:products,sku', new Slug],
+                        'sku' => ['required', new Slug],
                     ]);
 
                     if ($validator->fails()) {
                         throw new Exception($validator->messages());
                     }
                     $data['type'] = 'simple';
+                    $data['product_type'] = 'showcase';
                     $data['attribute_family_id'] = 1;
                     try {
                         $owner = bagisto_graphql()->guard($this->guard)->user();
@@ -776,10 +791,22 @@ class ProductMutation extends Controller
                             Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
 
                             if ($multipleFiles != null) {
-                                if (isset($multipleFiles[$index])) {
-                                    $files = $multipleFiles[$index];
-                                    bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
+                                
+                                // print_r($id);
+                                // echo "123";
+                                // return count($multipleFiles);
+
+                                for($ii=0; $ii<count($multipleFiles); $ii++) {
+                                    if (isset($multipleFiles[$ii])) {
+                                        $files = $multipleFiles[$ii];
+                                        bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                                    }
                                 }
+                                
+                                // if (isset($multipleFiles[$index])) {
+                                //     $files = $multipleFiles[$index];
+                                //     bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
+                                // }
                             }
 
                             $this->productRepository->syncQuantities($id, $data['quantity']);
@@ -799,8 +826,10 @@ class ProductMutation extends Controller
                     try {
                         $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
                         $validator = Validator::make($data, [
-                            'sku' => ['required', 'unique:products,sku,' . $productId, new Slug],
+                            'sku' => ['required', new Slug],
                         ]);
+
+                        $data['product_type'] = 'showcase';
 
                         if ($validator->fails()) {
                             throw new Exception($validator->messages());
@@ -816,10 +845,19 @@ class ProductMutation extends Controller
                             }
                         }
 
-                        if ($multipleFiles != null) {
-                            if (isset($multipleFiles[$index])) {
-                                $files = $multipleFiles[$index];
-                                bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                        if ($multipleFiles != null && in_array($productId, $data['imageIds'])) {
+                            //get count of product ids in array
+                            $arrcounts = array_count_values($data['imageIds']);                          
+                            for($ii=0; $ii<$arrcounts[$productId]; $ii++) {
+                                if (isset($multipleFiles[$ii])) {
+                                    $files = $multipleFiles[$ii];
+                                    bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                                    unset($multipleFiles[$ii]);
+                                }
+                            }
+
+                            if ($multipleFiles != null) {
+                                $multipleFiles = array_values($multipleFiles);
                             }
                         }
                         $this->productRepository->syncQuantities($productId, $data['quantity']);
@@ -830,7 +868,6 @@ class ProductMutation extends Controller
                 } else {
                     throw new Exception("Unable to process at the moment. Please try again after sometime.");
                 }
-//                dd($updateProduct);
             }
         }
 //        dd($updateProduct);
@@ -868,7 +905,7 @@ class ProductMutation extends Controller
             throw new Exception($validator->messages());
         }
 
-//        $event = new Product();
+        $event = new Product();
 //        $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
 //
 //        if (!empty($eventdata)) {

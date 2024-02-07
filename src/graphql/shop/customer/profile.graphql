@@ -160,6 +160,7 @@ type EventOrganizerProfileDetailsOutput {
     name: String
     image: String
     imageUrl: String @rename(attribute: "image_url")
+    paymenthistory:String
     paymentMethods : [CardDetailsOutput] @hasOne(relation: "payment_methods")
     defaultAddress: CustomerAddress @hasOne(relation: "default_address")
     createdAt: DateTime @rename(attribute: "created_at")
