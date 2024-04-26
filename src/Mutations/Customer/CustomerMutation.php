@@ -15,6 +15,7 @@ use Webkul\Customer\Repositories\CustomerGroupRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Customer\Models\Customer;
 use App\Events\SendAccountBlockEvent;
+use Illuminate\Support\Facades\DB;
 
 class CustomerMutation extends Controller
 {
@@ -196,6 +197,91 @@ class CustomerMutation extends Controller
             $query->where('email', 'like', '%' . urldecode($args['input']['email']) . '%');
         }
         $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function filterCustomerEvents($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Customer\Models\Customer::query();
+
+        $query->select("customers.*")->where('customer_type', 2);
+
+        if(isset($args['input']['name']) && !empty($args['input']['name'])) {
+            $query->where(function ($nameQuery) use ($args) {
+                $nameQuery->where('customers.first_name', 'LIKE', '%' . $args['input']['name'] . '%');
+                $nameQuery->orWhere('customers.last_name', 'LIKE', '%' . $args['input']['name'] . '%');
+            });
+        }
+        if(isset($args['input']['phone']) && !empty($args['input']['phone'])) {
+            $query->where('customers.phone', 'like', '%' . urldecode($args['input']['phone']) . '%');
+        }
+        if(isset($args['input']['email']) && !empty($args['input']['email'])) {
+            $query->where('customers.email', 'like', '%' . urldecode($args['input']['email']) . '%');
+        }
+        $query->join('products', 'customers.id', '=', 'products.owner_id')->where('event_status', '=', '1');
+        $query->groupBy('customers.id');
+        $query->orderBy('customers.id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function filterCustomerTransaction($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Customer\Models\Customer::query();
+        $query->select("customers.*");
+
+        if(isset($args['input']['name']) && !empty($args['input']['name'])) {
+            $query->where(function ($nameQuery) use ($args) {
+                $nameQuery->where('customers.first_name', 'LIKE', '%' . $args['input']['name'] . '%');
+                $nameQuery->orWhere('customers.last_name', 'LIKE', '%' . $args['input']['name'] . '%');
+            });
+        }
+        if(isset($args['input']['phone']) && !empty($args['input']['phone'])) {
+            $query->where('phone', 'like', '%' . urldecode($args['input']['phone']) . '%');
+        }
+        if(isset($args['input']['email']) && !empty($args['input']['email'])) {
+            $query->where('email', 'like', '%' . urldecode($args['input']['email']) . '%');
+        }
+
+        $query->join('orders', 'customers.id', '=', 'orders.customer_id');
+        $query->groupBy('customers.id');
+        $query->orderBy('customers.id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function filterPastTransactions($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = DB::table('customer_payment');
+        $today = date('Y-m-d');
+
+        $query->select("customer_payment.*")->whereDate('customer_payment.created_at', '<', $today)->where('customer_id', '=', $args['id']);
+        $query->orderBy('customer_payment.created_at', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function filterPendingTransactions($rootValue, array $args, GraphQLContext $context)
+    {
+        $today = date('Y-m-d');
+
+        $query = \Webkul\Product\Models\Product::query();        
+        $query->select('products.id as event_id', 'product_flat.name as event_name', 'products.created_at');
+        $query->selectRaw('COALESCE(SUM(order_items.base_total), 0) as total_amount');
+        $query->join('product_flat', 'products.id', '=', 'product_flat.product_id');
+        $query->leftjoin('order_items', 'products.id', '=', 'order_items.product_id');
+        $query->whereRaw('products.id NOT IN (select id from customer_payment where customer_id = '.$args['id'].')')->where('products.owner_id', '=', $args['id'])->where('products.type', '=', 'booking')->where('products.event_status', '!=', '2');
+        $query->groupBy('products.id');
+        $query->orderBy('products.id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;

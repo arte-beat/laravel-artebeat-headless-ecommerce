@@ -491,4 +491,65 @@ class ThankYouScreenMutation extends Controller
         $page = isset($args['page']) ? $args['page'] : 1;
         return $query->paginate($count, ['*'], 'page', $page);
     }
+
+    public function getAllDetailsByOrder($rootValue, array $args, GraphQLContext $context)
+    {
+        DB::enableQueryLog();
+        $query = \Webkul\GraphQLAPI\Models\Catalog\Product::query()
+            ->leftJoin('cart_items', 'products.id', '=', 'cart_items.product_id')
+            ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
+            ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
+            ->leftJoin('order_payment', 'order_payment.order_id', '=', 'orders.id') 
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.type as productType', 'cart_items.ticket_id', 'orders.id AS order_id', 'cart_items.total as price', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'cart_items.id as cart_id','addresses.address1','addresses.address2','addresses.city','addresses.state','addresses.country','addresses.postcode', 'order_payment.id as order_payment_id', 'order_payment.method', 'order_payment.method_title', 'cart_items.total_with_commission', 'orders.shipping_description')
+            ->whereIn('orders.status', ['completed', 'pending'])
+            ->whereIn('products.type', ['booking', 'simple'])
+            ->whereNULL('products.product_type');
+            $query->where('orders.id', $args['order_id']);
+        $query->groupBy('cart_items.ticket_id');
+        $query->orderBy('orders.id', 'desc');
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        $res = $query->paginate($count, ['*'], 'page', $page);
+        
+        if(!empty($res))
+        {
+            foreach ($res as $key=>$value)
+            {
+                $deliveredProduct = $this->customerDeliveryStatusRepository->findOneWhere([
+                    'cart_id' => $value['cart_id'],
+                ]);
+
+                if(!empty($deliveredProduct['status']))
+                {
+                    $res[$key]['deliveryStatus'] = 1 ;
+                }
+                else{
+                    $res[$key]['deliveryStatus'] = 0;
+                }
+            }
+
+        }
+
+        return $res;
+    }
+
+    public function getOrderData($rootValue, array $args, GraphQLContext $context)
+    {
+        DB::enableQueryLog();
+        $query = DB::table('orders');
+        $query
+            ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
+            ->leftJoin('order_payment', 'orders.id', '=', 'order_payment.order_id')
+            ->leftJoin('cart', 'orders.cart_id', '=', 'cart.id')
+            ->select('orders.*','order_payment.method as payment_method','orders.id as order_id','orders.customer_email','orders.customer_first_name','orders.customer_last_name', 'addresses.address1','addresses.address2','addresses.city','addresses.state','addresses.country','addresses.postcode', 'orders.total_qty_ordered', 'orders.grand_total', 'orders.shipping_description')
+            ->selectRaw('SUM(cart.commission_amount + cart.transaction_fee) as total_fees')
+            ->selectRaw('CONCAT(addresses.address1," ",addresses.address2) as address_info')
+            ->selectRaw('CONCAT(orders.customer_first_name," ",orders.customer_last_name) as customer_name');
+            $query->where('orders.id', $args['order_id']);
+            $query->where('addresses.order_id', $args['order_id']);
+        $order = $query->first();
+
+        return $order;
+    }
+
 }
