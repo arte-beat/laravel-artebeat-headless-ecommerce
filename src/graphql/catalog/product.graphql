@@ -25,12 +25,14 @@ extend type Query @guard{
 
     getCollections(input: FilterCollectionsInput ): [ShowCaseCollectionResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@collectionFilter")
 
-
+    owner(id: owner_id @eq): Customer @find(model: "Webkul\\Customer\\Models\\Customer")
 }
 
 
 extend type Query @guard(with: ["api", "admin-api"]) {
     getEvents(input: FilterEventsInput ): [EventBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
+
+    getEventsAdmin(input: FilterEventsInput ): [EventAdminBookingResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@eventFilter")
 
     getallMerchants(input: FilterEventsInput ): [MerchantResponse!]  @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@merchFilter")
 
@@ -59,9 +61,13 @@ extend type Mutation @guard {
 
     updateMerchantEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!, deleteInput: [DeleteInput]): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateMerchantEventBooking")
 
-    createShowcase(image: Upload, header_image: Upload, section_file: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeShowCase")
+    createShowcaseEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeShowcaseEventBooking")
 
-    updateShowcase(image: Upload, header_image: Upload, section_file: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowCase")
+    updateShowcaseEventBooking(files: [[Upload]], input: [MerchantEventBookingInput]!, deleteInput: [DeleteInput]): [MerchantEventBookingResponse] @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowcaseEventBooking")
+
+    createShowcase(image: Upload, header_image: Upload, section_file: Upload, whole_collection_banner: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@storeShowCase")
+
+    updateShowcase(image: Upload, header_image: Upload, section_file: Upload, whole_collection_banner: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowCase")
 
     deleteShowcase(id: ID!): Artist @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@deleteShowcase")
 
@@ -119,6 +125,10 @@ input DeleteInput {
     id: Int
 }
 
+input ImageIds {
+    id: Int
+}
+
 input RemoveImagesInput {
     id: Int
 }
@@ -133,8 +143,14 @@ input ShowCaseCollectionInput {
     name: String!
     description: String!
     price: Float
+    weight: Float
+    art_label: String
+    art_title: String
+    art_material: String
+    art_created_date: Date
     quantity: [QuantityInput]
     removeImages: [RemoveImagesInput]
+    imageIds: [Int!]
 }
 
 input ShowCaseInput {
@@ -143,6 +159,7 @@ input ShowCaseInput {
     subtitle: String!
     introduction: String!
     description: String!
+    short_artist_bio: String!
     website: String
     tiktok: String
     twitter: String
@@ -165,6 +182,10 @@ input UpdateProductInput {
     locale: String!
     sku: String!
     name: String!
+    art_label: String!
+    art_title: String!
+    art_material: String!
+    art_created_date: Date
     productNumber: String @rename(attribute: "product_number")
     urlKey: String! @rename(attribute: "url_key")
     taxCategoryId: Int @rename(attribute: "tax_category_id")
@@ -189,7 +210,7 @@ input UpdateProductInput {
     width: Float
     height: Float
     depth: Float
-    weight: Float!
+    weight: Float!    
     customerGroupPrices: [CustomerGroupPriceInput] @rename(attribute: "customer_group_prices")
     inventories: [InventoriesInput!]
     categories: [Int!]
@@ -217,6 +238,10 @@ input UpdateVariantInput {
     inventories: [VariantInventoryInput!]
     price: Float!
     weight: Float!
+    art_label: String!
+    art_title: String!
+    art_material: String!
+    art_created_date: Date
     status: Boolean!
 }
 
@@ -288,6 +313,33 @@ type EventBookingResponse {
     id: ID!
     type: String!
     event_status: Int
+    owner_id: Int
+    product_type: String!
+    parentId: ID @rename(attribute: "parent_id")
+    parent: EventBookingResponse @belongsTo(relation: "parent")
+    isHeroEvent: Int @rename(attribute: "is_hero_event")
+    isFeatureEvent: Int @rename(attribute: "is_feature_event")
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    booking: BookingProduct @hasOne(relation: "booking_product")
+    images: [Image!] @hasMany
+    artists: [Artist] @hasMany
+    promoters: [Promoter] @hasMany
+    merchants: [MerchantEventBookingResponse!] @hasMany
+    success: String
+    owner: Owner! @hasOne
+    commission : Float
+}
+
+type EventAdminBookingResponse {
+    id: ID!
+    type: String!
+    event_status: Int
+    owner_id: Int
+    owner: Owner! @hasOne
+    eventOrganizer: eventOrganizer @hasOne
+    product_type: String!
     parentId: ID @rename(attribute: "parent_id")
     parent: EventBookingResponse @belongsTo(relation: "parent")
     isHeroEvent: Int @rename(attribute: "is_hero_event")
@@ -386,9 +438,11 @@ type ShowCaseResponse {
     subtitle: String
     introduction: String!
     description: String!
+    short_artist_bio: String
     image: String @rename(attribute: "image_link")
     header_image: String @rename(attribute: "header_image_link")
     section_file: String @rename(attribute: "section_file_link")
+    whole_collection_banner: String @rename(attribute: "whole_collection_banner_link")
     website: String
     tiktok: String
     twitter: String
@@ -411,6 +465,7 @@ type Product {
     id: ID!
     event_status: Int!
     type: String!
+    product_type: String!
     attributeFamilyId: Int! @rename(attribute: "attribute_family_id")
     name: String! @rename(attribute: "sku")
     sku: String!
@@ -468,8 +523,8 @@ type ProductFlat {
     productNumber: String @rename(attribute: "product_number")
     name: String
     merch_type: Int
-    description: String
-    shortDescription: String @rename(attribute: "short_description")
+    description: String!
+    shortDescription: String! @rename(attribute: "short_description")
     urlKey: String @rename(attribute: "url_key")
     new: Boolean
     featured: Boolean
@@ -482,6 +537,10 @@ type ProductFlat {
     specialPriceFrom: String @rename(attribute: "special_price_from")
     specialPriceTo: String @rename(attribute: "special_price_to")
     weight: Float
+    art_label: String
+    art_title: String
+    art_material: String
+    art_created_date: Date
     color: Int
     colorLabel: String @rename(attribute: "color_label")
     size: Int

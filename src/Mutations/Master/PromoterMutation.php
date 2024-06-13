@@ -8,6 +8,7 @@ use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Product\Repositories\PromoterRepository;
 use Nuwave\Lighthouse\Support\Contracts\GraphQLContext;
 use Webkul\Product\Models\Promoter;
+use Webkul\Product\Models\Event;
 
 class PromoterMutation extends Controller
 {
@@ -130,6 +131,23 @@ class PromoterMutation extends Controller
             $query->where('promoter_name', 'like', '%' . urldecode($args['input']['promoter_name']) . '%');
         }
         $query->orderBy('id', 'desc');
+
+        $count = isset($args['first']) ? $args['first'] : 10;
+        $page = isset($args['page']) ? $args['page'] : 1;
+        return $query->paginate($count,['*'],'page',$page);
+    }
+
+    public function filterEventPromoter($rootValue, array $args, GraphQLContext $context)
+    {
+        $query = \Webkul\Product\Models\Promoter::query();
+
+        if(isset($args['input']['promoter_name']) && !empty($args['input']['promoter_name'])) {
+
+            $query->where('promoters.promoter_name', 'like', '%' . urldecode($args['input']['promoter_name']) . '%');
+        }
+
+        $query->join('event_performers', 'promoters.id', '=', 'event_performers.promoter_id');
+        $query->orderBy('promoters.id', 'desc');
 
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;

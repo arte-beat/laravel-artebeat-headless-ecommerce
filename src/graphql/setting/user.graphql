@@ -40,7 +40,7 @@ extend type Mutation {
     updateAdminProfile(image: Upload,input: AdminInput!): User
     @guard @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Setting\\UserMutation@updateAdminProfile")
 
-#    updateAdminProfile(image: Upload, header_image: Upload, section_file: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowCase")
+#    updateAdminProfile(image: Upload, header_image: Upload, section_file: Upload, whole_collection_banner: Upload, input: ShowCaseInput!): ShowCaseResponse @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\ProductMutation@updateShowCase")
 }
 
 

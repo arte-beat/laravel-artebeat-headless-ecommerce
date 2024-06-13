@@ -33,7 +33,9 @@ class AdminDashboardMutation extends Controller
             $data['total_event_organisers'] = \Webkul\Customer\Models\Customer::where('customer_type', 2)->count();
             $data['total_artists'] = \Webkul\Product\Models\Artist::count();
             $data['total_event_bookings'] = \Webkul\Product\Models\Product::where('type','booking')->where('product_type',null)->count();
-            $data['total_events'] = \Webkul\Product\Models\Product::count();
+            // $data['total_events'] = \Webkul\Product\Models\Product::count();
+            $data['total_events'] = \Webkul\Product\Models\Product::where('product_type', null)->count();
+            $data['total_collections'] = \Webkul\Product\Models\Product::where('product_type', '=', "showcase")->count();
 
             $data['total_merchandise_orders'] = \Webkul\Sales\Models\OrderItem::with('product')
             ->whereHas('product', function ($query) {
@@ -90,7 +92,17 @@ class AdminDashboardMutation extends Controller
     public function getLatestTenEvents($rootValue, array $args, GraphQLContext $context)
     {
         try {
-            $data = \Webkul\Product\Models\Product::orderBy('id', 'desc')->take(10)->get();
+            $data = \Webkul\Product\Models\Product::where('product_type',null)->orderBy('id', 'desc')->take(10)->get();
+            return $data;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    public function getLatestTenCollections($rootValue, array $args, GraphQLContext $context)
+    {
+        try {
+            $data = \Webkul\Product\Models\Product::where('product_type', '=', "showcase")->orderBy('id', 'desc')->take(10)->get();
             return $data;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());

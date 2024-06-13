@@ -4,6 +4,8 @@ extend type Query @guard(with: ["admin-api"]){
     getAllBookingPaymentsAndTransactionsResponse(input: BookingPaymentsAndTransactionsInput): [BookingPaymentsAndTransactionsResponse!] @paginate(type: "paginator", defaultCount: 10, resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getAllBookingPaymentsAndTransactionsResponse")
 
     getParticularBookingPaymentsAndTransactionsResponse(id: ID!): BookingPaymentsAndTransactionsResponse! @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getParticularBookingPaymentsAndTransactionsResponse")
+
+    getTransactionListByCustomerId(input: BookingPaymentsAndTransactionsInput): [BookingPaymentsAndTransactionsResponse!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Catalog\\BookingPaymentsAndTransactionsMutation@getTransactionListByCustomerId")
 }
 
 extend type Mutation @guard(with: ["admin-api"]) {
@@ -19,6 +21,8 @@ input BookingPaymentsAndTransactionsInput {
     customer_name: String
     email: String
     status: String
+    id: ID!
+    order_id: String
 }
 
 type ChangeOrderStatusResponse {

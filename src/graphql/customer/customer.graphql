@@ -2,7 +2,17 @@
 extend type Query @guard {
     customers(input: FilterCustomerInput): [Customer!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@filterCustomer")
 
+    customers_transaction(input: FilterCustomerInput): [Customer!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@filterCustomerTransaction")
+
+    customers_events(input: FilterCustomerInput): [Customer!] @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@filterCustomerEvents")
+
     customer(id: ID @eq): Customer @find(model: "Webkul\\Customer\\Models\\Customer")
+
+    customer_bankdetails(id: ID!): CustomerBankDetails @find(model: "Webkul\\Customer\\Models\\BillingInfos")
+
+    customers_past_transaction(id: ID!): FilterCustomerPastTrans @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@filterPastTransactions")
+
+    customers_pending_transaction(id: ID!): FilterCustomerPendTrans @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Customer\\CustomerMutation@filterPendingTransactions")
 }
 
 extend type Mutation @guard {
@@ -82,8 +92,37 @@ type Customer {
     status: Boolean
 #    customerGroup: CustomerGroup @belongsTo(relation: "group")
     addresses: [CustomerAddress] @hasMany
+    bankDetails: [CustomerBankDetails]
     defaultAddress: CustomerAddress @hasOne(relation: "default_address")
     createdAt: DateTime @rename(attribute: "created_at")
     updatedAt: DateTime @rename(attribute: "updated_at")
     success: String
+}
+
+type CustomerBankDetails {
+    id: ID!
+    customer_id: ID!
+    accountHolderName: String! @rename(attribute: "account_holder_name")
+    accountHolderType: String! @rename(attribute: "account_holder_type")
+    accountNumber: String! @rename(attribute: "account_number")
+    routingNumber: String! @rename(attribute: "routing_number")
+    country: String!
+    currency: String!
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+}
+
+type FilterCustomerPendTrans {
+    event_id: ID!
+    event_name: String!
+    total_amount: Float
+    createdAt: DateTime @rename(attribute: "created_at")
+}
+
+type FilterCustomerPastTrans {
+    transaction_id: ID!
+    transferred_amount: Float @rename(attribute: "total_amount")
+    description: String!
+    status: String!
+    date_of_transaction: DateTime @rename(attribute: "created_at")
 }

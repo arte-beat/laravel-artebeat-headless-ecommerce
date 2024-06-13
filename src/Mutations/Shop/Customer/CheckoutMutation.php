@@ -347,7 +347,7 @@ class CheckoutMutation extends Controller
                     }
                 }
 
-//                if (Cart::hasError() || ! Cart::saveCustomerAddress($data)) {
+            //    if (Cart::hasError() || ! Cart::saveCustomerAddress($data)) {
                 if (!Cart::saveCustomerAddress($data)) {
                     throw new CustomException(
                         trans('bagisto_graphql::app.shop.response.wrong-error'),
@@ -545,7 +545,7 @@ class CheckoutMutation extends Controller
         }
 
         try {
-//            if (Cart::hasError() || !Cart::saveShippingMethod($data['shipping_method'])) {
+        //    if (Cart::hasError() || !Cart::saveShippingMethod($data['shipping_method'])) {
             if (!Cart::saveShippingMethod($data['shipping_method'])) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.error-payment-selection'),
@@ -603,7 +603,7 @@ class CheckoutMutation extends Controller
         }
 
         try {
-//            if (Cart::hasError() || ! Cart::savePaymentMethod($data['payment'])) {
+            // if (Cart::hasError() || ! Cart::savePaymentMethod($data['payment'])) {
             if (!Cart::savePaymentMethod($data['payment'])) {
                 throw new CustomException(
                     trans('bagisto_graphql::app.shop.response.error-payment-save'),
@@ -749,7 +749,9 @@ class CheckoutMutation extends Controller
             $customerDetails = bagisto_graphql()->guard($this->guard)->user();
 
             if (!empty($customerDetails) && !empty($customerDetails->id)) {
+                
                 $stripe_cust_id = $customerDetails->stripe_customer_id;
+
                 if (!empty($stripe_cust_id)) {
                     $stripeCustomer = Stripe\Customer::retrieve($stripe_cust_id);
                 }
@@ -787,13 +789,34 @@ class CheckoutMutation extends Controller
                         ]
                     ]);
                 } else {
+                    if($cart->grand_total==0) {
+                        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET'));
+                        $stripeCharge = $stripe->checkout->sessions->create([
+                            'line_items' => [
+                                [
+                                    'price_data' => [
+                                        'unit_amount' => 0,
+                                        'product_data' => ['name' => 'Event Ticket'],
+                                        'currency' => 'aed',
+                                    ],
+                                    'quantity' => 1,
+                                ],
+                            ],
+                            'mode' => 'payment',
+                            'success_url' => 'https://example.com/success',
+                            'cancel_url' => 'https://example.com/cancel',
+                            // 'ui_mode' => 'embedded',
+                            // 'redirect_on_completion' => 'never'
+                        ]);
+                    } else {
                         $stripeCharge = Stripe\Charge::create([
                             "amount" => 100 * $cart->grand_total,
                             "currency" => $cart->base_currency_code,
                             "customer" => $stripe_cust_id,
-                            "source" => $args['input']['card_id']
-                            //"description" => "Test payment from itsolutionstuff.com.",
+                            "source" => $args['input']['card_id'],
+                            "description" => "Payment made for an event on Arte-Beat.com"                                               
                         ]);
+                    }
                 }
 
                 if ($stripeCharge) {
@@ -814,54 +837,56 @@ class CheckoutMutation extends Controller
                         $storePaymentMethod['id'] = $cardExistCheck['id'];
                     }
                     else{
-                        $card["card_id"] = $stripeCharge["source"]["id"];
-                        $card["object"] = $stripeCharge["source"]["object"];
-                        $card["address_city"] = $stripeCharge["source"]["address_city"];
-                        $card["address_country"] = $stripeCharge["source"]["address_country"];
-                        $card["address_line1"] = $stripeCharge["source"]["address_line1"];
-                        $card["address_line1_check"] = $stripeCharge["source"]["address_line1_check"];
-                        $card["address_line2"] = $stripeCharge["source"]["address_line2"];
-                        $card["address_state"] = $stripeCharge["source"]["address_state"];
-                        $card["address_zip"] = $stripeCharge["source"]["address_zip"];
-                        $card["address_zip_check"] = $stripeCharge["source"]["address_zip_check"];
-                        $card["brand"] = $stripeCharge["source"]["brand"];
-                        $card["country"] = $stripeCharge["source"]["country"];
-                        $card["cvc_check"] = $stripeCharge["source"]["cvc_check"];
-                        $card["dynamic_last4"] = $stripeCharge["source"]["dynamic_last4"];
-                        $card["exp_month"] = $stripeCharge["source"]["exp_month"];
-                        $card["exp_year"] = $stripeCharge["source"]["exp_year"];
-                        $card["fingerprint"] = $stripeCharge["source"]["fingerprint"];
-                        $card["funding"] = $stripeCharge["source"]["funding"];
-                        $card["last4"] = $stripeCharge["source"]["last4"];
-                        $card["metadata"] = $stripeCharge["source"]["metadata"];
-                        $card["name"] = $stripeCharge["source"]["name"];
-                        $card["tokenization_method"] = $stripeCharge["source"]["tokenization_method"];
-                        $card["wallet"] = $stripeCharge["source"]["wallet"];
                         $params ['customer_id']= $customerDetails->id;
-                        $params ['card_id']=$card['card_id'];
-                        $params ['brand']=$card['brand'];
-                        $params ['funding']=$card['funding'];
-                        $params ['type']= $card['object'];
-                        $params ['country']= $card['country'];
-                        $params ['exp_month']= $card['exp_month'];
-                        $params ['exp_year']= $card['exp_year'];
-                        $params ['last4']= $card['last4'];
-                        $params ['name']= $card['name'];
-                        $params ['fingerprint']= $card['fingerprint'];
-                        $params ['card_response']= json_encode($card);
+                        if ($stripeCharge && $cart->grand_total!=0) {
+                            $card["card_id"] = $stripeCharge["source"]["id"];
+                            $card["object"] = $stripeCharge["source"]["object"];
+                            $card["address_city"] = $stripeCharge["source"]["address_city"];
+                            $card["address_country"] = $stripeCharge["source"]["address_country"];
+                            $card["address_line1"] = $stripeCharge["source"]["address_line1"];
+                            $card["address_line1_check"] = $stripeCharge["source"]["address_line1_check"];
+                            $card["address_line2"] = $stripeCharge["source"]["address_line2"];
+                            $card["address_state"] = $stripeCharge["source"]["address_state"];
+                            $card["address_zip"] = $stripeCharge["source"]["address_zip"];
+                            $card["address_zip_check"] = $stripeCharge["source"]["address_zip_check"];
+                            $card["brand"] = $stripeCharge["source"]["brand"];
+                            $card["country"] = $stripeCharge["source"]["country"];
+                            $card["cvc_check"] = $stripeCharge["source"]["cvc_check"];
+                            $card["dynamic_last4"] = $stripeCharge["source"]["dynamic_last4"];
+                            $card["exp_month"] = $stripeCharge["source"]["exp_month"];
+                            $card["exp_year"] = $stripeCharge["source"]["exp_year"];
+                            $card["fingerprint"] = $stripeCharge["source"]["fingerprint"];
+                            $card["funding"] = $stripeCharge["source"]["funding"];
+                            $card["last4"] = $stripeCharge["source"]["last4"];
+                            $card["metadata"] = $stripeCharge["source"]["metadata"];
+                            $card["name"] = $stripeCharge["source"]["name"];
+                            $card["tokenization_method"] = $stripeCharge["source"]["tokenization_method"];
+                            $card["wallet"] = $stripeCharge["source"]["wallet"];
+                            $params ['card_id']=$card['card_id'];
+                            $params ['brand']=$card['brand'];
+                            $params ['funding']=$card['funding'];
+                            $params ['type']= $card['object'];
+                            $params ['country']= $card['country'];
+                            $params ['exp_month']= $card['exp_month'];
+                            $params ['exp_year']= $card['exp_year'];
+                            $params ['last4']= $card['last4'];
+                            $params ['name']= $card['name'];
+                            $params ['fingerprint']= $card['fingerprint'];
+                            $params ['card_response']= json_encode($card);
+                        }
                         $storePaymentMethod = $this->customerPaymentMethodsRepository->create($params);
                     }
                 }
             }
 
             // Old bagisto functionality
-            /*if ($redirectUrl = Payment::getRedirectUrl($cart)) {
-                return [
-                    'success'           => true,
-                    'redirect_url'      => $redirectUrl,
-                    'selected_method'   => $cart->payment->method,
-                ];
-            }*/
+            // if ($redirectUrl = Payment::getRedirectUrl($cart)) {
+            //     return [
+            //         'success'           => true,
+            //         'redirect_url'      => null,
+            //         'selected_method'   => $cart->payment->method,
+            //     ];
+            // }
 
             if ($paymentSuccess === true) {
                 $order = $this->orderRepository->create(Cart::prepareDataForOrder());
@@ -869,7 +894,7 @@ class CheckoutMutation extends Controller
                 Cart::updateQuantity();
                 Cart::deActivateCart();
 
-                if(!empty($order) )
+                if(!empty($order) && $cart->grand_total!=0)
                 {
                     $updateOrderData['payment_method_id'] = $storePaymentMethod['id'];
                     $updateOrderData['transaction_id'] =  $stripeCharge['balance_transaction'];
@@ -974,9 +999,9 @@ class CheckoutMutation extends Controller
             throw new \Exception(trans('Please check shipping address.'));
         }
 
-        if (!$cart->billing_address) {
-            throw new \Exception(trans('Please check billing address.'));
-        }
+        // if (!$cart->billing_address) {
+        //     throw new \Exception(trans('Please check billing address.'));
+        // }
 
         if ($cart->haveStockableItems() && !$cart->selected_shipping_rate) {
             throw new \Exception(trans('Please specify shipping method.'));

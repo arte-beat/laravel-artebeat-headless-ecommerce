@@ -15,7 +15,9 @@ extend type Query @guard(with: ["api", "admin-api"]){
 
     getBookedEvents(order_id: ID!): CustomerTicketResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getBookedEvents")
 
+    getAllDetailsByOrder(order_id: ID!): CustomerOrderResponse!  @paginate(type: "paginator" defaultCount:10 resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getAllDetailsByOrder")
 
+    getOrderDetails(order_id: ID!): OrderDetailResponse!  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getOrderData")
 }
 
 extend type Query {
@@ -23,6 +25,62 @@ extend type Query {
     qrScanningScreen(ticket_id: ID!): ThankYouScreenDataResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQrScanningScreenData")
 
     qrCheckInScreen(ticket_id: ID!,event_pwd:String!): ThankYouScreenDataResponse  @field(resolver: "Webkul\\GraphQLAPI\\Mutations\\Shop\\ThankYouScreen\\ThankYouScreenMutation@getQRCheckInScreen")
+}
+
+type OrderDetailResponse {
+    order_id: String
+    status: String
+    customer_name: String
+    total_fees: Float
+    customer_email: String
+    grand_total: Float
+    method: String
+    total_qty_ordered: Int
+    address1: String
+    address2: String
+    city: String
+    state: String
+    country: String
+    postcode: String
+    created_at: String
+    updated_at: String
+    address_info: String
+    shipping_description: String
+}
+
+type CustomerOrderResponse
+{
+    id : Int
+    quantity: Int
+    ticket_id: Int
+    order_id: Int
+    createdAt: DateTime @rename(attribute: "created_at")
+    updatedAt: DateTime @rename(attribute: "updated_at")
+    success: String
+    ticketType: String
+    firstname: String
+    lastname: String
+    email: String
+    status: String
+    basePrice: Float
+    purchasedQuantity: Int
+    price : Float
+    productName: String
+    order_payment_id: Int
+    method: String
+    productType: String
+    total_with_commission: Float
+    images: [Image!] @hasMany
+    artists: [Artist!]!
+    promoters: [Promoter!]!
+    productFlats: [ProductFlat!] @hasMany(relation: "product_flats")
+    booking: BookingProduct @hasOne(relation: "booking_product")
+    orderedDate : DateTime @rename(attribute: "orderDate")
+    orderedTicketId: Int
+    qrCode:String
+    is_checkedIn:String
+    checkedIn_time:String
+    name_counter:Int
 }
 
 type DownloadTicketResponse{

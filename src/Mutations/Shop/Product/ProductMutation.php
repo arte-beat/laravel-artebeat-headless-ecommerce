@@ -72,9 +72,10 @@ class ProductMutation extends Controller
         DB::enableQueryLog();
         $query = \Webkul\Product\Models\Product::query();
         $query->with('booking_product');
-        $query->where('type', 'booking');
+        $query->where('products.type', 'booking');
         $owner = bagisto_graphql()->guard($this->guard)->user();
-        $query->where('event_status', 1);
+        $query->where('products.event_status', 1);
+        // $query->join('booking_products', 'products.id', '=', 'booking_products.product_id');
         // owner_id: Int
 //        if (!empty($owner) && $owner->customer_type == 2) {
 //            $query->orWhere('owner_id', $owner->id);
@@ -83,23 +84,23 @@ class ProductMutation extends Controller
 
         if (isset($args['input']['name'])) {
             $name = strtolower(str_replace(" ", "-", $args['input']['name']));
-            $query->where('sku', 'like', '%' . urldecode($name) . '%');
+            $query->where('products.sku', 'like', '%' . urldecode($name) . '%');
         }
 
         if (!empty($args['input']['owner_type'])) {
-            $query->where('owner_type', 'like', '%' . urldecode($args['input']['owner_type']) . '%');
+            $query->where('products.owner_type', 'like', '%' . urldecode($args['input']['owner_type']) . '%');
         }
 
         if (!empty($args['input']['owner_id'])) {
-            $query->where('owner_id', '=', $args['input']['owner_id']);
+            $query->where('products.owner_id', '=', $args['input']['owner_id']);
         }
 
         if (!empty($args['input']['is_feature_event'])) {
-            $query->where('is_feature_event', '=', $args['input']['is_feature_event']);
+            $query->where('products.is_feature_event', '=', $args['input']['is_feature_event']);
         }
 
         if (!empty($args['input']['is_hero_event'])) {
-            $query->where('is_hero_event', '=', $args['input']['is_hero_event']);
+            $query->where('products.is_hero_event', '=', $args['input']['is_hero_event']);
         }
 
 //        if (isset($args['input']['event_status'])) {
@@ -109,7 +110,7 @@ class ProductMutation extends Controller
         if (isset($args['input']['search_text'])) {
             // Match artist, promoter, location and event name
             $searchedName = strtolower(str_replace(" ", "-", $args['input']['search_text']));
-            $query->where('sku', 'like', '%' . urldecode($searchedName) . '%');
+            $query->where('products.sku', 'like', '%' . urldecode($searchedName) . '%');
 
             $query->orWhereHas('promoters', function ($promoterQuery) use ($args) {
                 $promoterQuery->where('promoter_name', 'like', '%' . $args['input']['search_text'] . '%');
@@ -159,15 +160,23 @@ class ProductMutation extends Controller
 
 
             }
-        });
 
-        $query->orderBy('id', 'desc');
+            // $bookingQuery->orderBy('booking_products.available_from', 'asc');
+        });        
+
+        // $query->orderBy('id', 'asc');
+        $query->orderBy(function ($subQuery) {
+            $subQuery->select('booking_products.available_from')
+                ->from('booking_products')
+                ->whereColumn('products.id', 'booking_products.product_id')
+                ->limit(1);
+        }, 'asc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
-
-        $results = $query->paginate($count, ['*'], 'page', $page);
-
-        Log::info('eventFilter qry', ['query' => var_export(DB::getQueryLog(), true)]);
+        // \DB::listen(function($query) {
+        //     \Log::info($query->sql, $query->bindings, $query->time);
+        // });
+        $results = $query->paginate($count, ['*'],'page',$page);
         return $results;
     }
 
@@ -508,9 +517,9 @@ class ProductMutation extends Controller
         $event = new Product();
         $eventdata = $event::where('sku', '=', $data['sku'])->first();
 
-        if (!empty($eventdata)) {
-            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-        }
+        // if (!empty($eventdata)) {
+        //     throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+        // }
 
         $data['type'] = 'booking';
         $data['attribute_family_id'] = 1;
@@ -581,9 +590,9 @@ class ProductMutation extends Controller
         $event = new Product();
         $eventdata = $event::where('sku', '=', $data['sku'])->where('id', '!=', $id)->first();
 
-        if (!empty($eventdata)) {
-            throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
-        }
+        // if (!empty($eventdata)) {
+        //     throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+        // }
         if (!empty($product)) {
             // Only in case of booking product type
             if (isset($product->type) && $product->type == 'booking' && isset($data['booking']) && $data['booking']) {
@@ -698,6 +707,186 @@ class ProductMutation extends Controller
             if (isset($data['product_id']) && empty($data['id'])) {
                 $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
                 $validator = Validator::make($data, [
+                    'sku' => ['required', new Slug],
+                ]);
+
+                if ($validator->fails()) {
+                    throw new Exception($validator->messages());
+                }
+                $data['type'] = 'simple';
+                $data['attribute_family_id'] = 1;
+                $data['parent_id'] = $data['product_id'];
+                try {
+                    $owner = bagisto_graphql()->guard($this->guard)->user();
+                    $data['owner_id'] = $owner->id;
+                    $data['owner_type'] = 'admin';
+
+                    Event::dispatch('catalog.product.create.before');
+                    $product = $this->productRepository->create($data);
+                    Event::dispatch('catalog.product.create.after', $product);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+
+                if (!empty($product)) {
+                    $id = $product->id;
+                    try {
+                        Event::dispatch('catalog.product.update.before', $id);
+                        $updateProduct[$index] = $this->productRepository->update($data, $id);
+                        ProductFlat::where('product_id', $id)->update(['merch_type' => $data['merch_type']]);
+                        Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                        if ($multipleFiles != null) {
+                            if (isset($multipleFiles[$index])) {
+                                $files = $multipleFiles[$index];
+                                bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                            }
+                        }
+
+                        $this->productRepository->syncQuantities($id, $data['quantity']);
+                    } catch (Exception $e) {
+                        throw new Exception($e->getMessage());
+                    }
+                } else {
+                    throw new Exception("Unable to process at the moment. Please try again after sometime.");
+                }
+            } else {
+                $id = $data['id'];
+                $product = $this->productRepository->findOrFail($id);
+                if (!empty($product)) {
+                    try {
+                        $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                        $validator = Validator::make($data, [
+                            'sku' => ['required', 'unique:products,sku,' . $id, new Slug],
+                        ]);
+
+                        if ($validator->fails()) {
+                            throw new Exception($validator->messages());
+                        }
+                        Event::dispatch('catalog.product.update.before', $id);
+                        $updateProduct[$index] = $this->productRepository->update($data, $id);
+                        ProductFlat::where('product_id', $id)->update(['merch_type' => $data['merch_type']]);
+                        Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                        if (!empty($data['removeImages'])) {
+                            $removeImagesArr = $data['removeImages'];
+                            foreach ($removeImagesArr as $removeImage) {
+                                ProductImage::where("id", "=", $removeImage['id'])->delete();
+                            }
+                        }
+                        if ($multipleFiles != null) {
+                            if (isset($multipleFiles[$index])) {
+                                $files = $multipleFiles[$index];
+                                bagisto_graphql()->uploadMerchantImages($files, $product, 'product/', 'image');
+                            }
+                        }
+                        $this->productRepository->syncQuantities($id, $data['quantity']);
+                    } catch (Exception $e) {
+                        throw new Exception($e->getMessage());
+                    }
+                } else {
+                    throw new Exception("Unable to process at the moment. Please try again after sometime.");
+                }
+            }
+        }
+        return $updateProduct;
+    }
+
+    /**
+     * Store the specified resource in storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function storeShowcaseEventBooking($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        $multipleData = $args['input'];
+        $multipleFiles = $args['files'];
+        foreach ($multipleData as $index => $data) {
+            $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+            $validator = Validator::make($data, [
+                'name' => 'string|required',
+            ]);
+
+            if ($validator->fails()) {
+                throw new Exception($validator->messages());
+            }
+            $product = $this->productRepository->findOrFail($data['product_id']);
+            $event = new Product();
+            $eventdata = $event::where('sku', '=', $data['sku'])->first();
+            $product = $this->productRepository->findOrFail($data['product_id']);
+            if (!empty($eventdata)) {
+                throw new Exception("{\"name\":[\"The name has already been taken.\"]}");
+            }
+            $data['type'] = 'showcase';
+            $data['attribute_family_id'] = 1;
+            $data['status'] = 1;
+            $data['parent_id'] = $data['product_id'];
+            try {
+                $owner = bagisto_graphql()->guard($this->guard)->user();
+                $data['owner_id'] = $owner->id;
+                $data['owner_type'] = 'admin';
+
+                Event::dispatch('catalog.product.create.before');
+                $product = $this->productRepository->create($data);
+                Event::dispatch('catalog.product.create.after', $product);
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+
+            if (!empty($product)) {
+                $id = $product->id;
+                try {
+                    Event::dispatch('catalog.product.update.before', $id);
+                    $updateProduct[$index] = $this->productRepository->update($data, $id);
+                    ProductFlat::where('product_id', $id)->update(['merch_type' => $data['merch_type']]);
+                    Event::dispatch('catalog.product.update.after', $updateProduct[$index]);
+
+                    if ($multipleFiles != null) {
+                        if (isset($multipleFiles[$index])) {
+                            $files = $multipleFiles[$index];
+                            bagisto_graphql()->uploadEventImages($files, $product, 'product/', 'image');
+                        }
+                    }
+
+                    $this->productRepository->syncQuantities($id, $data['quantity']);
+                } catch (Exception $e) {
+                    throw new Exception($e->getMessage());
+                }
+            } else {
+                throw new Exception("Unable to process at the moment. Please try again after sometime.");
+            }
+//            }
+        }
+        return $updateProduct;
+    }
+
+
+    /**
+     * Store the specified resource in storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateShowcaseEventBooking($rootValue, array $args, GraphQLContext $context)
+    {
+        if (!isset($args['input']) || (isset($args['input']) && !$args['input'])) {
+            throw new Exception(trans('bagisto_graphql::app.admin.response.error-invalid-parameter'));
+        }
+        $multipleData = $args['input'];
+        $multipleDeleteData = $args['deleteInput'];
+        $multipleFiles = $args['files'];
+        foreach ($multipleDeleteData as $deleteData) {
+            Product::where("id", "=", $deleteData['id'])->delete();
+            ProductImage::where("product_id", "=", $deleteData['id'])->delete();
+        }
+        foreach ($multipleData as $index => $data) {
+            if (isset($data['product_id']) && empty($data['id'])) {
+                $data['sku'] = strtolower(str_replace(" ", "-", $data['name']));
+                $validator = Validator::make($data, [
                     'sku' => ['required', 'unique:products,sku', new Slug],
                 ]);
 
@@ -705,6 +894,7 @@ class ProductMutation extends Controller
                     throw new Exception($validator->messages());
                 }
                 $data['type'] = 'simple';
+                $data['product_type'] = 'showcase';
                 $data['attribute_family_id'] = 1;
                 $data['parent_id'] = $data['product_id'];
                 try {
@@ -1028,6 +1218,10 @@ class ProductMutation extends Controller
         if (isset($args['input']['name']) && !empty($args['input']['name'])) {
             $query->where('name', 'like', '%' . urldecode($args['input']['name']) . '%');
         }
+
+        if (isset($args['input']['type']) && !empty($args['input']['type'])) {
+            $query->where('type', '=', $args['input']['type']);
+        }
         $query->orderBy('id', 'desc');
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
@@ -1052,6 +1246,7 @@ class ProductMutation extends Controller
         $query->whereNull('product_type');
         $query->whereNotNull('parent_id');
         $query->where('type', 'simple');
+        $query->whereIn('event_status', [1,2,3]);
         $query->inRandomOrder();
         $count = isset($args['first']) ? $args['first'] : 10;
         $page = isset($args['page']) ? $args['page'] : 1;
@@ -1235,7 +1430,7 @@ class ProductMutation extends Controller
             ->leftJoin('orders', 'cart_items.cart_id', '=', 'orders.cart_id')
             ->leftJoin('addresses', 'orders.customer_email', '=', 'addresses.email')
             ->leftJoin('order_status_for_single_product', 'orders.id', '=', 'order_status_for_single_product.orderId')
-            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'cart_items.commission_amount as commission', 'cart_items.total_with_commission as total_product_price', 'order_status_for_single_product.status as deliveryStatus', 'orders.status', 'cart_items.tax_amount', 'cart_items.tax_percent')
+            ->addSelect('products.id', 'products.sku as productName', 'orders.created_at', 'cart_items.quantity', 'cart_items.ticket_id', 'orders.id AS order_id', 'addresses.address_type', 'addresses.first_name', 'addresses.last_name', 'addresses.address1', 'addresses.address2', 'addresses.postcode', 'addresses.city', 'addresses.state', 'addresses.country', 'addresses.email', 'addresses.phone', 'cart_items.total as price', 'orders.status', 'cart_items.base_price as basePrice', 'cart_items.quantity as purchasedQuantity', 'cart_items.commission_amount as commission', 'cart_items.transaction_fee as transaction_fee', 'cart_items.total_with_commission as total_product_price', 'order_status_for_single_product.status as deliveryStatus', 'orders.status', 'cart_items.tax_amount', 'cart_items.tax_percent')
             ->selectRaw("CONCAT(customer_first_name, ' ', customer_last_name) as customer_name")
             ->whereIn('orders.status', ['completed', 'pending'])
             ->where('addresses.default_address', 1)
